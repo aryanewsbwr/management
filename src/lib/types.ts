@@ -102,10 +102,12 @@ export interface CustomerDetail {
   hawker_name?: string;
   qty: number;
   circulation: 'Morning' | 'Evening';
+  delivery_days: number[]; // [1,2,3,4,5,6,7] (1=Mon..7=Sun), default all 7 days
   s_date: string;
   c_date?: string;
+  discount_percent: number; // Discount percentage (e.g. 5, 10, 15%)
   discount: number;
-  delivery_charge: number;
+  delivery_charge: number; // Delivery charges for this specific publication
 }
 
 export interface CounterSale {

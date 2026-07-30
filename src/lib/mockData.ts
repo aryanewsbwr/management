@@ -84,11 +84,11 @@ export const mockCustomers: Customer[] = [
 ];
 
 export const mockCustomerDetails: CustomerDetail[] = [
-  { sno: 1, customer_id: 1, publication_id: 1, publication_name: 'Dainik Bhaskar', hawker_id: 1, hawker_name: 'Ramesh Kumar', qty: 1, circulation: 'Morning', s_date: '2025-01-01', discount: 0.00, delivery_charge: 30.00 },
-  { sno: 2, customer_id: 1, publication_id: 3, publication_name: 'The Times of India', hawker_id: 1, hawker_name: 'Ramesh Kumar', qty: 1, circulation: 'Morning', s_date: '2025-01-01', discount: 0.00, delivery_charge: 0.00 },
-  { sno: 3, customer_id: 2, publication_id: 1, publication_name: 'Dainik Bhaskar', hawker_id: 1, hawker_name: 'Ramesh Kumar', qty: 2, circulation: 'Morning', s_date: '2025-02-15', discount: 5.00, delivery_charge: 40.00 },
-  { sno: 4, customer_id: 3, publication_id: 2, publication_name: 'Dainik Jagran', hawker_id: 2, hawker_name: 'Suresh Sharma', qty: 5, circulation: 'Morning', s_date: '2025-01-01', discount: 10.00, delivery_charge: 100.00 },
-  { sno: 5, customer_id: 4, publication_id: 1, publication_name: 'Dainik Bhaskar', hawker_id: 3, hawker_name: 'Vikram Singh', qty: 3, circulation: 'Morning', s_date: '2025-03-01', discount: 0.00, delivery_charge: 50.00 }
+  { sno: 1, customer_id: 1, publication_id: 1, publication_name: 'Dainik Bhaskar', hawker_id: 1, hawker_name: 'Ramesh Kumar', qty: 1, circulation: 'Morning', delivery_days: [1,2,3,4,5,6,7], s_date: '2025-01-01', discount_percent: 0, discount: 0.00, delivery_charge: 30.00 },
+  { sno: 2, customer_id: 1, publication_id: 3, publication_name: 'The Times of India', hawker_id: 1, hawker_name: 'Ramesh Kumar', qty: 1, circulation: 'Morning', delivery_days: [1,2,3,4,5,6,7], s_date: '2025-01-01', discount_percent: 0, discount: 0.00, delivery_charge: 0.00 },
+  { sno: 3, customer_id: 2, publication_id: 1, publication_name: 'Dainik Bhaskar', hawker_id: 1, hawker_name: 'Ramesh Kumar', qty: 2, circulation: 'Morning', delivery_days: [1,2,3,4,5,6,7], s_date: '2025-02-15', discount_percent: 5, discount: 5.00, delivery_charge: 40.00 },
+  { sno: 4, customer_id: 3, publication_id: 2, publication_name: 'Dainik Jagran', hawker_id: 2, hawker_name: 'Suresh Sharma', qty: 5, circulation: 'Morning', delivery_days: [1,2,3,4,5,6], s_date: '2025-01-01', discount_percent: 10, discount: 10.00, delivery_charge: 100.00 },
+  { sno: 5, customer_id: 4, publication_id: 1, publication_name: 'Dainik Bhaskar', hawker_id: 3, hawker_name: 'Vikram Singh', qty: 3, circulation: 'Morning', delivery_days: [1,2,3,4,5,6,7], s_date: '2025-03-01', discount_percent: 0, discount: 0.00, delivery_charge: 50.00 }
 ];
 
 export const mockCounterSales: CounterSale[] = [

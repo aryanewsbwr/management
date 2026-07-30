@@ -33,7 +33,11 @@ export function calculateMonthlyBill(
     const dayOfWeek = jsDay === 0 ? 7 : jsDay;
 
     for (const sub of activeSubs) {
-      // Check holiday for this publication on date
+      // 1. Check if paper is scheduled for delivery on this day of week
+      const allowedDays = sub.delivery_days || [1,2,3,4,5,6,7];
+      if (!allowedDays.includes(dayOfWeek)) continue;
+
+      // 2. Check holiday for this publication on date
       const isHoliday = holidays.some(h => 
         h.publication_id === sub.publication_id && 
         h.oc_date === dateStr
@@ -46,14 +50,22 @@ export function calculateMonthlyBill(
       const copyPrice = rateObj ? rateObj.rate : 5.00;
 
       totalCopies += sub.qty;
-      totalPaperAmt += copyPrice * sub.qty;
+      const dayPaperPrice = copyPrice * sub.qty;
+      totalPaperAmt += dayPaperPrice;
+
+      // Apply percentage discount if applicable
+      if (sub.discount_percent && sub.discount_percent > 0) {
+        totalDiscountAmt += (dayPaperPrice * sub.discount_percent) / 100;
+      }
     }
   }
 
-  // Monthly flat delivery and discount calculations
+  // Monthly flat delivery and fixed discount calculations per publication
   for (const sub of activeSubs) {
     totalDeliveryAmt += sub.delivery_charge || 0;
-    totalDiscountAmt += sub.discount || 0;
+    if (sub.discount && sub.discount > 0) {
+      totalDiscountAmt += sub.discount;
+    }
   }
 
   const previousDue = customer.due_amount || 0;
