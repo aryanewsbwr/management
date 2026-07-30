@@ -60,22 +60,16 @@ export default function CustomersPage() {
     (c.phone && c.phone.includes(searchTerm))
   );
 
-  // Auto English to Hindi Transliteration for Name
-  const handleEnglishNameChange = async (val: string) => {
-    setForm(prev => ({ ...prev, name_eng: val }));
-    if (val.trim()) {
-      const hindi = await transliterateToHindi(val);
-      setForm(prev => ({ ...prev, name_hindi: hindi }));
-    }
+  // Instant Synchronous English to Hindi Transliteration for Name
+  const handleEnglishNameChange = (val: string) => {
+    const hindi = transliterateToHindi(val);
+    setForm(prev => ({ ...prev, name_eng: val, name_hindi: hindi }));
   };
 
-  // Auto English to Hindi Transliteration for Address
-  const handleEnglishAddressChange = async (val: string) => {
-    setForm(prev => ({ ...prev, add1: val }));
-    if (val.trim()) {
-      const hindi = await transliterateToHindi(val);
-      setForm(prev => ({ ...prev, hindi_add: hindi }));
-    }
+  // Instant Synchronous English to Hindi Transliteration for Address
+  const handleEnglishAddressChange = (val: string) => {
+    const hindi = transliterateToHindi(val);
+    setForm(prev => ({ ...prev, add1: val, hindi_add: hindi }));
   };
 
   const toggleDeliveryDay = (dayId: number) => {
@@ -100,10 +94,10 @@ export default function CustomersPage() {
     const newCust: Customer = {
       customer_id: newCustId,
       name_eng: form.name_eng,
-      name_hindi: form.name_hindi,
+      name_hindi: form.name_hindi || transliterateToHindi(form.name_eng),
       cust_type: form.cust_type,
       add1: form.add1,
-      hindi_add: form.hindi_add,
+      hindi_add: form.hindi_add || transliterateToHindi(form.add1),
       phone: form.phone,
       security_deposit: Number(form.security_deposit),
       priority: 1,
@@ -264,17 +258,17 @@ export default function CustomersPage() {
                     required
                     value={form.name_eng}
                     onChange={(e) => handleEnglishNameChange(e.target.value)}
-                    placeholder="e.g. H.N. Sharma"
+                    placeholder="e.g. Ramesh Kumar"
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 focus:outline-none focus:border-indigo-600 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Hindi Name (हिंदी - Auto Filled)</label>
+                  <label className="block text-slate-600 font-semibold mb-1">Hindi Name (हिंदी नाम - Auto Transliterated)</label>
                   <input
                     type="text"
                     value={form.name_hindi}
                     onChange={(e) => setForm({ ...form, name_hindi: e.target.value })}
-                    placeholder="एच. एन. शर्मा"
+                    placeholder="रामेश कुमार"
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 focus:outline-none focus:border-indigo-600 font-medium"
                   />
                 </div>
@@ -318,12 +312,12 @@ export default function CustomersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Hindi Address (Auto Filled)</label>
+                  <label className="block text-slate-600 font-semibold mb-1">Hindi Address (हिंदी पता - Auto Transliterated)</label>
                   <input
                     type="text"
                     value={form.hindi_add}
                     onChange={(e) => setForm({ ...form, hindi_add: e.target.value })}
-                    placeholder="मकान 120, सेक्टर 4"
+                    placeholder="हाउस 120, सेक्टर 4"
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 focus:outline-none focus:border-indigo-600 font-medium"
                   />
                 </div>
