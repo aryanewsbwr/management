@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Newspaper, Calendar, Building2, Plus, Sun, Layers, Edit, X } from 'lucide-react';
+import { Newspaper, Calendar, Building2, Plus, Sun, Layers, Edit, X, Search, Trash2 } from 'lucide-react';
 import { mockPublications, mockPublicationRates, mockPublishers, mockHolidays, mockPublicationSups } from '@/lib/mockData';
 import { Publication, PublicationRate, Publisher, Holiday, PublicationSup } from '@/lib/types';
 import { transliterateToHindi } from '@/lib/transliteration';
@@ -20,16 +20,37 @@ export default function PublicationsPage() {
   const [activeTab, setActiveTab] = useState<'rates' | 'publishers' | 'holidays' | 'supplements'>('rates');
   const [publications, setPublications] = useState<Publication[]>(mockPublications);
   const [rates, setRates] = useState<PublicationRate[]>(mockPublicationRates);
-  const [publishers] = useState<Publisher[]>(mockPublishers);
+  const [publishers, setPublishers] = useState<Publisher[]>(mockPublishers);
   const [holidays] = useState<Holiday[]>(mockHolidays);
   const [supplements] = useState<PublicationSup[]>(mockPublicationSups);
 
   const [selectedPub, setSelectedPub] = useState<Publication>(mockPublications[0]);
   
-  // Modal states for Editing & Creating Publications
+  // Publication Edit/Add Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPub, setEditingPub] = useState<Publication | null>(null);
+
+  // Publisher Edit/Add Modals & Search
+  const [publisherSearch, setPublisherSearch] = useState('');
+  const [isPublisherModalOpen, setIsPublisherModalOpen] = useState(false);
+  const [editingPublisher, setEditingPublisher] = useState<Publisher | null>(null);
+
+  const [publisherForm, setPublisherForm] = useState<Publisher>({
+    publisher_id: 0,
+    name: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    phone: '',
+    mobile: '',
+    fax: '',
+    email: '',
+    website: '',
+    category: 'Newspaper',
+    type: 'Publisher'
+  });
 
   const [pubForm, setPubForm] = useState<{
     public_name: string;
@@ -121,6 +142,57 @@ export default function PublicationsPage() {
     setIsAddModalOpen(false);
   };
 
+  // Publisher Management Handlers (Matching legacy Publisher Info form)
+  const handleOpenAddPublisher = () => {
+    setEditingPublisher(null);
+    setPublisherForm({
+      publisher_id: publishers.length + 1,
+      name: '',
+      address: '',
+      city: '',
+      state: '',
+      pincode: '',
+      phone: '',
+      mobile: '',
+      fax: '',
+      email: '',
+      website: '',
+      category: 'Newspaper',
+      type: 'Publisher'
+    });
+    setIsPublisherModalOpen(true);
+  };
+
+  const handleOpenEditPublisher = (pub: Publisher) => {
+    setEditingPublisher(pub);
+    setPublisherForm({ ...pub });
+    setIsPublisherModalOpen(true);
+  };
+
+  const handleSavePublisher = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!publisherForm.name.trim()) return;
+
+    if (editingPublisher) {
+      setPublishers(publishers.map(p => p.publisher_id === editingPublisher.publisher_id ? publisherForm : p));
+    } else {
+      setPublishers([...publishers, { ...publisherForm, publisher_id: publishers.length + 1 }]);
+    }
+    setIsPublisherModalOpen(false);
+  };
+
+  const handleDeletePublisher = (id: number) => {
+    if (confirm('Are you sure you want to delete this publisher?')) {
+      setPublishers(publishers.filter(p => p.publisher_id !== id));
+    }
+  };
+
+  const filteredPublishers = publishers.filter(p =>
+    p.name.toLowerCase().includes(publisherSearch.toLowerCase()) ||
+    (p.city && p.city.toLowerCase().includes(publisherSearch.toLowerCase())) ||
+    (p.category && p.category.toLowerCase().includes(publisherSearch.toLowerCase()))
+  );
+
   const handleRateChange = (dayId: number, newRate: number) => {
     const existingIdx = rates.findIndex(r => r.publication_id === selectedPub.publication_id && r.day_of_week === dayId);
     if (existingIdx >= 0) {
@@ -137,19 +209,29 @@ export default function PublicationsPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Publications & Rates</h1>
-          <p className="text-xs text-slate-500">Manage newspapers, day-of-week rates, publishers, holidays & supplements</p>
+          <h1 className="text-xl font-bold text-slate-900">Publications & Publishers Master</h1>
+          <p className="text-xs text-slate-500">Manage newspapers, day-of-week rates, publishers directory, holidays & supplements</p>
         </div>
-        <button
-          onClick={() => {
-            setPubForm({ public_name: '', pub_hindi: '', type_p: 'Daily', publisher_id: 1, abrv: '', circulation: 'Morning', chr_del: true });
-            setIsAddModalOpen(true);
-          }}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-colors self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>New Publication</span>
-        </button>
+        {activeTab === 'rates' ? (
+          <button
+            onClick={() => {
+              setPubForm({ public_name: '', pub_hindi: '', type_p: 'Daily', publisher_id: 1, abrv: '', circulation: 'Morning', chr_del: true });
+              setIsAddModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-colors self-start sm:self-auto cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Publication</span>
+          </button>
+        ) : activeTab === 'publishers' ? (
+          <button
+            onClick={handleOpenAddPublisher}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-colors self-start sm:self-auto cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Publisher / Dealer</span>
+          </button>
+        ) : null}
       </div>
 
       {/* Tabs */}
@@ -175,7 +257,7 @@ export default function PublicationsPage() {
           }`}
         >
           <Building2 className="w-3.5 h-3.5" />
-          <span>Publishers Directory</span>
+          <span>Publishers Directory ({publishers.length})</span>
         </button>
 
         <button
@@ -288,21 +370,67 @@ export default function PublicationsPage() {
         </div>
       )}
 
-      {/* Tab 2: Publishers */}
+      {/* Tab 2: Publishers Directory (Matching 1publisher.csv & legacy Publisher Info form) */}
       {activeTab === 'publishers' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {publishers.map((pub) => (
-            <div key={pub.publisher_id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-slate-900 text-sm">{pub.name}</h3>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                  {pub.category || 'Publisher'}
-                </span>
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              value={publisherSearch}
+              onChange={(e) => setPublisherSearch(e.target.value)}
+              placeholder="Find Publisher by Name, City, or Category..."
+              className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-600 shadow-xs font-medium"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredPublishers.map((pub) => (
+              <div key={pub.publisher_id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2 text-xs relative group">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                      ID #{pub.publisher_id}
+                    </span>
+                    <h3 className="font-bold text-slate-900 text-sm mt-1">{pub.name}</h3>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleOpenEditPublisher(pub)}
+                      className="p-1 text-slate-400 hover:text-indigo-600"
+                      title="Edit Publisher"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeletePublisher(pub.publisher_id)}
+                      className="p-1 text-slate-400 hover:text-rose-600"
+                      title="Delete Publisher"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    Cat: {pub.category || 'Both'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    Type: {pub.type || 'Publisher'}
+                  </span>
+                </div>
+
+                <div className="text-slate-500 space-y-0.5 pt-1 text-[11px]">
+                  {pub.address && <p>Address: {pub.address}</p>}
+                  <p>City/State: {pub.city || 'N/A'}{pub.state ? `, ${pub.state}` : ''} {pub.pincode ? `(${pub.pincode})` : ''}</p>
+                  {(pub.mobile || pub.phone) && <p>Phone/Mobile: {pub.mobile || pub.phone}</p>}
+                  {pub.email && <p>Email: {pub.email}</p>}
+                  {pub.website && <p>Website: {pub.website}</p>}
+                </div>
               </div>
-              <p className="text-slate-500">Location: {pub.city || 'HQ'}, {pub.state}</p>
-              <p className="text-slate-500">Phone/Mobile: {pub.mobile || pub.phone || 'N/A'}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
@@ -356,6 +484,177 @@ export default function PublicationsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Publisher Add/Edit Modal (Exact Match to 1publisher.csv & Legacy Form) */}
+      {isPublisherModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 text-slate-900 w-full max-w-lg rounded-xl shadow-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm">{editingPublisher ? 'Update Publisher Info' : 'Add Publisher Info'}</h3>
+              <button onClick={() => setIsPublisherModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePublisher} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-600 font-semibold mb-1">Publisher / Dealer Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={publisherForm.name}
+                  onChange={(e) => setPublisherForm({ ...publisherForm, name: e.target.value })}
+                  placeholder="e.g. BENNETT COLEMAN & CO. LTD."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-semibold mb-1">Address</label>
+                <input
+                  type="text"
+                  value={publisherForm.address || ''}
+                  onChange={(e) => setPublisherForm({ ...publisherForm, address: e.target.value })}
+                  placeholder="Street / Premises Address"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">City</label>
+                  <input
+                    type="text"
+                    value={publisherForm.city || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, city: e.target.value })}
+                    placeholder="NEW DELHI"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">State</label>
+                  <input
+                    type="text"
+                    value={publisherForm.state || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, state: e.target.value })}
+                    placeholder="DELHI"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Pincode</label>
+                  <input
+                    type="text"
+                    value={publisherForm.pincode || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, pincode: e.target.value })}
+                    placeholder="110001"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Phone</label>
+                  <input
+                    type="text"
+                    value={publisherForm.phone || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, phone: e.target.value })}
+                    placeholder="011-23321234"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Mobile</label>
+                  <input
+                    type="text"
+                    value={publisherForm.mobile || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, mobile: e.target.value })}
+                    placeholder="9811033333"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Fax</label>
+                  <input
+                    type="text"
+                    value={publisherForm.fax || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, fax: e.target.value })}
+                    placeholder="Fax No"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={publisherForm.email || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, email: e.target.value })}
+                    placeholder="contact@publisher.com"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Website</label>
+                  <input
+                    type="text"
+                    value={publisherForm.website || ''}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, website: e.target.value })}
+                    placeholder="www.publisher.com"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Category</label>
+                  <select
+                    value={publisherForm.category}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, category: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  >
+                    <option value="Newspaper">Newspaper</option>
+                    <option value="Magzine">Magzine</option>
+                    <option value="Both">Both</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 font-semibold mb-1">Type</label>
+                  <select
+                    value={publisherForm.type}
+                    onChange={(e) => setPublisherForm({ ...publisherForm, type: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-900 font-medium focus:outline-none focus:border-indigo-600"
+                  >
+                    <option value="Publisher">Publisher</option>
+                    <option value="Dealer">Dealer</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsPublisherModalOpen(false)}
+                  className="px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-xs"
+                >
+                  {editingPublisher ? 'Update Publisher' : 'Save Publisher'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

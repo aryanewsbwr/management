@@ -14,10 +14,14 @@ export interface Publisher {
   address?: string;
   city?: string;
   state?: string;
+  pincode?: string;
   phone?: string;
   mobile?: string;
+  fax?: string;
   email?: string;
-  category?: string;
+  website?: string;
+  category?: 'Newspaper' | 'Magzine' | 'Both' | string;
+  type?: 'Publisher' | 'Dealer' | string;
 }
 
 export interface Publication {

@@ -19,10 +19,24 @@ export const mockAreas: Area[] = [
 ];
 
 export const mockPublishers: Publisher[] = [
-  { publisher_id: 1, name: 'Dainik Bhaskar Group', city: 'Bhopal', state: 'MP', phone: '0755-255441', mobile: '9826011111', email: 'sales@bhaskar.com', category: 'Daily Newspaper' },
-  { publisher_id: 2, name: 'Jagran Prakashan Ltd', city: 'Kanpur', state: 'UP', phone: '0512-2216161', mobile: '9839022222', email: 'info@jagran.com', category: 'Daily Newspaper' },
-  { publisher_id: 3, name: 'The Times Group (BCCL)', city: 'New Delhi', state: 'Delhi', phone: '011-23321234', mobile: '9811033333', email: 'dist@timesgroup.com', category: 'English Daily' },
-  { publisher_id: 4, name: 'India Today Media', city: 'Noida', state: 'UP', phone: '0120-4807100', mobile: '9810044444', email: 'subscriptions@indiatoday.com', category: 'Magazine & Periodicals' }
+  { publisher_id: 1, name: 'BENNETT COLEMAN & CO. LTD.', city: 'NEW DELHI', category: 'Newspaper', type: 'Publisher' },
+  { publisher_id: 2, name: 'ROHIT NEWS AGENCY', category: 'Both', type: 'Dealer' },
+  { publisher_id: 3, name: 'DAINIK BHASKAR', category: 'Both', type: 'Publisher' },
+  { publisher_id: 4, name: 'GEETA PUSTAK BHANDAR', city: 'AJMER', category: 'Magzine', type: 'Dealer' },
+  { publisher_id: 5, name: 'BEAWAR NEWS AGENCY', city: 'BEAWAR', category: 'Both', type: 'Dealer' },
+  { publisher_id: 6, name: 'H T MEDIA LTD.', city: 'NEW DELHI', category: 'Both', type: 'Publisher' },
+  { publisher_id: 7, name: 'SARVODAYA BOOK STALL', city: 'JODHPUR', category: 'Magzine', type: 'Dealer' },
+  { publisher_id: 8, name: 'Punjab Kesari', category: 'Newspaper', type: 'Publisher' },
+  { publisher_id: 9, name: 'Saurashtra Trust', category: 'Magzine', type: 'Publisher' },
+  { publisher_id: 10, name: 'BENNETT COLEMAN & CO. LTD.New Delhi', city: 'NEW DELHI', category: 'Both', type: 'Publisher' },
+  { publisher_id: 11, name: 'Bennett Coleman & Co Ltd,Mumbai', category: 'Magzine', type: 'Publisher' },
+  { publisher_id: 12, name: 'Lok Prakashan Ltd', category: 'Newspaper', type: 'Publisher' },
+  { publisher_id: 13, name: 'Indian Express newspaper (bby) ltd', category: 'Both', type: 'Publisher' },
+  { publisher_id: 14, name: 'Bhartiya vidya bhawan', category: 'Magzine', type: 'Publisher' },
+  { publisher_id: 15, name: 'Sahara India Mass Communications', category: 'Newspaper', type: 'Publisher' },
+  { publisher_id: 16, name: 'Nirantar', category: 'Newspaper', type: 'Publisher' },
+  { publisher_id: 17, name: 'Bank', category: 'Both', type: 'Publisher' },
+  { publisher_id: 18, name: 'DNA', category: 'Newspaper', type: 'Publisher' }
 ];
 
 export const mockPublications: Publication[] = [
