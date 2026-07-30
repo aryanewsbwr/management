@@ -1,0 +1,18 @@
+# Dependencies
+/node_modules
+/.pnpm
+/.yarn
+
+# Next.js build output
+/.next/
+/out/
+
+# Production & Local Environment files
+.env*.local
+.env
+
+# IDE & OS files
+.DS_Store
+*.pem
+Thumbs.db
+free_port.ps1

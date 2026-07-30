@@ -1,0 +1,9 @@
+{
+  "appId": "com.aryannewsagency.app",
+  "appName": "Aryan News Agency",
+  "webDir": "out",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

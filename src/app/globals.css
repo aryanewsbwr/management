@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased font-sans selection:bg-indigo-500 selection:text-white;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  #printable-bill {
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+  }
+}
