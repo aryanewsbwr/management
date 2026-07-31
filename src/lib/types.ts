@@ -24,19 +24,35 @@ export interface Publisher {
   type?: 'Publisher' | 'Dealer' | string;
 }
 
+export interface PublicationSup {
+  sup_id?: number;
+  publica_id?: number;
+  publication_id?: number;
+  publication_name?: string;
+  supname: string;
+  month?: string;
+  year?: number;
+  region_name?: string;
+}
+
 export interface Publication {
   publication_id: number;
   public_name: string;
   pub_hindi?: string;
+  pub_name_hindi?: string;
   type_p: 'Daily' | 'Weekly' | 'Monthly' | 'Magazine';
   publisher_id?: number;
-  abrv: string;
-  circulation: 'Morning' | 'Evening';
-  chr_del: boolean;
+  publisher_name?: string;
+  abrv?: string;
+  abrevation?: string;
+  circulation?: 'Morning' | 'Evening' | string;
+  chr_del?: boolean;
   rate?: number;
   duration?: string;
   pub_day?: string;
   pub_month?: string;
+  publishing_day?: string;
+  is_active?: boolean;
 }
 
 export interface PublicationRate {
@@ -201,9 +217,11 @@ export interface Bill {
   delivery_amount: number;
   discount_amount: number;
   previous_due: number;
+  total_amount?: number;
   net_payable: number;
   status: 'Paid' | 'Unpaid' | 'Partial';
-  bill_date: string;
+  bill_date?: string;
+  generated_date?: string;
 }
 
 export interface Receipt {
@@ -235,15 +253,6 @@ export interface Holiday {
   publication_id?: number;
   publication_name?: string;
   affected_publications?: number[]; // Multi-select publications
-}
-
-export interface PublicationSup {
-  sup_id: number;
-  publication_id: number;
-  publication_name?: string;
-  month: string;
-  year: number;
-  region_name?: string;
 }
 
 export interface AgencyMessage {
