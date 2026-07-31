@@ -16,8 +16,14 @@ const weekDaysList = [
   { id: 7, name: 'Sun', full: 'Sunday' },
 ];
 
+import { useSearchParams } from 'next/navigation';
+
 export default function CustomersPage() {
-  const [activeTab, setActiveTab] = useState<'customers' | 'discontinue'>('customers');
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get('tab');
+  const initialTab = tabQuery === 'discontinue' ? 'discontinue' : 'customers';
+
+  const [activeTab, setActiveTab] = useState<'customers' | 'discontinue'>(initialTab);
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [details, setDetails] = useState<CustomerDetail[]>(mockCustomerDetails);
   

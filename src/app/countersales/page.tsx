@@ -5,8 +5,14 @@ import { Store, Plus, IndianRupee, ShoppingBag, ShoppingCart, X } from 'lucide-r
 import { mockCounterSales, mockPublications, mockPurchases, mockPublishers } from '@/lib/mockData';
 import { CounterSale, Purchase, PurchaseDetail } from '@/lib/types';
 
+import { useSearchParams } from 'next/navigation';
+
 export default function CounterSalesPage() {
-  const [activeTab, setActiveTab] = useState<'sales' | 'purchases'>('sales');
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get('tab');
+  const initialTab = tabQuery === 'purchases' ? 'purchases' : 'sales';
+
+  const [activeTab, setActiveTab] = useState<'sales' | 'purchases'>(initialTab);
   const [sales, setSales] = useState<CounterSale[]>(mockCounterSales);
   const [purchases, setPurchases] = useState<Purchase[]>(mockPurchases);
 

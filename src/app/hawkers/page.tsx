@@ -5,8 +5,14 @@ import { Truck, Plus, Phone, MapPin, Navigation, BookOpen, Map, Search, Trash2, 
 import { mockHawkers, mockRegions, mockCollectors, mockReceiptIssues } from '@/lib/mockData';
 import { Hawker, Collector, ReceiptIssue, Region } from '@/lib/types';
 
+import { useSearchParams } from 'next/navigation';
+
 export default function HawkersPage() {
-  const [activeTab, setActiveTab] = useState<'hawkers' | 'regions' | 'collectors'>('hawkers');
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get('tab');
+  const initialTab = tabQuery === 'regions' ? 'regions' : tabQuery === 'collectors' ? 'collectors' : 'hawkers';
+
+  const [activeTab, setActiveTab] = useState<'hawkers' | 'regions' | 'collectors'>(initialTab);
   const [hawkers, setHawkers] = useState<Hawker[]>(mockHawkers);
   const [regions, setRegions] = useState<Region[]>(mockRegions);
   const [collectors] = useState<Collector[]>(mockCollectors);

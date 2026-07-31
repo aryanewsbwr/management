@@ -7,8 +7,14 @@ import { calculateMonthlyBill } from '@/lib/billingEngine';
 import { Bill, Receipt } from '@/lib/types';
 import BillPrintModal from '@/components/BillPrintModal';
 
+import { useSearchParams } from 'next/navigation';
+
 export default function BillingPage() {
-  const [activeTab, setActiveTab] = useState<'bills' | 'receipts'>('bills');
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get('tab');
+  const initialTab = tabQuery === 'receipts' ? 'receipts' : 'bills';
+
+  const [activeTab, setActiveTab] = useState<'bills' | 'receipts'>(initialTab);
   const [bills, setBills] = useState<Bill[]>(mockBills);
   const [receipts, setReceipts] = useState<Receipt[]>(mockReceipts);
   

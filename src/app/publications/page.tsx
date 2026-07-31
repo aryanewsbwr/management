@@ -16,8 +16,19 @@ const weekDays = [
   { id: 6, name: 'Saturday (शनिवार)' },
 ];
 
+import { useSearchParams } from 'next/navigation';
+
 export default function PublicationsPage() {
-  const [activeTab, setActiveTab] = useState<'rates' | 'publishers' | 'ratechanges' | 'holidays' | 'press_discontinue' | 'supplements'>('rates');
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get('tab');
+  
+  const initialTab = tabQuery === 'publishers' ? 'publishers' 
+    : tabQuery === 'ratechanges' ? 'ratechanges'
+    : tabQuery === 'holidays' ? 'holidays'
+    : tabQuery === 'suspensions' ? 'press_discontinue'
+    : 'rates';
+
+  const [activeTab, setActiveTab] = useState<'rates' | 'publishers' | 'ratechanges' | 'holidays' | 'press_discontinue' | 'supplements'>(initialTab);
   const [publications, setPublications] = useState<Publication[]>(mockPublications);
   const [rates, setRates] = useState<PublicationRate[]>(mockPublicationRates);
   const [publishers, setPublishers] = useState<Publisher[]>(mockPublishers);
