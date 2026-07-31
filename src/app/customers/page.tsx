@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Users, Plus, Phone, MapPin, Newspaper, Search, Check, X, Calendar, Percent, PauseCircle } from 'lucide-react';
 import { mockCustomers, mockCustomerDetails, mockPublications, mockHawkers, mockRegions } from '@/lib/mockData';
 import { Customer, CustomerDetail, CustomerDiscontinue } from '@/lib/types';
@@ -16,9 +17,7 @@ const weekDaysList = [
   { id: 7, name: 'Sun', full: 'Sunday' },
 ];
 
-import { useSearchParams } from 'next/navigation';
-
-export default function CustomersPage() {
+function CustomersContent() {
   const searchParams = useSearchParams();
   const tabQuery = searchParams.get('tab');
   const initialTab = tabQuery === 'discontinue' ? 'discontinue' : 'customers';
@@ -773,5 +772,13 @@ export default function CustomersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-xs font-semibold text-slate-500">Loading Customers...</div>}>
+      <CustomersContent />
+    </Suspense>
   );
 }

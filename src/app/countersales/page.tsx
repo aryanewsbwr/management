@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Store, Plus, IndianRupee, ShoppingBag, ShoppingCart, X } from 'lucide-react';
 import { mockCounterSales, mockPublications, mockPurchases, mockPublishers } from '@/lib/mockData';
 import { CounterSale, Purchase, PurchaseDetail } from '@/lib/types';
 
-import { useSearchParams } from 'next/navigation';
-
-export default function CounterSalesPage() {
+function CounterSalesContent() {
   const searchParams = useSearchParams();
   const tabQuery = searchParams.get('tab');
   const initialTab = tabQuery === 'purchases' ? 'purchases' : 'sales';
@@ -545,5 +544,13 @@ export default function CounterSalesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CounterSalesPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-xs font-semibold text-slate-500">Loading Counter Sales...</div>}>
+      <CounterSalesContent />
+    </Suspense>
   );
 }

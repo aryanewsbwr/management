@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Truck, Plus, Phone, MapPin, Navigation, BookOpen, Map, Search, Trash2, X } from 'lucide-react';
 import { mockHawkers, mockRegions, mockCollectors, mockReceiptIssues } from '@/lib/mockData';
 import { Hawker, Collector, ReceiptIssue, Region } from '@/lib/types';
 
-import { useSearchParams } from 'next/navigation';
-
-export default function HawkersPage() {
+function HawkersContent() {
   const searchParams = useSearchParams();
   const tabQuery = searchParams.get('tab');
   const initialTab = tabQuery === 'regions' ? 'regions' : tabQuery === 'collectors' ? 'collectors' : 'hawkers';
@@ -522,5 +521,13 @@ export default function HawkersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HawkersPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-xs font-semibold text-slate-500">Loading Hawkers...</div>}>
+      <HawkersContent />
+    </Suspense>
   );
 }

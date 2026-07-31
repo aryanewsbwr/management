@@ -119,7 +119,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname + (window?.location?.search || '') === item.href || pathname === item.href.split('?')[0];
+                  const isActive = pathname === item.href.split('?')[0];
 
                   return (
                     <Link

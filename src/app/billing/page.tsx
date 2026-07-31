@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { FileText, Printer, Play, Plus, CreditCard, Filter, CheckCircle, X } from 'lucide-react';
 import { mockBills, mockCustomers, mockCustomerDetails, mockPublicationRates, mockHolidays, mockReceipts, mockCollectors, mockRegions } from '@/lib/mockData';
 import { calculateMonthlyBill } from '@/lib/billingEngine';
 import { Bill, Receipt } from '@/lib/types';
 import BillPrintModal from '@/components/BillPrintModal';
 
-import { useSearchParams } from 'next/navigation';
-
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams();
   const tabQuery = searchParams.get('tab');
   const initialTab = tabQuery === 'receipts' ? 'receipts' : 'bills';
@@ -526,5 +525,13 @@ export default function BillingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-xs font-semibold text-slate-500">Loading Billing...</div>}>
+      <BillingContent />
+    </Suspense>
   );
 }

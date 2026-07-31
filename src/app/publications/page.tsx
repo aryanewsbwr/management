@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Newspaper, Calendar, Building2, Plus, Sun, Layers, Edit, X, Search, Trash2, TrendingUp, AlertTriangle } from 'lucide-react';
 import { mockPublications, mockPublicationRates, mockPublishers, mockHolidays, mockPublicationSups } from '@/lib/mockData';
 import { Publication, PublicationRate, Publisher, Holiday, PublicationSup, RateChange, PublicationDiscontinue } from '@/lib/types';
@@ -16,9 +17,7 @@ const weekDays = [
   { id: 6, name: 'Saturday (शनिवार)' },
 ];
 
-import { useSearchParams } from 'next/navigation';
-
-export default function PublicationsPage() {
+function PublicationsContent() {
   const searchParams = useSearchParams();
   const tabQuery = searchParams.get('tab');
   
@@ -1064,5 +1063,13 @@ export default function PublicationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PublicationsPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-xs font-semibold text-slate-500">Loading Publications...</div>}>
+      <PublicationsContent />
+    </Suspense>
   );
 }
