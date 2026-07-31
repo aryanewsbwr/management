@@ -33,6 +33,10 @@ export interface Publication {
   abrv: string;
   circulation: 'Morning' | 'Evening';
   chr_del: boolean;
+  rate?: number;
+  duration?: string;
+  pub_day?: string;
+  pub_month?: string;
 }
 
 export interface PublicationRate {
@@ -45,6 +49,8 @@ export interface PublicationRate {
 export interface RateChange {
   change_id: number;
   publication_id: number;
+  publication_name?: string;
+  type_p?: string;
   old_rate: number;
   new_rate: number;
   effective_date: string;
@@ -57,8 +63,10 @@ export interface Hawker {
   phone?: string;
   mobile?: string;
   address?: string;
+  city?: string;
   region_id?: number;
   region_name?: string;
+  assigned_regions?: number[]; // Multi-select assigned regions
 }
 
 export interface Collector {
@@ -88,13 +96,18 @@ export interface Customer {
   hindi_add?: string;
   phone?: string;
   security_deposit: number;
-  priority: number;
+  priority: number; // Route delivery sequence
   due_amount: number;
   c_bal: number;
   region_id?: number;
   region_name?: string;
   paid_status: 'Paid' | 'Unpaid' | 'Partial';
   govt_supply: boolean;
+  is_sub_agent?: boolean;
+  is_self?: boolean;
+  sub_agent_id?: number;
+  sub_agent_name?: string;
+  susha_05?: boolean;
 }
 
 export interface CustomerDetail {
@@ -112,6 +125,30 @@ export interface CustomerDetail {
   discount_percent: number; // Discount percentage (e.g. 5, 10, 15%)
   discount: number;
   delivery_charge: number; // Delivery charges for this specific publication
+  hw_sa?: 'Hawker' | 'SubAgent';
+}
+
+export interface CustomerDiscontinue {
+  discontinue_id: number;
+  customer_id: number;
+  customer_name?: string;
+  publication_id: number;
+  publication_name?: string;
+  hawker_id?: number;
+  hawker_name?: string;
+  type: 'Temporary' | 'Permanent';
+  from_date: string;
+  to_date?: string;
+  entry_date: string;
+  period: string;
+}
+
+export interface PublicationDiscontinue {
+  pub_discontinue_id: number;
+  publication_id: number;
+  publication_name?: string;
+  from_date: string;
+  to_date: string;
 }
 
 export interface CounterSale {
@@ -122,6 +159,9 @@ export interface CounterSale {
   rate: number;
   amt: number;
   sale_date: string;
+  period?: string;
+  customer_name?: string;
+  narration?: string;
 }
 
 export interface Purchase {
@@ -152,6 +192,7 @@ export interface Bill {
   customer_id: number;
   customer_name?: string;
   name_hindi?: string;
+  region_id?: number;
   region_name?: string;
   bill_month: string;
   bill_year: number;
@@ -175,10 +216,15 @@ export interface Receipt {
   bill_id?: number;
   receipt_date: string;
   bill_amount: number;
+  manual_rcp_amt?: number;
   receipt_amount: number;
   less_amount: number;
   balance_amount: number;
-  payment_mode: 'Cash' | 'UPI' | 'Cheque' | 'Bank Transfer';
+  manual_rcp_no?: string;
+  manual_rcp_date?: string;
+  payment_mode: 'Cash' | 'Cheque' | 'UPI' | 'Bank Transfer';
+  cheque_no?: string;
+  cheque_date?: string;
   remarks?: string;
 }
 
@@ -188,6 +234,7 @@ export interface Holiday {
   oc_date: string;
   publication_id?: number;
   publication_name?: string;
+  affected_publications?: number[]; // Multi-select publications
 }
 
 export interface PublicationSup {
@@ -203,4 +250,10 @@ export interface AgencyMessage {
   message_id: number;
   dated: string;
   message: string;
+}
+
+export interface FinancialPeriod {
+  starting_year: number;
+  ending_year: number;
+  active_month: string;
 }
