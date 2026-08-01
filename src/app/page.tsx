@@ -1,140 +1,90 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { 
-  Users, 
+  Building, 
+  Newspaper, 
+  MapPin, 
   Truck, 
-  IndianRupee, 
-  Store, 
+  Users, 
+  DollarSign, 
+  Calendar, 
+  ShoppingBag, 
+  Receipt, 
+  PauseCircle, 
+  Scissors, 
+  BookOpen, 
+  CreditCard, 
   FileText, 
-  ChevronRight,
-  Plus,
-  Building,
-  Newspaper,
-  MapPin,
-  DollarSign,
-  Calendar,
-  ShoppingBag,
-  Receipt,
-  PauseCircle,
-  Scissors,
-  BookOpen,
-  CreditCard,
-  Layers,
-  Sparkles
+  Printer,
+  ChevronRight
 } from 'lucide-react';
-import { mockCustomers, mockHawkers, mockCounterSales, mockPublications } from '@/lib/mockData';
 
-const legacyFormsList = [
-  { id: 1, name: 'Publisher Info', hindiName: 'प्रकाशक मास्टर', href: '/publications?tab=publishers', icon: Building, color: 'from-blue-600 to-indigo-600', badge: 'Screen 1' },
-  { id: 2, name: 'Publication Info', hindiName: 'अखबार एवं दर मास्टर', href: '/publications?tab=active', icon: Newspaper, color: 'from-indigo-600 to-violet-600', badge: 'Screen 2' },
-  { id: 3, name: 'Region Master', hindiName: 'क्षेत्र एवं जोन मास्टर', href: '/hawkers?tab=regions', icon: MapPin, color: 'from-purple-600 to-pink-600', badge: 'Screen 3' },
-  { id: 4, name: 'Hawker Master', hindiName: 'हॉकर वितरण मास्टर', href: '/hawkers?tab=hawkers', icon: Truck, color: 'from-sky-600 to-blue-600', badge: 'Screen 4' },
-  { id: 5, name: 'Customer Info', hindiName: 'ग्राहक मास्टर', href: '/customers?tab=customers', icon: Users, color: 'from-emerald-600 to-teal-600', badge: 'Screen 5' },
-  { id: 6, name: 'Rate Changes Info', hindiName: 'दर परिवर्तन लॉग', href: '/publications?tab=ratechanges', icon: DollarSign, color: 'from-amber-600 to-orange-600', badge: 'Screen 6' },
-  { id: 7, name: 'Define Holiday', hindiName: 'छुट्टी / प्रेस अवकाश', href: '/publications?tab=holidays', icon: Calendar, badge: 'Screen 7' },
-  { id: 8, name: 'Purchase Invoice', hindiName: 'प्रेस स्टॉक खरीद', href: '/countersales?tab=purchases', icon: ShoppingBag, color: 'from-rose-600 to-red-600', badge: 'Screen 8' },
-  { id: 9, name: 'Retail Sale Perm. Cust', hindiName: 'काउंटर नकद बिक्री', href: '/countersales?tab=sales', icon: Receipt, color: 'from-cyan-600 to-teal-600', badge: 'Screen 9' },
-  { id: 10, name: 'Customer Discontinue', hindiName: 'ग्राहक छुट्टी वैकेशन', href: '/customers?tab=discontinue', icon: PauseCircle, color: 'from-yellow-600 to-amber-600', badge: 'Screen 10' },
-  { id: 11, name: 'Publication Discontinue', hindiName: 'प्रेस रोक / निलंबन', href: '/publications?tab=suspensions', icon: Scissors, color: 'from-fuchsia-600 to-pink-600', badge: 'Screen 11' },
-  { id: 12, name: 'Receipt Allotment', hindiName: 'रसीद बुक आवंटन', href: '/hawkers?tab=collectors', icon: BookOpen, color: 'from-teal-600 to-emerald-600', badge: 'Screen 12' },
-  { id: 13, name: 'Payment Receipt Entry', hindiName: 'भुगतान रसीद प्रविष्टि', href: '/billing?tab=receipts', icon: CreditCard, color: 'from-emerald-600 to-green-600', badge: 'Screen 13' },
-  { id: 14, name: 'Bill Processing Region', hindiName: 'क्षेत्र वार बिल जनरेशन', href: '/billing?tab=bills', icon: FileText, color: 'from-indigo-600 to-blue-600', badge: 'Screen 14' },
-  { id: 15, name: 'Period Detail / Financial Year', hindiName: 'वित्तीय वर्ष चयन', href: '#', icon: Layers, color: 'from-slate-700 to-slate-900', badge: 'Screen 15' },
+const simpleMenuItems = [
+  { num: '1', name: 'Publisher Info', hindi: '1. प्रकाशक जानकारी', desc: 'Add or view newspaper publishers', href: '/publications?tab=publishers', icon: Building, color: 'bg-blue-600' },
+  { num: '2', name: 'Publication Info', hindi: '2. अखबार एवं दर जानकारी', desc: 'Newspaper names & weekly rates', href: '/publications?tab=active', icon: Newspaper, color: 'bg-indigo-600' },
+  { num: '3', name: 'Region Details', hindi: '3. क्षेत्र / जोन जानकारी', desc: 'City areas & distribution zones', href: '/hawkers?tab=regions', icon: MapPin, color: 'bg-purple-600' },
+  { num: '4', name: 'Hawker Details', hindi: '4. हॉकर (पेपर बांटने वाले)', desc: 'Hawker delivery boys & routes', href: '/hawkers?tab=hawkers', icon: Truck, color: 'bg-sky-600' },
+  { num: '5', name: 'Customer Info', hindi: '5. ग्राहक जानकारी एवं पेपर जोड़ें', desc: 'Add customers, Hindi name & papers', href: '/customers?tab=customers', icon: Users, color: 'bg-emerald-600' },
+  { num: '6', name: 'Rate Changes Info', hindi: '6. रेट में बदलाव', desc: 'Change price rate per weekday', href: '/publications?tab=ratechanges', icon: DollarSign, color: 'bg-amber-600' },
+  { num: '7', name: 'Define Holiday', hindi: '7. त्यौहार / प्रेस छुट्टी', desc: 'Festival holidays & press stop', href: '/publications?tab=holidays', icon: Calendar, color: 'bg-orange-600' },
+  { num: '8', name: 'Purchase Invoice', hindi: '8. अखबार खरीद इनवॉइस', desc: 'Stock purchases from publishers', href: '/countersales?tab=purchases', icon: ShoppingBag, color: 'bg-rose-600' },
+  { num: '9', name: 'Retail Sale', hindi: '9. काउंटर नकद बिक्री', desc: 'Direct OTC paper sales to walk-ins', href: '/countersales?tab=sales', icon: Receipt, color: 'bg-teal-600' },
+  { num: '10', name: 'Discontinue Info', hindi: '10. ग्राहक वैकेशन स्टॉप (छुट्टी)', desc: 'Stop paper temporarily or permanently', href: '/customers?tab=discontinue', icon: PauseCircle, color: 'bg-yellow-600' },
+  { num: '11', name: 'Publication Discontinue', hindi: '11. प्रेस सस्पेंशन / बंद अखबार', desc: 'Stop printing a paper for days', href: '/publications?tab=suspensions', icon: Scissors, color: 'bg-fuchsia-600' },
+  { num: '12', name: 'Receipt Allotment', hindi: '12. रसीद बुक आवंटन', desc: 'Give receipt books to collectors', href: '/hawkers?tab=collectors', icon: BookOpen, color: 'bg-cyan-600' },
+  { num: '13', name: 'Payment Receipt Entry', hindi: '13. भुगतान रसीद काटना (पेमेंट)', desc: 'Customer payment entry (Cash/Cheque)', href: '/billing?tab=receipts', icon: CreditCard, color: 'bg-emerald-700' },
+  { num: '14', name: 'Bill Processing', hindi: '14. महीने का बिल जनरेट करें', desc: 'Calculate monthly bills by region', href: '/billing?tab=bills', icon: FileText, color: 'bg-blue-700' },
+  { num: '15', name: 'Sticker & Reports', hindi: '15. प्रिंट रिपोर्ट एवं स्टिकर', desc: 'Print bill, stickers & hawker sheets', href: '/reports?tab=hawker_sheet', icon: Printer, color: 'bg-slate-800' },
 ];
 
 export default function Dashboard() {
-  const totalDues = mockCustomers.reduce((sum, c) => sum + c.due_amount, 0);
-  const todayCounterSales = mockCounterSales.reduce((sum, s) => sum + s.amt, 0);
-  const totalCustomers = mockCustomers.length;
-  const totalHawkers = mockHawkers.length;
-
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Title & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+    <div className="space-y-6 max-w-5xl mx-auto py-2">
+      {/* Header Banner */}
+      <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-lg border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900">Aryan News Agency Desktop Dashboard</h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-              15 Forms Ready
-            </span>
-          </div>
-          <p className="text-xs text-slate-500">Click any form below to open the exact Visual Basic screen and start entries</p>
+          <span className="bg-indigo-500/30 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 uppercase tracking-wider">
+            सरल मोड (Easy Non-Tech Mode)
+          </span>
+          <h1 className="text-2xl md:text-3xl font-black text-white mt-2">आर्यन न्यूज़ एजेंसी - मुख्य मेनू</h1>
+          <p className="text-sm text-slate-300 font-medium mt-1">
+            Aryan News Agency Software — नीचे दिए गए किसी भी बटन पर क्लिक करें
+          </p>
         </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs font-semibold text-slate-500">Customer Dues</p>
-          <p className="text-xl font-black text-amber-600 mt-1">₹{totalDues.toLocaleString('en-IN')}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Pending collections</p>
-        </div>
+      {/* Main Menu Big Button Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {simpleMenuItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.num}
+              href={item.href}
+              className="group p-5 rounded-2xl bg-white border-2 border-slate-200 hover:border-indigo-600 shadow-xs hover:shadow-xl transition-all duration-200 flex items-start gap-4"
+            >
+              <div className={`w-12 h-12 rounded-xl ${item.color} text-white flex items-center justify-center font-black text-lg shrink-0 shadow-md group-hover:scale-110 transition-transform`}>
+                <Icon className="w-6 h-6" />
+              </div>
 
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs font-semibold text-slate-500">Today Sales</p>
-          <p className="text-xl font-black text-emerald-600 mt-1">₹{todayCounterSales.toLocaleString('en-IN')}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Counter sales</p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs font-semibold text-slate-500">Active Customers</p>
-          <p className="text-xl font-black text-indigo-600 mt-1">{totalCustomers}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Subscriptions</p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs">
-          <p className="text-xs font-semibold text-slate-500">Delivery Hawkers</p>
-          <p className="text-xl font-black text-slate-800 mt-1">{totalHawkers}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Assigned boys</p>
-        </div>
-      </div>
-
-      {/* 15 Legacy Forms Direct Launcher Grid */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            <span>Legacy Software Form Launcher (All 15 Screens)</span>
-          </h2>
-          <span className="text-xs text-slate-500 font-medium">B:\himanshu uncle software layout</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {legacyFormsList.map((form) => {
-            const Icon = form.icon;
-            return (
-              <Link
-                key={form.id}
-                href={form.href}
-                className="group relative p-3.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
-              >
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${form.color || 'from-indigo-600 to-indigo-500'} flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                    {form.badge}
+                  <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                    Option #{item.num}
                   </span>
+                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
                 </div>
-
-                <div>
-                  <h3 className="font-bold text-xs text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug">
-                    {form.name}
-                  </h3>
-                  <p className="text-[11px] font-bold text-slate-400 mt-0.5">{form.hindiName}</p>
-                </div>
-
-                <div className="flex items-center text-[10px] font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform pt-1 border-t border-slate-100">
-                  <span>Open Form Window</span>
-                  <ChevronRight className="w-3 h-3 ml-0.5" />
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                <h2 className="text-base font-black text-slate-900 mt-1 leading-snug group-hover:text-indigo-600 transition-colors">
+                  {item.hindi}
+                </h2>
+                <p className="text-xs font-bold text-slate-600 mt-0.5">{item.name}</p>
+                <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
