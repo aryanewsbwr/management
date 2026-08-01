@@ -32,6 +32,18 @@ function PublicationsContent() {
   const [rates, setRates] = useState<PublicationRate[]>(mockPublicationRates);
   const [publishers, setPublishers] = useState<Publisher[]>(mockPublishers);
   const [holidays, setHolidays] = useState<Holiday[]>(mockHolidays);
+  const aggregatedHolidays = Object.values(holidays.reduce((acc, curr) => {
+    const key = `${curr.oc_date}_${curr.occasion}`;
+    if (!acc[key]) {
+      acc[key] = { ...curr, affected_pubs: [] };
+    }
+    if (curr.publication_name) {
+      if (!acc[key].affected_pubs.includes(curr.publication_name)) {
+        acc[key].affected_pubs.push(curr.publication_name);
+      }
+    }
+    return acc;
+  }, {} as Record<string, any>));
   const [supplements] = useState<PublicationSup[]>(mockPublicationSups);
 
   // Rate Changes Log (Screenshot 6)
@@ -526,6 +538,7 @@ function PublicationsContent() {
                   <th className="py-2 px-3 text-right">Old Rate</th>
                   <th className="py-2 px-3 text-right">New Rate</th>
                   <th className="py-2 px-3">Effective Date</th>
+                  <th className="py-2 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -537,6 +550,9 @@ function PublicationsContent() {
                     <td className="py-2.5 px-3 text-right text-slate-500">₹{rc.old_rate.toFixed(2)}</td>
                     <td className="py-2.5 px-3 text-right font-black text-emerald-600">₹{rc.new_rate.toFixed(2)}</td>
                     <td className="py-2.5 px-3 text-slate-500">{rc.effective_date}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      <button onClick={() => setRateChanges(rateChanges.filter(r => r.change_id !== rc.change_id))} className="text-red-500 hover:text-red-700 mx-1"><Trash2 className="w-4 h-4 inline"/></button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -564,14 +580,18 @@ function PublicationsContent() {
                   <th className="py-2 px-3">Date</th>
                   <th className="py-2 px-3">Occasion</th>
                   <th className="py-2 px-3">Affected Publications</th>
+                  <th className="py-2 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {holidays.map((h) => (
+                {aggregatedHolidays.map((h, idx) => (
                   <tr key={h.holiday_id}>
                     <td className="py-2.5 px-3 font-semibold text-slate-900">{h.oc_date}</td>
                     <td className="py-2.5 px-3 text-slate-700 font-bold">{h.occasion}</td>
                     <td className="py-2.5 px-3 text-indigo-600">{h.publication_name || 'All Publications'}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      <button onClick={() => setHolidays(holidays.filter(holiday => holiday.holiday_id !== h.holiday_id))} className="text-red-500 hover:text-red-700 mx-1"><Trash2 className="w-4 h-4 inline"/></button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -599,6 +619,7 @@ function PublicationsContent() {
                   <th className="py-2 px-3">Publication Name</th>
                   <th className="py-2 px-3">From Date</th>
                   <th className="py-2 px-3">To Date</th>
+                  <th className="py-2 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -607,6 +628,9 @@ function PublicationsContent() {
                     <td className="py-2.5 px-3 font-bold text-rose-700">{pd.publication_name}</td>
                     <td className="py-2.5 px-3 text-slate-700 font-semibold">{pd.from_date}</td>
                     <td className="py-2.5 px-3 text-slate-700 font-semibold">{pd.to_date}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      <button onClick={() => setPressDiscontinues(pressDiscontinues.filter(p => p.pub_discontinue_id !== pd.pub_discontinue_id))} className="text-red-500 hover:text-red-700 mx-1"><Trash2 className="w-4 h-4 inline"/></button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -188,15 +188,46 @@ function HawkersContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {hawkers.map((hawker) => (
             <div key={hawker.hawker_id} className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                  <Truck className="w-4.5 h-4.5" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                    <Truck className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xs text-slate-900">{hawker.name}</h3>
+                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      ID #{hawker.hawker_id}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-xs text-slate-900">{hawker.name}</h3>
-                  <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                    ID #{hawker.hawker_id}
-                  </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setHawkerForm({
+                        name: hawker.name,
+                        address: hawker.address || '',
+                        city: hawker.city || '',
+                        phone: hawker.phone || '',
+                        mobile: hawker.mobile || '',
+                        assigned_regions: hawker.assigned_regions || [1]
+                      });
+                      setIsHawkerModalOpen(true);
+                    }}
+                    className="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] border border-indigo-200"
+                  >
+                    ✍️ Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Delete Hawker ${hawker.name}?`)) {
+                        setHawkers(hawkers.filter(h => h.hawker_id !== hawker.hawker_id));
+                      }
+                    }}
+                    className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[10px] border border-rose-200"
+                  >
+                    🗑️ Del
+                  </button>
                 </div>
               </div>
 

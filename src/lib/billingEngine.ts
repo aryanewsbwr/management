@@ -50,7 +50,8 @@ export function calculateMonthlyBill(
       const copyPrice = rateObj ? rateObj.rate : 5.00;
 
       totalCopies += sub.qty;
-      const dayPaperPrice = copyPrice * sub.qty;
+      const actualPrice = copyPrice ?? 5.0;
+      const dayPaperPrice = actualPrice * sub.qty;
       totalPaperAmt += dayPaperPrice;
 
       // Apply percentage discount if applicable

@@ -18,46 +18,47 @@ import {
   CreditCard, 
   FileText, 
   Printer,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 
-const simpleMenuItems = [
-  { num: '1', name: 'Publisher Info', hindi: '1. प्रकाशक जानकारी', desc: 'Add or view newspaper publishers', href: '/publications?tab=publishers', icon: Building, color: 'bg-blue-600' },
-  { num: '2', name: 'Publication Info', hindi: '2. अखबार एवं दर जानकारी', desc: 'Newspaper names & weekly rates', href: '/publications?tab=active', icon: Newspaper, color: 'bg-indigo-600' },
-  { num: '3', name: 'Region Details', hindi: '3. क्षेत्र / जोन जानकारी', desc: 'City areas & distribution zones', href: '/hawkers?tab=regions', icon: MapPin, color: 'bg-purple-600' },
-  { num: '4', name: 'Hawker Details', hindi: '4. हॉकर (पेपर बांटने वाले)', desc: 'Hawker delivery boys & routes', href: '/hawkers?tab=hawkers', icon: Truck, color: 'bg-sky-600' },
-  { num: '5', name: 'Customer Info', hindi: '5. ग्राहक जानकारी एवं पेपर जोड़ें', desc: 'Add customers, Hindi name & papers', href: '/customers?tab=customers', icon: Users, color: 'bg-emerald-600' },
-  { num: '6', name: 'Rate Changes Info', hindi: '6. रेट में बदलाव', desc: 'Change price rate per weekday', href: '/publications?tab=ratechanges', icon: DollarSign, color: 'bg-amber-600' },
-  { num: '7', name: 'Define Holiday', hindi: '7. त्यौहार / प्रेस छुट्टी', desc: 'Festival holidays & press stop', href: '/publications?tab=holidays', icon: Calendar, color: 'bg-orange-600' },
-  { num: '8', name: 'Purchase Invoice', hindi: '8. अखबार खरीद इनवॉइस', desc: 'Stock purchases from publishers', href: '/countersales?tab=purchases', icon: ShoppingBag, color: 'bg-rose-600' },
-  { num: '9', name: 'Retail Sale', hindi: '9. काउंटर नकद बिक्री', desc: 'Direct OTC paper sales to walk-ins', href: '/countersales?tab=sales', icon: Receipt, color: 'bg-teal-600' },
-  { num: '10', name: 'Discontinue Info', hindi: '10. ग्राहक वैकेशन स्टॉप (छुट्टी)', desc: 'Stop paper temporarily or permanently', href: '/customers?tab=discontinue', icon: PauseCircle, color: 'bg-yellow-600' },
-  { num: '11', name: 'Publication Discontinue', hindi: '11. प्रेस सस्पेंशन / बंद अखबार', desc: 'Stop printing a paper for days', href: '/publications?tab=suspensions', icon: Scissors, color: 'bg-fuchsia-600' },
-  { num: '12', name: 'Receipt Allotment', hindi: '12. रसीद बुक आवंटन', desc: 'Give receipt books to collectors', href: '/hawkers?tab=collectors', icon: BookOpen, color: 'bg-cyan-600' },
-  { num: '13', name: 'Payment Receipt Entry', hindi: '13. भुगतान रसीद काटना (पेमेंट)', desc: 'Customer payment entry (Cash/Cheque)', href: '/billing?tab=receipts', icon: CreditCard, color: 'bg-emerald-700' },
-  { num: '14', name: 'Bill Processing', hindi: '14. महीने का बिल जनरेट करें', desc: 'Calculate monthly bills by region', href: '/billing?tab=bills', icon: FileText, color: 'bg-blue-700' },
-  { num: '15', name: 'Sticker & Reports', hindi: '15. प्रिंट रिपोर्ट एवं स्टिकर', desc: 'Print bill, stickers & hawker sheets', href: '/reports?tab=hawker_sheet', icon: Printer, color: 'bg-slate-800' },
+const primaryEnglishMenuItems = [
+  { num: '1', primary: '1. Publisher Info', secondary: 'प्रकाशक जानकारी', desc: 'Add or view newspaper publishers & press info', href: '/publishers', icon: Building, color: 'bg-blue-600' },
+  { num: '2', primary: '2. Publication Info', secondary: 'अखबार एवं दर जानकारी', desc: 'Newspaper titles & weekly rate matrix', href: '/publications', icon: Newspaper, color: 'bg-indigo-600' },
+  { num: '3', primary: '3. Region Details', secondary: 'क्षेत्र / जोन विवरण', desc: 'City areas & distribution zones', href: '/regions', icon: MapPin, color: 'bg-purple-600' },
+  { num: '4', primary: '4. Hawker Details', secondary: 'हॉकर विवरण (वितरण)', desc: 'Hawker delivery boys & route assignments', href: '/hawkers', icon: Truck, color: 'bg-sky-600' },
+  { num: '5', primary: '5. Customer Info', secondary: 'ग्राहक जानकारी एवं पेपर', desc: 'Add customers, addresses & subscriptions', href: '/customers', icon: Users, color: 'bg-emerald-600' },
+  { num: '6', primary: '6. Rate Changes Info', secondary: 'दर बदलाव लॉग (रेट)', desc: 'Weekday rate change logs & history', href: '/ratechanges', icon: DollarSign, color: 'bg-amber-600' },
+  { num: '7', primary: '7. Define Holiday', secondary: 'छुट्टी / त्यौहार अवकाश', desc: 'Festival holidays & press break dates', href: '/holidays', icon: Calendar, color: 'bg-orange-600' },
+  { num: '8', primary: '8. Purchase Invoice', secondary: 'अखबार खरीद इनवॉइस', desc: 'Wholesale publisher stock purchase entries', href: '/purchases', icon: ShoppingBag, color: 'bg-rose-600' },
+  { num: '9', primary: '9. Retail Sale', secondary: 'काउंटर नकद बिक्री', desc: 'Direct OTC newspaper cash sales', href: '/countersales', icon: Receipt, color: 'bg-teal-600' },
+  { num: '10', primary: '10. Discontinue Info', secondary: 'ग्राहक वैकेशन (छुट्टी स्टॉप)', desc: 'Temporary vacation hold or permanent stops', href: '/discontinue', icon: PauseCircle, color: 'bg-yellow-600' },
+  { num: '11', primary: '11. Press Suspensions', secondary: 'बंद अखबार सस्पेंशन', desc: 'Non-printing press suspension logs', href: '/presssuspensions', icon: Scissors, color: 'bg-fuchsia-600' },
+  { num: '12', primary: '12. Receipt Allotment', secondary: 'रसीद बुक आवंटन', desc: 'Receipt book ranges issued to collectors', href: '/receiptallotment', icon: BookOpen, color: 'bg-cyan-600' },
+  { num: '13', primary: '13. Payment Receipt', secondary: 'भुगतान रसीद प्रविष्टि', desc: 'Customer bill payment entry (Cash/Cheque)', href: '/receipts', icon: CreditCard, color: 'bg-emerald-700' },
+  { num: '14', primary: '14. Bill Processing', secondary: 'महीने का बिल जनरेट करें', desc: 'Calculate & generate monthly bills by region', href: '/billing', icon: FileText, color: 'bg-blue-700' },
+  { num: '15', primary: '15. Reports & Printing', secondary: 'प्रिंट व रिपोर्ट', desc: 'Print monthly bills, address stickers & hawker sheets', href: '/reports?tab=hawker_sheet', icon: Printer, color: 'bg-slate-800' },
 ];
 
 export default function Dashboard() {
   return (
-    <div className="space-y-6 max-w-5xl mx-auto py-2">
+    <div className="space-y-6 max-w-6xl mx-auto py-2">
       {/* Header Banner */}
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-lg border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <span className="bg-indigo-500/30 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30 uppercase tracking-wider">
-            सरल मोड (Easy Non-Tech Mode)
+            Aryan News Agency • Main Software Dashboard
           </span>
-          <h1 className="text-2xl md:text-3xl font-black text-white mt-2">आर्यन न्यूज़ एजेंसी - मुख्य मेनू</h1>
+          <h1 className="text-2xl md:text-3xl font-black text-white mt-2">Main Menu Overview</h1>
           <p className="text-sm text-slate-300 font-medium mt-1">
-            Aryan News Agency Software — नीचे दिए गए किसी भी बटन पर क्लिक करें
+            Select any module below to launch its dedicated form window (Click or Hover Top Navigation)
           </p>
         </div>
       </div>
 
-      {/* Main Menu Big Button Grid */}
+      {/* Main Menu Grid with English Primary + Hindi Secondary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {simpleMenuItems.map((item) => {
+        {primaryEnglishMenuItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
@@ -76,10 +77,12 @@ export default function Dashboard() {
                   </span>
                   <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
                 </div>
+                {/* Primary English Title */}
                 <h2 className="text-base font-black text-slate-900 mt-1 leading-snug group-hover:text-indigo-600 transition-colors">
-                  {item.hindi}
+                  {item.primary}
                 </h2>
-                <p className="text-xs font-bold text-slate-600 mt-0.5">{item.name}</p>
+                {/* Secondary Hindi Subtitle */}
+                <p className="text-xs font-bold text-slate-500 mt-0.5">({item.secondary})</p>
                 <p className="text-xs text-slate-400 mt-1">{item.desc}</p>
               </div>
             </Link>

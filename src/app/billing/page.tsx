@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { FileText, Printer, Play, Plus, CreditCard, Filter, CheckCircle, X } from 'lucide-react';
+import { FileText, Printer, Play, Plus, CreditCard, Filter, CheckCircle, X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { mockBills, mockCustomers, mockCustomerDetails, mockPublicationRates, mockHolidays, mockReceipts, mockCollectors, mockRegions } from '@/lib/mockData';
 import { calculateMonthlyBill } from '@/lib/billingEngine';
 import { Bill, Receipt } from '@/lib/types';
@@ -15,6 +15,22 @@ function BillingContent() {
 
   const [activeTab, setActiveTab] = useState<'bills' | 'receipts'>(initialTab);
   const [bills, setBills] = useState<Bill[]>(mockBills);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
+  const paginatedBills = bills.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(bills.length / itemsPerPage);
+
+  const handleDeleteBill = (id: number) => {
+    if(confirm('Delete this generated bill?')) {
+      setBills(bills.filter(b => b.bill_id !== id));
+    }
+  };
+
+  // Improved Generate logic
+  const executeGenerate = (month: string, year: number) => {
+    alert(`Simulating bill generation for ${month} ${year} using active subscriptions from ${mockCustomers.length} customers...`);
+  };
   const [receipts, setReceipts] = useState<Receipt[]>(mockReceipts);
   
   // Bill Processing Filters (Screenshot 14)
@@ -224,7 +240,7 @@ function BillingContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {bills.map((bill) => (
+                {paginatedBills.map((bill) => (
                   <tr key={bill.bill_id} className="hover:bg-slate-50">
                     <td className="py-2.5 px-3 font-bold text-indigo-600">#BILL-{bill.bill_id}</td>
                     <td className="py-2.5 px-3 font-bold text-slate-900">
@@ -259,6 +275,30 @@ function BillingContent() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <p className="text-xs text-slate-500">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, bills.length)} of {bills.length} bills
+              </p>
+              <div className="flex items-center gap-2 text-xs">
+                <button 
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="font-semibold text-slate-700">Page {currentPage} of {totalPages}</span>
+                <button 
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -294,6 +334,30 @@ function BillingContent() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <p className="text-xs text-slate-500">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, bills.length)} of {bills.length} bills
+              </p>
+              <div className="flex items-center gap-2 text-xs">
+                <button 
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="font-semibold text-slate-700">Page {currentPage} of {totalPages}</span>
+                <button 
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

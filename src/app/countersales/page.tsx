@@ -13,6 +13,7 @@ function CounterSalesContent() {
 
   const [activeTab, setActiveTab] = useState<'sales' | 'purchases'>(initialTab);
   const [sales, setSales] = useState<CounterSale[]>(mockCounterSales);
+  const handleDelete = (id: number) => { if(confirm('Delete this sale?')) setSales(sales.filter(s => s.sale_id !== id)); };
   const [purchases, setPurchases] = useState<Purchase[]>(mockPurchases);
 
   // Counter Retail Sale Form State (Matching Screenshot 9)

@@ -272,11 +272,59 @@ function CustomersContent() {
                       {cust.name_hindi && <p className="text-xs font-bold text-slate-600">{cust.name_hindi}</p>}
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 block font-semibold">Due Balance</span>
-                      <span className={`text-base font-black ${cust.due_amount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                        ₹{cust.due_amount.toFixed(2)}
-                      </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 block font-semibold">Due Balance</span>
+                        <span className={`text-base font-black ${cust.due_amount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          ₹{cust.due_amount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <button
+                          onClick={() => {
+                            setForm({
+                              name_eng: cust.name_eng,
+                              name_hindi: cust.name_hindi || '',
+                              add1: cust.add1 || '',
+                              add2: cust.add2 || '',
+                              hindi_add: cust.hindi_add || '',
+                              phone: cust.phone || '',
+                              priority: cust.priority || 1,
+                              region_id: cust.region_id || 1,
+                              security_deposit: cust.security_deposit || 0,
+                              due_amount: cust.due_amount || 0,
+                              cust_type: (cust.cust_type as any) || 'Regular',
+                              is_sub_agent: cust.is_sub_agent || false,
+                              susha_05: cust.susha_05 || true,
+                              is_self: cust.is_self || true,
+                              govt_supply: cust.govt_supply || false,
+                              sub_agent_id: 0,
+                              publication_id: 1,
+                              hawker_id: 1,
+                              hw_sa: 'Hawker',
+                              qty: 1,
+                              circulation: 'Morning',
+                              delivery_days: [1, 2, 3, 4, 5, 6, 7],
+                              discount_percent: 0,
+                              delivery_charge: 30.00
+                            });
+                            setIsModalOpen(true);
+                          }}
+                          className="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] border border-indigo-200"
+                        >
+                          ✍️ Edit / Update (सहेजें/बदलें)
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete customer ${cust.name_eng}?`)) {
+                              setCustomers(customers.filter(c => c.customer_id !== cust.customer_id));
+                            }
+                          }}
+                          className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[10px] border border-rose-200"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
 

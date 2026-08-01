@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Trash2 } from 'lucide-react';
 import { mockPurchases } from '@/lib/mockData';
 import { Purchase } from '@/lib/types';
 
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<Purchase[]>(mockPurchases);
+  const handleDelete = (id: number) => { if(confirm('Delete this purchase?')) setPurchases(purchases.filter(p => p.purchase_id !== id)); };
 
   return (
     <div className="space-y-6 animate-in fade-in max-w-7xl mx-auto">
@@ -29,6 +30,7 @@ export default function PurchasesPage() {
               <div className="text-right">
                 <span className="text-xs text-slate-500 block font-semibold">Net Payable</span>
                 <span className="text-xl font-black text-emerald-600">₹{pur.net_amt.toLocaleString('en-IN')}</span>
+                <button onClick={() => handleDelete(pur.purchase_id)} className="mt-2 text-rose-500 hover:text-rose-700 block text-right w-full text-xs font-bold"><Trash2 className="w-3.5 h-3.5 inline mr-1" /> Delete</button>
               </div>
             </div>
 

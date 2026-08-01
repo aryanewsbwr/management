@@ -1,12 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, CreditCard } from 'lucide-react';
+import { Plus, CreditCard, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { mockReceipts, mockCustomers, mockCollectors } from '@/lib/mockData';
 import { Receipt } from '@/lib/types';
 
 export default function ReceiptsPage() {
   const [receipts, setReceipts] = useState<Receipt[]>(mockReceipts);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  
+  const totalPages = Math.ceil(receipts.length / itemsPerPage);
+  const paginatedReceipts = receipts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  
+  const handleDelete = (id: number) => {
+    if (confirm('Are you sure you want to delete this receipt?')) {
+      setReceipts(receipts.filter(r => r.receipt_id !== id));
+    }
+  };
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [form, setForm] = useState({
@@ -84,10 +95,11 @@ export default function ReceiptsPage() {
                 <th className="p-3">Mode</th>
                 <th className="p-3 text-right">Received Amount</th>
                 <th className="p-3 text-center">Status</th>
+                <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {receipts.map((rec) => (
+              {paginatedReceipts.map((rec) => (
                 <tr key={rec.receipt_id} className="hover:bg-slate-50">
                   <td className="p-3 font-bold text-indigo-600">{rec.receipt_no}</td>
                   <td className="p-3 font-bold text-slate-900">{rec.customer_name}</td>
@@ -100,11 +112,42 @@ export default function ReceiptsPage() {
                       Collected
                     </span>
                   </td>
+                  <td className="p-3 text-right">
+                    <button onClick={() => handleDelete(rec.receipt_id)} className="text-rose-500 hover:text-rose-700 mx-1" title="Delete Receipt">
+                      <Trash2 className="w-4 h-4 inline" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+            <p className="text-xs text-slate-500">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, receipts.length)} of {receipts.length} receipts
+            </p>
+            <div className="flex items-center gap-2 text-xs">
+              <button 
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="font-semibold text-slate-700">Page {currentPage} of {totalPages}</span>
+              <button 
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-600"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal */}

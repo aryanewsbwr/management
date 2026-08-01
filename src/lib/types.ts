@@ -1,6 +1,9 @@
 export interface Region {
   region_id: number;
   region_name: string;
+  name_hindi?: string;
+  zone?: string;
+  hawker_count?: number;
 }
 
 export interface Area {
@@ -58,8 +61,16 @@ export interface Publication {
 export interface PublicationRate {
   rate_id?: number;
   publication_id: number;
-  day_of_week: number; // 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun
-  rate: number;
+  publication_name?: string;
+  day_of_week?: number;
+  rate_mon?: number;
+  rate_tue?: number;
+  rate_wed?: number;
+  rate_thu?: number;
+  rate_fri?: number;
+  rate_sat?: number;
+  rate_sun?: number;
+  rate?: number;
 }
 
 export interface RateChange {
@@ -96,9 +107,13 @@ export interface ReceiptIssue {
   issue_id: number;
   collect_id: number;
   collector_name?: string;
+  book_no?: string;
   receipt_from: number;
   receipt_to: number;
+  start_no?: number;
+  end_no?: number;
   issue_date: string;
+  issued_date?: string;
   return_date?: string;
 }
 
@@ -134,7 +149,7 @@ export interface CustomerDetail {
   hawker_id?: number;
   hawker_name?: string;
   qty: number;
-  circulation: 'Morning' | 'Evening';
+  circulation: 'Morning' | 'Evening' | string;
   delivery_days: number[]; // [1,2,3,4,5,6,7] (1=Mon..7=Sun), default all 7 days
   s_date: string;
   c_date?: string;
