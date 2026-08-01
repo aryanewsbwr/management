@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   Users, 
@@ -9,9 +9,40 @@ import {
   Store, 
   FileText, 
   ChevronRight,
-  Plus
+  Plus,
+  Building,
+  Newspaper,
+  MapPin,
+  DollarSign,
+  Calendar,
+  ShoppingBag,
+  Receipt,
+  PauseCircle,
+  Scissors,
+  BookOpen,
+  CreditCard,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { mockCustomers, mockHawkers, mockCounterSales, mockPublications } from '@/lib/mockData';
+
+const legacyFormsList = [
+  { id: 1, name: 'Publisher Info', hindiName: 'प्रकाशक मास्टर', href: '/publications?tab=publishers', icon: Building, color: 'from-blue-600 to-indigo-600', badge: 'Screen 1' },
+  { id: 2, name: 'Publication Info', hindiName: 'अखबार एवं दर मास्टर', href: '/publications?tab=active', icon: Newspaper, color: 'from-indigo-600 to-violet-600', badge: 'Screen 2' },
+  { id: 3, name: 'Region Master', hindiName: 'क्षेत्र एवं जोन मास्टर', href: '/hawkers?tab=regions', icon: MapPin, color: 'from-purple-600 to-pink-600', badge: 'Screen 3' },
+  { id: 4, name: 'Hawker Master', hindiName: 'हॉकर वितरण मास्टर', href: '/hawkers?tab=hawkers', icon: Truck, color: 'from-sky-600 to-blue-600', badge: 'Screen 4' },
+  { id: 5, name: 'Customer Info', hindiName: 'ग्राहक मास्टर', href: '/customers?tab=customers', icon: Users, color: 'from-emerald-600 to-teal-600', badge: 'Screen 5' },
+  { id: 6, name: 'Rate Changes Info', hindiName: 'दर परिवर्तन लॉग', href: '/publications?tab=ratechanges', icon: DollarSign, color: 'from-amber-600 to-orange-600', badge: 'Screen 6' },
+  { id: 7, name: 'Define Holiday', hindiName: 'छुट्टी / प्रेस अवकाश', href: '/publications?tab=holidays', icon: Calendar, badge: 'Screen 7' },
+  { id: 8, name: 'Purchase Invoice', hindiName: 'प्रेस स्टॉक खरीद', href: '/countersales?tab=purchases', icon: ShoppingBag, color: 'from-rose-600 to-red-600', badge: 'Screen 8' },
+  { id: 9, name: 'Retail Sale Perm. Cust', hindiName: 'काउंटर नकद बिक्री', href: '/countersales?tab=sales', icon: Receipt, color: 'from-cyan-600 to-teal-600', badge: 'Screen 9' },
+  { id: 10, name: 'Customer Discontinue', hindiName: 'ग्राहक छुट्टी वैकेशन', href: '/customers?tab=discontinue', icon: PauseCircle, color: 'from-yellow-600 to-amber-600', badge: 'Screen 10' },
+  { id: 11, name: 'Publication Discontinue', hindiName: 'प्रेस रोक / निलंबन', href: '/publications?tab=suspensions', icon: Scissors, color: 'from-fuchsia-600 to-pink-600', badge: 'Screen 11' },
+  { id: 12, name: 'Receipt Allotment', hindiName: 'रसीद बुक आवंटन', href: '/hawkers?tab=collectors', icon: BookOpen, color: 'from-teal-600 to-emerald-600', badge: 'Screen 12' },
+  { id: 13, name: 'Payment Receipt Entry', hindiName: 'भुगतान रसीद प्रविष्टि', href: '/billing?tab=receipts', icon: CreditCard, color: 'from-emerald-600 to-green-600', badge: 'Screen 13' },
+  { id: 14, name: 'Bill Processing Region', hindiName: 'क्षेत्र वार बिल जनरेशन', href: '/billing?tab=bills', icon: FileText, color: 'from-indigo-600 to-blue-600', badge: 'Screen 14' },
+  { id: 15, name: 'Period Detail / Financial Year', hindiName: 'वित्तीय वर्ष चयन', href: '#', icon: Layers, color: 'from-slate-700 to-slate-900', badge: 'Screen 15' },
+];
 
 export default function Dashboard() {
   const totalDues = mockCustomers.reduce((sum, c) => sum + c.due_amount, 0);
@@ -24,24 +55,13 @@ export default function Dashboard() {
       {/* Title & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-xs text-slate-500">Newspaper transactions, hawkers & monthly dues</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/customers"
-            className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-colors flex items-center gap-1.5"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Customer</span>
-          </Link>
-          <Link
-            href="/billing"
-            className="px-3.5 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors flex items-center gap-1.5"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Monthly Bills</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-black text-slate-900">Aryan News Agency Desktop Dashboard</h1>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+              15 Forms Ready
+            </span>
+          </div>
+          <p className="text-xs text-slate-500">Click any form below to open the exact Visual Basic screen and start entries</p>
         </div>
       </div>
 
@@ -72,64 +92,48 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Clean Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Unpaid Dues List */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-900">Unpaid Customer Dues</h2>
-            <Link href="/billing" className="text-xs font-semibold text-indigo-600 hover:underline">
-              View All
-            </Link>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left text-slate-700">
-              <thead className="bg-slate-50 text-slate-500 font-semibold border-y border-slate-200">
-                <tr>
-                  <th className="py-2 px-3">Customer</th>
-                  <th className="py-2 px-3">Region</th>
-                  <th className="py-2 px-3 text-right">Due</th>
-                  <th className="py-2 px-3 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {mockCustomers.filter(c => c.due_amount > 0).map((cust) => (
-                  <tr key={cust.customer_id} className="hover:bg-slate-50">
-                    <td className="py-2.5 px-3 font-semibold text-slate-900">
-                      {cust.name_eng}
-                      {cust.name_hindi && <span className="block text-[11px] text-slate-400 font-normal">{cust.name_hindi}</span>}
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-500">{cust.region_name}</td>
-                    <td className="py-2.5 px-3 text-right font-bold text-amber-600">₹{cust.due_amount.toFixed(2)}</td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                        Unpaid
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* 15 Legacy Forms Direct Launcher Grid */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <span>Legacy Software Form Launcher (All 15 Screens)</span>
+          </h2>
+          <span className="text-xs text-slate-500 font-medium">B:\himanshu uncle software layout</span>
         </div>
 
-        {/* Papers Overview */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-3">
-          <h2 className="text-sm font-bold text-slate-900">Active Publications</h2>
-          <div className="space-y-2">
-            {mockPublications.map((pub) => (
-              <div key={pub.publication_id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-xs">
-                <div>
-                  <p className="font-bold text-slate-900">{pub.public_name}</p>
-                  <p className="text-[11px] text-slate-500">{pub.pub_hindi} • {pub.type_p}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {legacyFormsList.map((form) => {
+            const Icon = form.icon;
+            return (
+              <Link
+                key={form.id}
+                href={form.href}
+                className="group relative p-3.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${form.color || 'from-indigo-600 to-indigo-500'} flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                    {form.badge}
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white border border-slate-200 text-slate-600">
-                  {pub.abrv}
-                </span>
-              </div>
-            ))}
-          </div>
+
+                <div>
+                  <h3 className="font-bold text-xs text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug">
+                    {form.name}
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-400 mt-0.5">{form.hindiName}</p>
+                </div>
+
+                <div className="flex items-center text-[10px] font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform pt-1 border-t border-slate-100">
+                  <span>Open Form Window</span>
+                  <ChevronRight className="w-3 h-3 ml-0.5" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
