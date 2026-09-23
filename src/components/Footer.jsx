@@ -16,8 +16,8 @@ export default function Footer({ onSelectCategory, onOpenAdmin, onOpenSubmitNews
           {/* Col 1: Identity */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-brand-700 to-red-500 flex items-center justify-center text-white font-black text-2xl font-hindi shadow-lg">
-                आ
+              <div className="w-13 h-13 rounded-xl bg-white p-1 flex items-center justify-center shadow-lg shrink-0 overflow-hidden">
+                <img src="/logo.png" alt="Aryan News Agency Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h3 className="text-xl font-black text-white font-hindi">

@@ -201,8 +201,8 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           
           {/* Logo Header */}
           <div className="text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-700 to-red-500 text-white flex items-center justify-center font-black text-3xl font-hindi mx-auto mb-3 shadow-lg shadow-red-600/30">
-              आ
+            <div className="w-20 h-20 rounded-2xl bg-white p-1.5 flex items-center justify-center mx-auto mb-3 shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <img src="/logo.png" alt="Aryan News Agency Logo" className="w-full h-full object-contain" />
             </div>
             <h2 className="text-2xl font-black font-hindi">
               {AGENCY_INFO.nameHi}
@@ -313,8 +313,8 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-xl font-hindi shadow">
-              आ
+            <div className="w-11 h-11 rounded-xl bg-white p-1 flex items-center justify-center shadow border border-gray-200 dark:border-gray-700 overflow-hidden shrink-0">
+              <img src="/logo.png" alt="Aryan News Agency Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">
