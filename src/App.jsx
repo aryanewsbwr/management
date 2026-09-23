@@ -247,7 +247,7 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans transition-colors duration-200`}>
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans transition-colors duration-200 w-full max-w-full overflow-x-hidden`}>
       
       {/* 1. MAIN NAVIGATION */}
       <Navbar
@@ -295,7 +295,7 @@ export default function App() {
       <WebStories />
 
       {/* MAIN VIEWPORT CONTAINER */}
-      <main className="flex-1 max-w-7xl w-full mx-auto pb-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto pb-12 overflow-x-hidden">
         
         {/* If user is searching or has selected a specific category */}
         {searchQuery.trim() !== '' ? (

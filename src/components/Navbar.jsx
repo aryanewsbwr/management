@@ -46,13 +46,14 @@ export default function Navbar({
   }, [lang]);
 
   return (
-    <header className="sticky top-0 z-40 w-full shadow-md">
+    <header className="sticky top-0 z-40 w-full max-w-full shadow-md overflow-hidden">
       {/* 1. TOP MINI UTILITY BAR */}
-      <div className="bg-gradient-to-r from-red-800 via-brand-700 to-red-900 text-white text-xs px-3 sm:px-6 py-1.5 flex items-center justify-between border-b border-red-600/30">
-        <div className="flex items-center space-x-3">
+      <div className="bg-gradient-to-r from-red-800 via-brand-700 to-red-900 text-white text-xs px-2.5 sm:px-6 py-1.5 flex items-center justify-between border-b border-red-600/30 w-full overflow-hidden">
+        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
           <span className="flex items-center gap-1 font-medium text-amber-200">
-            <MapPin className="w-3.5 h-3.5 text-amber-300" />
-            <span>ब्यावर, राजस्थान</span>
+            <MapPin className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <span className="font-bold">ब्यावर</span>
+            <span className="hidden sm:inline">, राजस्थान</span>
           </span>
           <span className="hidden md:inline text-red-200">|</span>
           <span className="hidden md:inline text-gray-100">{currentDateTime}</span>
@@ -61,41 +62,43 @@ export default function Navbar({
           </span>
 
           {/* Live API Status Indicator */}
-          <span className="inline-flex items-center gap-1 bg-black/30 text-emerald-300 font-medium px-2 py-0.5 rounded text-[11px] border border-emerald-500/30">
+          <span className="hidden sm:inline-flex items-center gap-1 bg-black/30 text-emerald-300 font-medium px-2 py-0.5 rounded text-[11px] border border-emerald-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            <span className="hidden sm:inline">लाइव API</span>
-            <span className="font-mono font-bold text-white">({liveCount || 80}+ लाइव)</span>
+            <span>लाइव API</span>
+            <span className="font-mono font-bold text-white">({liveCount || 50}+)</span>
           </span>
         </div>
 
-        <div className="flex items-center space-x-2 sm:space-x-3">
+        <div className="flex items-center space-x-1 sm:space-x-3 shrink-0">
           {/* Refresh Live News Button */}
           <button
             onClick={onRefreshLiveNews}
             disabled={isLoadingLiveNews}
-            className="flex items-center gap-1 bg-red-950 hover:bg-black/50 text-white px-2 py-0.5 rounded text-[11px] transition border border-red-500/40 disabled:opacity-50"
+            className="flex items-center gap-1 bg-red-950 hover:bg-black/50 text-white px-1.5 sm:px-2 py-0.5 rounded text-[11px] transition border border-red-500/40 disabled:opacity-50"
             title="लाइव खबरें रीफ्रेश करें"
           >
             <RefreshCw className={`w-3 h-3 text-amber-300 ${isLoadingLiveNews ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isLoadingLiveNews ? 'लोड हो रहा...' : 'ताज़ा करें'}</span>
           </button>
+
           {/* Quick Helpline WhatsApp */}
           <a
             href={`https://wa.me/${AGENCY_INFO.whatsapp}?text=${encodeURIComponent('नमस्ते आर्यन न्यूज़ एजेंसी, मुझे विज्ञापन/समाचार के संबंध में संपर्क करना है।')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-2 py-0.5 rounded text-[11px] transition shadow-sm"
-            title="व्हाट्सएप हेल्पलाइन"
+            title="व्हाट्सएप हेल्पलाइन: +91 98290-58949"
           >
             <PhoneCall className="w-3 h-3" />
-            <span className="hidden sm:inline">हेल्पलाइन:</span>
-            <span>+91 98290-58949</span>
+            <span className="hidden md:inline">हेल्पलाइन:</span>
+            <span className="hidden sm:inline">+91 98290-58949</span>
+            <span className="sm:hidden font-bold">संपर्क</span>
           </a>
 
           {/* Language Switcher */}
           <button
             onClick={onToggleLang}
-            className="flex items-center gap-1 bg-black/20 hover:bg-black/40 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide transition border border-white/20"
+            className="flex items-center gap-1 bg-black/20 hover:bg-black/40 px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide transition border border-white/20"
             title="भाषा बदलें"
           >
             <Globe className="w-3 h-3 text-amber-300" />
@@ -216,7 +219,7 @@ export default function Navbar({
       </div>
 
       {/* 3. HORIZONTAL CATEGORIES BAR (Desktop & Mobile Swipeable) */}
-      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar py-1">
+      <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar py-1 w-full max-w-full">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 flex items-center gap-1 sm:gap-2 whitespace-nowrap min-w-max">
           {CATEGORIES.map((cat) => {
             const isActive = selectedCategory === cat.id;
