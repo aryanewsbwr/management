@@ -364,21 +364,54 @@ export default function App() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {filteredArticles.map(art => (
-                <ArticleCard
-                  key={art.id}
-                  article={art}
-                  lang={lang}
-                  layout="standard"
-                  onOpenArticle={setActiveArticle}
-                  onPlayTTS={handlePlayTTS}
-                  isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === art.id}
-                  isBookmarked={bookmarks.includes(art.id)}
-                  onToggleBookmark={handleToggleBookmark}
-                />
-              ))}
-            </div>
+            {filteredArticles.length === 0 ? (
+              selectedCategory === 'beawar' ? (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-900 dark:to-amber-950/20 border-2 border-dashed border-amber-300 dark:border-amber-800/60 rounded-3xl p-6 sm:p-8 text-center shadow-sm my-6">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+                    📍
+                  </div>
+                  <h4 className="text-base sm:text-lg font-black font-hindi text-gray-900 dark:text-white">
+                    अभी ब्यावर क्षेत्र की कोई नई खबर उपलब्ध नहीं है
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-hindi mt-1.5 max-w-lg mx-auto leading-relaxed">
+                    हमारे स्थानीय संवाददाता एवं ब्यूरो द्वारा खबर अपलोड होते ही यहाँ सबसे पहले प्रदर्शित होगी। क्या आपके पास कोई स्थानीय समाचार है?
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                    <a
+                      href="https://wa.me/919829058949?text=%E0%A4%A8%E0%A4%AE%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A5%87%2C%20%E0%A4%AE%E0%A5%81%E0%A4%9D%E0%A5%87%20%E0%A4%AC%E0%A5%8D%E0%A4%AF%E0%A4%BE%E0%A4%B5%E0%A4%B0%20%E0%A4%95%E0%A5%80%20%E0%A4%96%E0%A4%AC%E0%A4%B0%20%E0%A4%AD%E0%A5%87%E0%A4%9C%E0%A4%A8%E0%A5%80%20%E0%A4%B9%E0%A5%88%E0%A5%A4"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition active:scale-95"
+                    >
+                      <span>📲 ब्यावर की खबर व्हाट्सएप पर भेजें (+91 98290-58949)</span>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 my-6">
+                  <p className="text-base font-semibold font-hindi text-gray-500">
+                    इस श्रेणी में फिलहाल कोई खबर उपलब्ध नहीं है।
+                  </p>
+                </div>
+              )
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {filteredArticles.map(art => (
+                  <ArticleCard
+                    key={art.id}
+                    article={art}
+                    lang={lang}
+                    layout="standard"
+                    onOpenArticle={setActiveArticle}
+                    onPlayTTS={handlePlayTTS}
+                    isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === art.id}
+                    isBookmarked={bookmarks.includes(art.id)}
+                    onToggleBookmark={handleToggleBookmark}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           /* DEFAULT HOMEPAGE: "FIRST MIX CATEGORY THEN DIFFERENT CATEGORY" */

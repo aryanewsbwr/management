@@ -132,8 +132,8 @@ export default function Navbar({
           
           {/* Logo & Agency Identity */}
           <div className="flex items-center gap-2.5 sm:gap-3 cursor-pointer" onClick={() => onSelectCategory('all')}>
-            <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-md border border-gray-200 dark:border-gray-700 shrink-0 overflow-hidden flex items-center justify-center group hover:scale-105 transition-transform">
-              <img src="/logo.png" alt="Aryan News Agency Logo" className="w-full h-full object-contain" />
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-gray-800 p-1 shadow-md border border-gray-200 dark:border-gray-700 shrink-0 overflow-hidden flex items-center justify-center group hover:scale-105 transition-transform">
+              <img src="/logo.png" alt="Aryan News Agency Logo" className="w-9 h-9 sm:w-10 sm:h-10 object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">
