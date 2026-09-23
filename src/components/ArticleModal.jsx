@@ -152,6 +152,10 @@ export default function ArticleModal({
             <img
               src={article.image}
               alt={title}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&auto=format&fit=crop&q=80';
+              }}
               className="w-full h-auto max-h-[420px] object-cover"
             />
             <div className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80">

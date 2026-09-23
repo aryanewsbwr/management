@@ -95,6 +95,10 @@ export default function HeroMixedSection({
             <img
               src={heroArticle.image}
               alt={heroTitle}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&auto=format&fit=crop&q=80';
+              }}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80"
             />
             {/* Dark overlay gradients */}
@@ -107,7 +111,7 @@ export default function HeroMixedSection({
                 <span>संपादकीय पसंद</span>
               </span>
               <span className="bg-black/60 backdrop-blur-md text-amber-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-white/20">
-                ब्यावर विशेष
+                {heroArticle.category === 'beawar' ? 'ब्यावर विशेष' : heroArticle.category === 'rajasthan' ? 'राजस्थान' : heroArticle.category === 'sports' ? 'खेल जगत' : heroArticle.category === 'business' ? 'व्यापार' : 'लाइव हेडलाइन'}
               </span>
             </div>
 

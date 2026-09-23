@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import BreakingTicker from './components/BreakingTicker';
 import MandiTicker from './components/MandiTicker';
@@ -39,6 +39,8 @@ export default function App() {
   const [theme, setTheme] = useState('light');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingLiveNews, setIsLoadingLiveNews] = useState(false);
+  const [liveUpdateToast, setLiveUpdateToast] = useState(false);
+  const lastFetchTimeRef = useRef(0);
 
   // 2. Modals States
   const [activeArticle, setActiveArticle] = useState(null);
@@ -86,12 +88,30 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('hashchange', handlePopState);
 
-    // Fetch live news from RSS feeds in the background
-    loadLiveFeeds(initialArticles);
+    // Fetch live news from RSS feeds immediately on startup
+    loadLiveFeeds(false);
+
+    // Periodic auto-refresh every 2 minutes (120,000 ms) to keep live news constantly updating
+    const autoRefreshTimer = setInterval(() => {
+      loadLiveFeeds(false);
+    }, 120000);
+
+    // Tab visibility change: when user switches back to this tab, fetch latest news if > 60s
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const timeSince = Date.now() - (lastFetchTimeRef.current || 0);
+        if (timeSince > 60000) {
+          loadLiveFeeds(true);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       unsubscribeTTS();
       ttsService.stop();
+      clearInterval(autoRefreshTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('hashchange', handlePopState);
     };
@@ -109,28 +129,35 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Fetch real-time live feeds
-  const loadLiveFeeds = async () => {
+  // Fetch real-time live feeds with verified images
+  const loadLiveFeeds = async (showToast = false) => {
     setIsLoadingLiveNews(true);
+    lastFetchTimeRef.current = Date.now();
     try {
       const liveItems = await fetchAllLiveCategories();
       if (liveItems && liveItems.length > 0) {
-        // Cache live items in local storage
+        // Cache live items in local storage with 15-minute TTL
         StorageService.saveCachedLiveArticles(liveItems);
 
-        // Update breaking news ticker with top 6 live headlines
+        // Update breaking news ticker with top live headlines
         const topHeadlines = liveItems
           .filter(item => item.titleHi && item.titleHi.length > 15)
-          .slice(0, 6)
+          .slice(0, 8)
           .map(item => item.titleHi);
         
         if (topHeadlines.length > 0) {
           setBreakingNews(topHeadlines);
         }
 
-        // Merge: Custom articles first, then live items, then seed Beawar articles
+        // Custom Beawar articles created by admin remain at the top
+        // Followed by genuine, real-time live articles with real photos
         const customArticles = StorageService.getCustomArticles();
-        setArticles([...customArticles, ...liveItems, ...INITIAL_ARTICLES]);
+        setArticles([...customArticles, ...liveItems]);
+
+        if (showToast) {
+          setLiveUpdateToast(true);
+          setTimeout(() => setLiveUpdateToast(false), 3500);
+        }
       }
     } catch (e) {
       console.warn('Live news fetch notice:', e);
@@ -237,9 +264,17 @@ export default function App() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         isLoadingLiveNews={isLoadingLiveNews}
-        onRefreshLiveNews={loadLiveFeeds}
+        onRefreshLiveNews={() => loadLiveFeeds(true)}
         liveCount={articles.filter(a => a.isLiveFeed).length}
       />
+
+      {/* Floating Live Update Notification Toast */}
+      {liveUpdateToast && (
+        <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900/95 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl border border-red-500/50 flex items-center gap-2 backdrop-blur-md animate-bounce">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span>🔴 ताज़ा लाइव समाचार सफलतापूर्वक अपडेट हो चुके हैं!</span>
+        </div>
+      )}
 
       {/* 2. BREAKING NEWS LIVE FLASH TICKER */}
       <BreakingTicker

@@ -2,16 +2,18 @@ import { INITIAL_ARTICLES, INITIAL_BREAKING_NEWS } from '../data/initialArticles
 import { INITIAL_MANDI_RATES } from '../data/mandiRates';
 
 const STORAGE_KEYS = {
-  ARTICLES: 'arya_news_articles_v2',
-  CUSTOM_ARTICLES: 'arya_news_custom_articles_v2',
-  CACHED_LIVE: 'arya_news_cached_live_v2',
-  BREAKING: 'arya_news_breaking_v2',
-  MANDI: 'arya_news_mandi_v2',
-  BOOKMARKS: 'arya_news_bookmarks_v2',
-  LANG: 'arya_news_lang_v2',
-  THEME: 'arya_news_theme_v2',
-  ADS: 'arya_news_ads_v2'
+  ARTICLES: 'arya_news_articles_v3',
+  CUSTOM_ARTICLES: 'arya_news_custom_articles_v3',
+  CACHED_LIVE: 'arya_news_cached_live_v3',
+  BREAKING: 'arya_news_breaking_v3',
+  MANDI: 'arya_news_mandi_v3',
+  BOOKMARKS: 'arya_news_bookmarks_v3',
+  LANG: 'arya_news_lang_v3',
+  THEME: 'arya_news_theme_v3',
+  ADS: 'arya_news_ads_v3'
 };
+
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes cache TTL
 
 export const StorageService = {
   // Custom articles created by Uncle / Admin
@@ -37,11 +39,23 @@ export const StorageService = {
     return list;
   },
 
-  // Cached Live Articles
+  // Cached Live Articles with TTL (Auto-expires stale news)
   getCachedLiveArticles() {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.CACHED_LIVE);
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.timestamp && Array.isArray(parsed.items)) {
+        const ageMs = Date.now() - parsed.timestamp;
+        if (ageMs > CACHE_TTL_MS) {
+          // Cache expired, remove to trigger fresh live fetch
+          localStorage.removeItem(STORAGE_KEYS.CACHED_LIVE);
+          return [];
+        }
+        return parsed.items;
+      }
+      return [];
     } catch {
       return [];
     }
@@ -49,20 +63,23 @@ export const StorageService = {
 
   saveCachedLiveArticles(articles) {
     try {
-      localStorage.setItem(STORAGE_KEYS.CACHED_LIVE, JSON.stringify(articles.slice(0, 100)));
+      const payload = {
+        timestamp: Date.now(),
+        items: articles.slice(0, 100)
+      };
+      localStorage.setItem(STORAGE_KEYS.CACHED_LIVE, JSON.stringify(payload));
     } catch (e) {
       console.warn('Storage limit reached for cached live news');
     }
   },
 
-  // Combined Initial Articles (Custom + Seeded Beawar)
+  // Combined Initial Articles (Custom Beawar at top, then live news)
   getArticles() {
     const custom = this.getCustomArticles();
     const cachedLive = this.getCachedLiveArticles();
     
     if (cachedLive.length > 0) {
-      // Return custom at top, then cached live, then seed
-      return [...custom, ...cachedLive, ...INITIAL_ARTICLES];
+      return [...custom, ...cachedLive];
     }
     return [...custom, ...INITIAL_ARTICLES];
   },
