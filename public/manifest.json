@@ -1,0 +1,21 @@
+{
+  "short_name": "AryanNews",
+  "name": "Aryan News Agency - Beawar",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%23d32f2f'/><text x='50%' y='65%' font-size='100' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>आ</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%23d32f2f'/><text x='50%' y='65%' font-size='270' font-weight='bold' fill='white' text-anchor='middle' font-family='sans-serif'>आ</text></svg>",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#d32f2f",
+  "display": "standalone",
+  "orientation": "portrait"
+}
