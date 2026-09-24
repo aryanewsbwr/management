@@ -77,6 +77,11 @@ export default function ArticleCard({
           <span className="absolute top-1 left-1 bg-red-600/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow">
             {categoryLabel}
           </span>
+          {article.sourceName && (
+            <span className="absolute bottom-1 left-1 bg-black/80 text-gray-200 text-[8px] font-medium px-1.5 py-0.5 rounded backdrop-blur-sm">
+              {article.sourceName}
+            </span>
+          )}
         </div>
 
         {/* Content */}
@@ -168,6 +173,12 @@ export default function ArticleCard({
         {article.isBreaking && (
           <span className="absolute top-2.5 right-2.5 bg-amber-500 text-gray-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse">
             ब्रेकिंग
+          </span>
+        )}
+
+        {article.sourceName && (
+          <span className="absolute bottom-2 left-2 bg-black/75 text-gray-200 text-[10px] font-medium px-2 py-0.5 rounded-md backdrop-blur-sm">
+            स्रोत: {article.sourceName}
           </span>
         )}
       </div>

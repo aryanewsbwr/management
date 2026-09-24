@@ -151,8 +151,10 @@ export default function ArticleModal({
               }}
               className="w-full h-auto max-h-[420px] object-cover"
             />
-            <div className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80">
-              फोटो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)
+            <div className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 font-hindi">
+              {article.isLiveFeed || article.originalUrl
+                ? `चित्र साभार: ${article.sourceName || 'मूल प्रकाशक'} • सर्वाधिकार मूल प्रकाशक के पास सुरक्षित`
+                : 'फोटो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)'}
             </div>
           </div>
 
@@ -198,6 +200,10 @@ export default function ArticleModal({
                   </a>
                 )}
               </div>
+
+              <p className="text-[10px] text-gray-400 leading-relaxed font-hindi">
+                * अस्वीकरण: यह समाचार सारांश भारतीय कॉपीराइट अधिनियम (धारा 52) के 'उचित उपयोग' के तहत जनहित में प्रदर्शित किया गया है। समस्त बौद्धिक संपदा अधिकार मूल प्रकाशक ({article.sourceName || 'मूल स्रोत'}) के पास सुरक्षित हैं।
+              </p>
             </div>
           ) : (
             <div className={`mt-6 text-gray-800 dark:text-gray-200 font-hindi whitespace-pre-line ${fontClasses[fontSizeLevel]}`}>

@@ -9,7 +9,6 @@ import ArticleCard from './components/ArticleCard';
 import ArticleModal from './components/ArticleModal';
 import QuickReadModal from './components/QuickReadModal';
 import MandiModal from './components/MandiModal';
-import AdminModal from './components/AdminModal';
 import SubmitNewsModal from './components/SubmitNewsModal';
 import BookmarksModal from './components/BookmarksModal';
 import MobileBottomNav from './components/MobileBottomNav';
@@ -47,7 +46,6 @@ export default function App() {
   const [activeArticle, setActiveArticle] = useState(null);
   const [isQuickReadOpen, setIsQuickReadOpen] = useState(false);
   const [isMandiModalOpen, setIsMandiModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSubmitNewsOpen, setIsSubmitNewsOpen] = useState(false);
   const [isBookmarksModalOpen, setIsBookmarksModalOpen] = useState(false);
 
@@ -304,7 +302,6 @@ export default function App() {
         onToggleLang={handleToggleLang}
         theme={theme}
         onToggleTheme={handleToggleTheme}
-        onOpenAdmin={navigateToAdmin}
         onOpenSubmitNews={() => setIsSubmitNewsOpen(true)}
         onOpenBookmarks={() => setIsBookmarksModalOpen(true)}
         bookmarksCount={bookmarks.length}
@@ -605,7 +602,6 @@ export default function App() {
       {/* FOOTER */}
       <Footer
         onSelectCategory={setSelectedCategory}
-        onOpenAdmin={navigateToAdmin}
         onOpenSubmitNews={() => setIsSubmitNewsOpen(true)}
         lang={lang}
       />
@@ -656,20 +652,7 @@ export default function App() {
         lastUpdatedAt={mandiLastUpdated}
       />
 
-      {/* 4. Uncle's Editorial Admin CMS Modal */}
-      <AdminModal
-        isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-        onAddArticle={handleAddArticle}
-        onDeleteArticle={handleDeleteArticle}
-        articles={articles}
-        mandiRates={mandiRates}
-        onUpdateMandiRates={handleUpdateMandiRates}
-        breakingNews={breakingNews}
-        onUpdateBreakingNews={handleUpdateBreakingNews}
-      />
-
-      {/* 5. Citizen Journalism: Submit News via WhatsApp Modal */}
+      {/* 4. Citizen Journalism: Submit News via WhatsApp Modal */}
       <SubmitNewsModal
         isOpen={isSubmitNewsOpen}
         onClose={() => setIsSubmitNewsOpen(false)}

@@ -1,11 +1,11 @@
 import React from 'react';
 import { 
   MapPin, Phone, Mail, Globe, Share2, ShieldCheck, 
-  ExternalLink, Heart, Send, Lock 
+  ExternalLink, Heart, Send 
 } from 'lucide-react';
 import { AGENCY_INFO, CATEGORIES } from '../data/categories';
 
-export default function Footer({ onSelectCategory, onOpenAdmin, onOpenSubmitNews, lang = 'hi' }) {
+export default function Footer({ onSelectCategory, onOpenSubmitNews, lang = 'hi' }) {
   return (
     <footer className="bg-gray-950 text-gray-300 pt-10 pb-20 lg:pb-10 border-t border-gray-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -131,7 +131,20 @@ export default function Footer({ onSelectCategory, onOpenAdmin, onOpenSubmitNews
 
         </div>
 
-        {/* BOTTOM LEGAL & COPYRIGHT */}
+        {/* COPYRIGHT & FAIR DEALING DISCLAIMER */}
+        <div className="mt-8 p-4 rounded-2xl bg-gray-900/80 border border-gray-800 text-[11px] text-gray-400 leading-relaxed font-hindi space-y-2">
+          <p className="font-bold text-gray-300">
+            ⚖️ कॉपीराइट एवं स्रोत अस्वीकरण (Copyright & Fair Dealing Notice):
+          </p>
+          <p>
+            आर्यन न्यूज़ एजेंसी (aryannewsagency.com) पर प्रकाशित ब्यावर व स्थानीय समाचार हमारे संवाददाताओं द्वारा तैयार किए जाते हैं। राष्ट्रीय, अंतरराष्ट्रीय, प्रादेशिक व खेल समाचारों के शीर्षक, संक्षिप्त अंश एवं चित्र केवल जनहित व समसामयिक समीक्षा हेतु मूल प्रकाशकों (जैसे दैनिक भास्कर, बीबीसी हिन्दी आदि) के सार्वजनिक आरएसएस (RSS) माध्यम से भारतीय कॉपीराइट अधिनियम, 1957 की धारा 52 के "उचित उपयोग" (Fair Dealing) प्रावधानों के अंतर्गत स्रोत के स्पष्ट आभार के साथ प्रदर्शित किए जाते हैं।
+          </p>
+          <p>
+            समस्त बौद्धिक संपदा अधिकार एवं ट्रेडमार्क उनके संबंधित मूल प्रकाशकों के पास पूर्णतः सुरक्षित हैं। पाठकों की सुविधा के लिए प्रत्येक समाचार पर मूल प्रकाशक की आधिकारिक वेबसाइट का सीधा लिंक ("मूल स्रोत पर पूरी खबर पढ़ें") प्रदान किया जाता है। किसी भी सामग्री या कॉपीराइट से संबंधित जानकारी अथवा आपत्ति हेतु कृपया <a href="mailto:aryannewsagency@gmail.com" className="text-red-400 underline font-sans">aryannewsagency@gmail.com</a> पर संपर्क करें।
+          </p>
+        </div>
+
+        {/* BOTTOM LEGAL BAR */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
           <p className="text-center sm:text-left">
             © {new Date().getFullYear()} <strong className="text-gray-300">Aryan News Agency (आर्यन न्यूज़ एजेंसी)</strong>. सर्वाधिकार सुरक्षित।
@@ -142,14 +155,7 @@ export default function Footer({ onSelectCategory, onOpenAdmin, onOpenSubmitNews
             <span>•</span>
             <span className="hover:text-gray-300 cursor-pointer">गोपनीयता नीति</span>
             <span>•</span>
-            <button
-              onClick={onOpenAdmin}
-              className="flex items-center gap-1 text-gray-500 hover:text-red-400 transition"
-              title="एडमिन पोर्टल"
-            >
-              <Lock className="w-3 h-3" />
-              <span>संपादकीय लॉगिन</span>
-            </button>
+            <span className="text-gray-600">ब्यावर, राजस्थान</span>
           </div>
         </div>
 

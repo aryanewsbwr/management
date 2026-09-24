@@ -12,7 +12,6 @@ export default function Navbar({
   onToggleLang, 
   theme, 
   onToggleTheme, 
-  onOpenAdmin,
   onOpenSubmitNews,
   onOpenBookmarks,
   bookmarksCount,
@@ -112,16 +111,6 @@ export default function Navbar({
             title="थीम बदलें"
           >
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-          </button>
-
-          {/* Admin CMS Access */}
-          <button
-            onClick={onOpenAdmin}
-            className="flex items-center gap-1 text-[11px] text-red-200 hover:text-white transition px-1"
-            title="संपादकीय एडमिन लॉगिन"
-          >
-            <Lock className="w-3 h-3" />
-            <span className="hidden sm:inline">एडमिन</span>
           </button>
         </div>
       </div>
