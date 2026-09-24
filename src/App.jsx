@@ -18,6 +18,7 @@ import AdminPanel from './pages/AdminPanel';
 import { StorageService } from './services/storage';
 import { fetchAllLiveCategories } from './services/newsApi';
 import { ttsService } from './services/ttsService';
+import { CATEGORIES, AGENCY_INFO } from './data/categories';
 import { INITIAL_ARTICLES, INITIAL_BREAKING_NEWS } from './data/initialArticles';
 import { INITIAL_MANDI_RATES } from './data/mandiRates';
 import { Share2, PhoneCall, Sparkles, Filter, RefreshCw, Send } from 'lucide-react';
