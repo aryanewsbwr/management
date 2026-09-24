@@ -2,11 +2,28 @@ import React from 'react';
 import { X, TrendingUp, TrendingDown, Minus, Share2, Sparkles, AlertCircle } from 'lucide-react';
 import { MANDI_NOTICE } from '../data/mandiRates';
 
-export default function MandiModal({ isOpen, onClose, rates = [] }) {
+export default function MandiModal({ isOpen, onClose, rates = [], lastUpdatedAt = null }) {
   if (!isOpen) return null;
 
+  const isToday = (isoStr) => {
+    if (!isoStr) return false;
+    const d = new Date(isoStr);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() &&
+           d.getMonth() === now.getMonth() &&
+           d.getDate() === now.getDate();
+  };
+
+  const updatedToday = isToday(lastUpdatedAt);
+  const formattedDate = lastUpdatedAt
+    ? new Date(lastUpdatedAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+
   const handleShare = () => {
-    let text = `*🌾 कृषि उपज मंडी समिति ब्यावर - दैनिक भाव चार्ट*\nदिनांक: ${MANDI_NOTICE.date}\nस्थिति: ${MANDI_NOTICE.status}\n\n`;
+    const dateText = updatedToday
+      ? `आज (${formattedDate})`
+      : `${formattedDate || 'पूर्व रिकॉर्ड'} (आज के नए भाव प्रतीक्षित)`;
+    let text = `*🌾 कृषि उपज मंडी समिति ब्यावर - दैनिक भाव चार्ट*\nदिनांक: ${dateText}\nस्थिति: ${updatedToday ? MANDI_NOTICE.status : 'आज के नए भाव प्रतीक्षित'}\n\n`;
     rates.forEach(r => {
       text += `📍 *${r.cropHi}*: ₹${r.minPrice} से ₹${r.maxPrice} ${r.unit} (${r.change})\n`;
     });
@@ -29,7 +46,9 @@ export default function MandiModal({ isOpen, onClose, rates = [] }) {
                 {MANDI_NOTICE.marketName}
               </h3>
               <p className="text-xs text-emerald-200">
-                दैनिक भाव बुलेटिन • दिनांक: {MANDI_NOTICE.date}
+                {updatedToday
+                  ? `दैनिक भाव बुलेटिन • दिनांक: ${formattedDate}`
+                  : `दैनिक भाव बुलेटिन • अंतिम अपडेट: ${formattedDate || 'पूर्व भाव'}`}
               </p>
             </div>
           </div>
@@ -43,9 +62,22 @@ export default function MandiModal({ isOpen, onClose, rates = [] }) {
         </div>
 
         {/* Status Alert Banner */}
-        <div className="bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900">
-          <span>स्थिति: {MANDI_NOTICE.status}</span>
-          <span className="text-[11px] text-gray-500 dark:text-gray-400">आर्यन न्यूज़ एजेंसी द्वारा सत्यापित</span>
+        <div className={`px-4 py-3 text-xs font-semibold flex items-center justify-between border-b ${
+          updatedToday 
+            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900' 
+            : 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-900/60'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${updatedToday ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
+            <span>
+              {updatedToday 
+                ? 'स्थिति: मंडी खुली है • आज के ताज़ा भाव दर्ज हैं' 
+                : `⚠️ आज के नए मंडी भाव अभी दर्ज नहीं हुए हैं (अंतिम दर्ज: ${formattedDate || 'पूर्व रिकॉर्ड'})।`}
+            </span>
+          </div>
+          <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400 shrink-0">
+            आर्यन न्यूज़ एजेंसी द्वारा सत्यापित
+          </span>
         </div>
 
         {/* Rates Table */}

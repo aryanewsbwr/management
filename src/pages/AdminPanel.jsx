@@ -7,13 +7,17 @@ import {
 import { AGENCY_INFO } from '../data/categories';
 import { StorageService } from '../services/storage';
 
+import { supabase, isSupabaseConfigured } from '../services/supabase';
+
 export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
 
   // Dashboard Active Tab: 'upload' | 'manage' | 'mandi' | 'breaking'
   const [activeTab, setActiveTab] = useState('upload');
@@ -24,6 +28,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [author, setAuthor] = useState('संवाददाता, ब्यावर');
   const [area, setArea] = useState('चांग गेट, ब्यावर');
   const [imagePreview, setImagePreview] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -35,52 +40,90 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [breakingNews, setBreakingNews] = useState([]);
   const [newTicker, setNewTicker] = useState('');
 
-  // Check existing session
+  // Check existing Supabase auth session
   useEffect(() => {
-    const session = sessionStorage.getItem('arya_admin_session');
-    if (session === 'true') {
-      setIsAuthenticated(true);
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setIsAuthenticated(true);
+          setCurrentUserEmail(session.user?.email || '');
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsAuthenticated(Boolean(session));
+        if (session) {
+          setCurrentUserEmail(session.user?.email || '');
+          loadData();
+        } else {
+          setCurrentUserEmail('');
+        }
+      });
+
+      loadData();
+      return () => subscription.unsubscribe();
+    } else {
+      loadData();
     }
-    loadData();
   }, []);
 
-  const loadData = () => {
-    const allArticles = StorageService.getArticles();
-    const beawarOnly = allArticles.filter(a => a.category === 'beawar' && a.id.startsWith('custom-'));
-    setBeawarArticles(beawarOnly);
-    setMandiRates(StorageService.getMandiRates());
-    setBreakingNews(StorageService.getBreakingNews());
-  };
+  const loadData = async () => {
+    try {
+      const customArticles = await StorageService.fetchCustomArticles();
+      setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
 
-  // Handle Login
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setLoginError('');
+      const mandiData = await StorageService.fetchMandiRates();
+      setMandiRates(mandiData.rates || []);
 
-    // Exact required credentials: id: ananews, pass: [REDACTED]
-    if (username.trim() === 'ananews' && password === '[REDACTED]') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('arya_admin_session', 'true');
-      setLoginError('');
-      loadData();
-    } else {
-      setLoginError('गलत यूजर आईडी या पासवर्ड! कृपया दोबारा जांचें।');
+      const bn = await StorageService.fetchBreakingNews();
+      setBreakingNews(bn || []);
+    } catch (e) {
+      console.error('[AdminPanel] Error loading data:', e);
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    sessionStorage.removeItem('arya_admin_session');
-  };
-
-  // Quick Demo Autofill Helper
-  const handleAutoFill = () => {
-    setUsername('ananews');
-    setPassword('[REDACTED]');
+  // Handle Login via Supabase Auth
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setLoginError('');
+    setIsLoggingIn(true);
+
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        throw new Error('Supabase Auth कॉन्फ़िगर नहीं है। कृपया Vercel पर्यावरण चर (VITE_SUPABASE_URL और VITE_SUPABASE_ANON_KEY) जोड़ें।');
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: adminEmail.trim(),
+        password: adminPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.session) {
+        setIsAuthenticated(true);
+        setCurrentUserEmail(data.session.user?.email || adminEmail);
+        setLoginError('');
+        await loadData();
+      }
+    } catch (err) {
+      setLoginError(err.message || 'लॉगिन विफल! ईमेल या पासवर्ड की जांच करें।');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
-  // Image File Picker (Non-tech friendly: from phone gallery or computer)
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    setIsAuthenticated(false);
+    setCurrentUserEmail('');
+  };
+
+  // Image File Picker (Direct file upload)
   const handleImageFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -91,6 +134,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       return;
     }
 
+    setSelectedFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
@@ -98,8 +142,8 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     reader.readAsDataURL(file);
   };
 
-  // Handle Beawar News Publish
-  const handlePublishNews = (e) => {
+  // Handle Beawar News Publish with Supabase Storage upload
+  const handlePublishNews = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
       alert('कृपया खबर का शीर्षक और विवरण दोनों भरें।');
@@ -107,77 +151,111 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     }
 
     setIsSubmitting(true);
+    setUploadSuccess('');
 
-    const newArticle = {
-      id: `custom-bwr-${Date.now()}`,
-      titleHi: title.trim(),
-      titleEn: title.trim(),
-      summaryHi: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
-      summaryEn: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
-      contentHi: content.trim(),
-      contentEn: content.trim(),
-      category: 'beawar',
-      image: imagePreview || 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80',
-      publishedAt: new Date().toISOString(),
-      author: `${author} (${area})`,
-      isHero: false,
-      isTrending: true,
-      isBreaking: false,
-      readTime: '2 मिनट',
-      views: 1
-    };
+    try {
+      let finalImageUrl = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
 
-    // Save to storage
-    StorageService.saveArticle(newArticle);
+      // If user picked a file, upload to Supabase Storage (news-images bucket)
+      if (selectedFile) {
+        try {
+          finalImageUrl = await StorageService.uploadArticleImage(selectedFile);
+        } catch (uploadErr) {
+          console.warn('Storage upload notice:', uploadErr.message);
+          // If storage fails, fall back to existing preview or default
+        }
+      }
 
-    // Reset Form
-    setTitle('');
-    setContent('');
-    setImagePreview('');
-    setIsSubmitting(false);
-    setUploadSuccess('ब्यावर की खबर सफलतापूर्वक वेबसाइट पर प्रकाशित हो गई है!');
+      const newArticle = {
+        id: `custom-bwr-${Date.now()}`,
+        titleHi: title.trim(),
+        titleEn: title.trim(),
+        summaryHi: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
+        summaryEn: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
+        contentHi: content.trim(),
+        contentEn: content.trim(),
+        category: 'beawar',
+        image: finalImageUrl,
+        publishedAt: new Date().toISOString(),
+        author: `${author} (${area})`,
+        isHero: false,
+        isTrending: true,
+        isBreaking: false,
+        readTime: '2 मिनट'
+      };
 
-    loadData();
-    if (onNewsUpdated) onNewsUpdated();
+      await StorageService.saveArticle(newArticle);
 
-    setTimeout(() => {
-      setUploadSuccess('');
-      setActiveTab('manage');
-    }, 1800);
+      // Reset Form
+      setTitle('');
+      setContent('');
+      setImagePreview('');
+      setSelectedFile(null);
+      setIsSubmitting(false);
+      setUploadSuccess('ब्यावर की खबर सफलतापूर्वक डेटाबेस में सुरक्षित एवं प्रकाशित हो गई है!');
+
+      await loadData();
+      if (onNewsUpdated) onNewsUpdated();
+
+      setTimeout(() => {
+        setUploadSuccess('');
+        setActiveTab('manage');
+      }, 1800);
+    } catch (err) {
+      alert(`खबर प्रकाशित करने में त्रुटि: ${err.message}`);
+      setIsSubmitting(false);
+    }
   };
 
   // Handle Delete Article
-  const handleDeleteArticle = (id) => {
+  const handleDeleteArticle = async (id) => {
     if (confirm('क्या आप सचमुच यह खबर वेबसाइट से हटाना चाहते हैं?')) {
-      StorageService.deleteArticle(id);
-      loadData();
-      if (onNewsUpdated) onNewsUpdated();
+      try {
+        await StorageService.deleteArticle(id);
+        await loadData();
+        if (onNewsUpdated) onNewsUpdated();
+      } catch (err) {
+        alert(`हटाने में त्रुटि: ${err.message}`);
+      }
     }
   };
 
   // Save Mandi Rates
-  const handleSaveMandi = () => {
-    StorageService.saveMandiRates(mandiRates);
-    alert('ब्यावर मंडी भाव अपडेट कर दिए गए हैं!');
-    if (onNewsUpdated) onNewsUpdated();
+  const handleSaveMandi = async () => {
+    try {
+      await StorageService.saveMandiRates(mandiRates);
+      alert('ब्यावर मंडी भाव डेटाबेस में सफलतापूर्वक अपडेट कर दिए गए हैं!');
+      await loadData();
+      if (onNewsUpdated) onNewsUpdated();
+    } catch (err) {
+      alert(`मंडी भाव सहेजने में त्रुटि: ${err.message}`);
+    }
   };
 
   // Add Breaking Ticker
-  const handleAddTicker = (e) => {
+  const handleAddTicker = async (e) => {
     e.preventDefault();
     if (!newTicker.trim()) return;
     const updated = [newTicker.trim(), ...breakingNews];
-    StorageService.saveBreakingNews(updated);
-    setBreakingNews(updated);
-    setNewTicker('');
-    if (onNewsUpdated) onNewsUpdated();
+    try {
+      await StorageService.saveBreakingNews(updated);
+      setBreakingNews(updated);
+      setNewTicker('');
+      if (onNewsUpdated) onNewsUpdated();
+    } catch (err) {
+      alert(`ब्रेकिंग न्यूज़ सहेजने में त्रुटि: ${err.message}`);
+    }
   };
 
-  const handleDeleteTicker = (idx) => {
+  const handleDeleteTicker = async (idx) => {
     const updated = breakingNews.filter((_, i) => i !== idx);
-    StorageService.saveBreakingNews(updated);
-    setBreakingNews(updated);
-    if (onNewsUpdated) onNewsUpdated();
+    try {
+      await StorageService.saveBreakingNews(updated);
+      setBreakingNews(updated);
+      if (onNewsUpdated) onNewsUpdated();
+    } catch (err) {
+      alert(`हटाने में त्रुटि: ${err.message}`);
+    }
   };
 
   // ==========================================
@@ -226,21 +304,21 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             
-            {/* Username / ID */}
+            {/* Email */}
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                यूजर आईडी (User ID)
+                एडमिन ईमेल (Email)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <User className="w-4 h-4" />
                 </div>
                 <input
-                  type="text"
+                  type="email"
                   required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="यूजर आईडी दर्ज करें (ananews)"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="एडमिन ईमेल दर्ज करें"
                   className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none text-gray-900 dark:text-white"
                 />
               </div>
@@ -258,9 +336,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="पासवर्ड दर्ज करें ([REDACTED])"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="सुरक्षित पासवर्ड दर्ज करें"
                   className="w-full pl-9 pr-10 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none text-gray-900 dark:text-white font-mono"
                 />
                 <button
@@ -276,22 +354,19 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-red-600 to-brand-700 hover:from-red-700 hover:to-brand-800 text-white font-bold py-3 rounded-xl shadow-lg shadow-red-600/30 transition transform active:scale-95 text-sm font-hindi mt-2"
+              disabled={isLoggingIn}
+              className="w-full bg-gradient-to-r from-red-600 to-brand-700 hover:from-red-700 hover:to-brand-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg shadow-red-600/30 transition transform active:scale-95 text-sm font-hindi mt-2 flex items-center justify-center gap-2"
             >
-              डैशबोर्ड में लॉगिन करें (Login)
+              {isLoggingIn ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>सत्यापन हो रहा है...</span>
+                </>
+              ) : (
+                <span>डैशबोर्ड में लॉगिन करें (Login)</span>
+              )}
             </button>
           </form>
-
-          {/* Quick Demo Credential Autofill */}
-          <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
-            <button
-              type="button"
-              onClick={handleAutoFill}
-              className="text-xs text-red-600 dark:text-red-400 hover:underline font-semibold"
-            >
-              ⚡ एक क्लिक में क्रेडेंशियल भरें (ananews / [REDACTED])
-            </button>
-          </div>
 
         </div>
 
@@ -326,7 +401,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                लॉगिन: <strong className="font-mono text-gray-700 dark:text-gray-300">ananews</strong> (ब्यावर डेस्क)
+                लॉगिन: <strong className="font-mono text-gray-700 dark:text-gray-300">{currentUserEmail || 'व्यवस्थापक'}</strong> (ब्यावर डेस्क)
               </p>
             </div>
           </div>

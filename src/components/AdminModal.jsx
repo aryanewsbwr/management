@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 
+import { supabase, isSupabaseConfigured } from '../services/supabase';
+
 export default function AdminModal({
   isOpen,
   onClose,
@@ -18,8 +20,10 @@ export default function AdminModal({
 }) {
   const [activeTab, setActiveTab] = useState('new_article'); // 'new_article' | 'manage_articles' | 'mandi' | 'breaking'
   const [isPasscodeAuthenticated, setIsPasscodeAuthenticated] = useState(false);
-  const [passcode, setPasscode] = useState('');
-  const [passcodeError, setPasscodeError] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // New article form
   const [newTitle, setNewTitle] = useState('');
@@ -40,14 +44,34 @@ export default function AdminModal({
 
   if (!isOpen) return null;
 
-  // Simple admin passcode check (default: 1234 or direct unlock for demo)
-  const handlePasscodeSubmit = (e) => {
+  // Strict Supabase Auth Login - No bypass
+  const handleAdminAuthSubmit = async (e) => {
     e.preventDefault();
-    if (passcode === '1234' || passcode.toLowerCase() === 'aryan' || passcode === '') {
-      setIsPasscodeAuthenticated(true);
-      setPasscodeError(false);
-    } else {
-      setPasscodeError(true);
+    setAuthError('');
+    setIsLoggingIn(true);
+
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        throw new Error('Supabase Auth is not configured. Please set environment variables.');
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: adminEmail.trim(),
+        password: adminPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.session) {
+        setIsPasscodeAuthenticated(true);
+        setAuthError('');
+      }
+    } catch (err) {
+      setAuthError(err.message || 'लॉगिन विफल! ईमेल या पासवर्ड की जांच करें।');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -70,8 +94,7 @@ export default function AdminModal({
       isHero: isHero,
       isTrending: true,
       isBreaking: isBreaking,
-      readTime: '2 मिनट',
-      views: 1
+      readTime: '2 मिनट'
     };
 
     onAddArticle(articleObj);
@@ -135,37 +158,60 @@ export default function AdminModal({
           </button>
         </div>
 
-        {/* Passcode Lock if not unlocked */}
+        {/* Supabase Auth Login if not authenticated */}
         {!isPasscodeAuthenticated ? (
           <div className="p-8 max-w-md mx-auto text-center">
-            <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
               🔒
             </div>
-            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              संपादकीय सुरक्षा लॉगिन
+            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2 font-hindi">
+              संपादकीय सुरक्षा लॉगिन (Supabase Auth)
             </h4>
             <p className="text-xs text-gray-500 mb-4">
-              यह पैनल केवल आर्यन न्यूज़ एजेंसी के संपादकीय विभाग के लिए है। (पासकोड: 1234 या खाली छोड़ें)
+              यह पैनल केवल आर्यन न्यूज़ एजेंसी के अधिकृत एडमिन के लिए है। कृपया अपना पंजीकृत ईमेल और पासवर्ड दर्ज करें।
             </p>
 
-            <form onSubmit={handlePasscodeSubmit} className="space-y-3">
-              <input
-                type="password"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                placeholder="पासकोड दर्ज करें (उदा. 1234)..."
-                className="w-full text-center px-4 py-2 border rounded-xl dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white font-mono"
-              />
-              {passcodeError && (
-                <p className="text-xs text-red-600 font-semibold">
-                  गलत पासकोड! कृपया पुनः प्रयास करें।
+            <form onSubmit={handleAdminAuthSubmit} className="space-y-3 text-left">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  एडमिन ईमेल (Email)
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="admin@aryannewsagency.com"
+                  className="w-full px-4 py-2 border rounded-xl dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  पासवर्ड (Password)
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2 border rounded-xl dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white text-sm"
+                />
+              </div>
+
+              {authError && (
+                <p className="text-xs text-red-600 font-semibold mt-1">
+                  {authError}
                 </p>
               )}
+
               <button
                 type="submit"
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl shadow-md transition"
+                disabled={isLoggingIn}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl shadow-md transition disabled:opacity-50 mt-2"
               >
-                लॉगिन करें
+                {isLoggingIn ? 'प्रमाणीकरण हो रहा...' : 'सुरक्षित लॉगिन करें'}
               </button>
             </form>
           </div>

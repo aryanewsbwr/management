@@ -16,8 +16,7 @@ export const INITIAL_ARTICLES = [
     isHero: false,
     isTrending: true,
     isBreaking: false,
-    readTime: '2 मिनट',
-    views: 2950
+    readTime: '2 मिनट'
   },
   {
     id: 'art-nat-1',
@@ -25,7 +24,7 @@ export const INITIAL_ARTICLES = [
     titleEn: 'Indian Railways Amrit Bharat Station Scheme: Modern revamp of Beawar & 40 stations underway',
     summaryHi: 'अमृत भारत स्टेशन योजना के तहत ब्यावर रेलवे स्टेशन पर लिफ्ट, एस्केलेटर, वीआईपी लाउंज और भव्य रूफ प्लाजा का निर्माण तेजी से जारी है। यात्रियों को मिलेंगी विश्वस्तरीय सुविधाएं।',
     summaryEn: 'Under the Amrit Bharat Station Scheme, Beawar railway station is undergoing major upgrades including modern escalators, executive lounges, and a majestic heritage facade.',
-    contentHi: `नई दिल्ली / ब्यावर। उत्तर पश्चिम रेलवे के अंतर्गत ब्यावर रेलवे स्टेशन के पुनर्विकास का कार्य 70 प्रतिशत पूरा हो चुका है। स्टेशन की नई बिल्डिंग ब्यावर के हेरिटेज स्थापत्य कला से प्रेरित होगी।
+    contentHi: `नई दिल्ली / ब्यावर। उत्तर पश्चिम रेलवे के अंतर्गत ब्यावर रेलवे स्टेशन के पुनर्विकास का कार्य 70 प्रतिशत पूरा हो चुका है। स्टेशन की नई बिल्डिंग ब्यावर के हेरिटेज स्थापत्य कला से प्रेरित होगी। 
 
 वरिष्ठ अधिकारियों के अनुसार अगले तीन महीनों में स्वचालित सीढ़ियां और अतिरिक्त प्लेटफॉर्म शेड चालू कर दिए जाएंगे। इसके साथ ही सर्कुलेटिंग एरिया में सुव्यवस्थित पार्किंग और ग्रीनरी विकसित की जा रही है।`,
     contentEn: `New Delhi / Beawar: Over 70% of modernization works at Beawar Railway Station have been concluded under the prestigious Amrit Bharat redevelopment initiative.`,
@@ -36,8 +35,7 @@ export const INITIAL_ARTICLES = [
     isHero: false,
     isTrending: true,
     isBreaking: false,
-    readTime: '3 मिनट',
-    views: 4120
+    readTime: '3 मिनट'
   },
   {
     id: 'art-mandi-1',
@@ -56,8 +54,7 @@ export const INITIAL_ARTICLES = [
     isHero: false,
     isTrending: false,
     isBreaking: false,
-    readTime: '2 मिनट',
-    views: 5120
+    readTime: '2 मिनट'
   },
   {
     id: 'art-spt-1',
@@ -76,8 +73,7 @@ export const INITIAL_ARTICLES = [
     isHero: false,
     isTrending: false,
     isBreaking: false,
-    readTime: '2 मिनट',
-    views: 1840
+    readTime: '2 मिनट'
   },
   {
     id: 'art-ent-1',
@@ -96,8 +92,7 @@ export const INITIAL_ARTICLES = [
     isHero: false,
     isTrending: true,
     isBreaking: false,
-    readTime: '3 मिनट',
-    views: 6300
+    readTime: '3 मिनट'
   },
   {
     id: 'art-crm-1',
@@ -116,8 +111,7 @@ export const INITIAL_ARTICLES = [
     isHero: false,
     isTrending: false,
     isBreaking: false,
-    readTime: '2 मिनट',
-    views: 2680
+    readTime: '2 मिनट'
   },
   {
     id: 'art-biz-1',
@@ -136,8 +130,7 @@ export const INITIAL_ARTICLES = [
     isHero: false,
     isTrending: false,
     isBreaking: false,
-    readTime: '2 मिनट',
-    views: 3410
+    readTime: '2 मिनट'
   }
 ];
 

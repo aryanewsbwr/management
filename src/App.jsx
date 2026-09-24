@@ -33,6 +33,7 @@ export default function App() {
   const [articles, setArticles] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
   const [mandiRates, setMandiRates] = useState([]);
+  const [mandiLastUpdated, setMandiLastUpdated] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [lang, setLang] = useState('hi');
@@ -53,19 +54,42 @@ export default function App() {
   // 3. Audio TTS State
   const [currentTTSState, setCurrentTTSState] = useState({ isPlaying: false, articleId: null });
 
-  // 4. Initial Load
+  // 4. Load Database Data (Custom Articles, Mandi Rates, Breaking News)
+  const loadDatabaseData = async () => {
+    try {
+      const [customArticles, mandiData, bn] = await Promise.all([
+        StorageService.fetchCustomArticles(),
+        StorageService.fetchMandiRates(),
+        StorageService.fetchBreakingNews()
+      ]);
+
+      if (customArticles && customArticles.length > 0) {
+        setArticles(prev => {
+          const liveOnly = prev.filter(p => p.isLiveFeed);
+          return [...customArticles, ...liveOnly];
+        });
+      }
+
+      if (mandiData && mandiData.rates) {
+        setMandiRates(mandiData.rates);
+        setMandiLastUpdated(mandiData.lastUpdatedAt || null);
+      }
+
+      if (bn && bn.length > 0) {
+        setBreakingNews(bn);
+      }
+    } catch (err) {
+      console.warn('Database data fetch notice:', err);
+    }
+  };
+
+  // 5. Initial Load
   useEffect(() => {
-    // Load local storage data
-    const initialArticles = StorageService.getArticles();
-    const initialBreaking = StorageService.getBreakingNews();
-    const initialMandi = StorageService.getMandiRates();
+    // Load local storage preferences (strictly for user preferences: bookmarks, lang, theme)
     const initialBookmarks = StorageService.getBookmarks();
     const initialLang = StorageService.getLang();
     const initialTheme = StorageService.getTheme();
 
-    setArticles(initialArticles);
-    setBreakingNews(initialBreaking);
-    setMandiRates(initialMandi);
     setBookmarks(initialBookmarks);
     setLang(initialLang);
     setTheme(initialTheme);
@@ -88,20 +112,23 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('hashchange', handlePopState);
 
-    // Fetch live news from RSS feeds immediately on startup
+    // Fetch live news feeds and database data immediately
     loadLiveFeeds(false);
+    loadDatabaseData();
 
-    // Periodic auto-refresh every 2 minutes (120,000 ms) to keep live news constantly updating
+    // Auto-refresh feeds every 10 minutes (600,000 ms) without spamming rate limits
     const autoRefreshTimer = setInterval(() => {
       loadLiveFeeds(false);
-    }, 120000);
+      loadDatabaseData();
+    }, 600000);
 
-    // Tab visibility change: when user switches back to this tab, fetch latest news if > 60s
+    // Tab visibility change: when user switches back to this tab, fetch latest news if > 10 min
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         const timeSince = Date.now() - (lastFetchTimeRef.current || 0);
-        if (timeSince > 60000) {
+        if (timeSince > 600000) {
           loadLiveFeeds(true);
+          loadDatabaseData();
         }
       }
     };
@@ -151,7 +178,7 @@ export default function App() {
 
         // Custom Beawar articles created by admin remain at the top
         // Followed by genuine, real-time live articles with real photos
-        const customArticles = StorageService.getCustomArticles();
+        const customArticles = await StorageService.fetchCustomArticles();
         setArticles([...customArticles, ...liveItems]);
 
         if (showToast) {
@@ -197,25 +224,46 @@ export default function App() {
     setBookmarks(updated);
   };
 
-  // Admin Actions
-  const handleAddArticle = (newArt) => {
-    const updated = StorageService.saveArticle(newArt);
-    setArticles(updated);
+  // Admin Actions with Supabase Persistence
+  const handleAddArticle = async (newArt) => {
+    try {
+      await StorageService.saveArticle(newArt);
+      const customArticles = await StorageService.fetchCustomArticles();
+      setArticles(prev => [...customArticles, ...prev.filter(p => p.isLiveFeed)]);
+    } catch (e) {
+      console.error('[App] handleAddArticle error:', e);
+    }
   };
 
-  const handleDeleteArticle = (articleId) => {
-    const updated = StorageService.deleteArticle(articleId);
-    setArticles(updated);
+  const handleDeleteArticle = async (articleId) => {
+    try {
+      await StorageService.deleteArticle(articleId);
+      const customArticles = await StorageService.fetchCustomArticles();
+      setArticles(prev => [...customArticles, ...prev.filter(p => p.isLiveFeed)]);
+    } catch (e) {
+      console.error('[App] handleDeleteArticle error:', e);
+    }
   };
 
-  const handleUpdateMandiRates = (newRates) => {
-    const updated = StorageService.saveMandiRates(newRates);
-    setMandiRates(updated);
+  const handleUpdateMandiRates = async (newRates) => {
+    try {
+      await StorageService.saveMandiRates(newRates);
+      const mandiData = await StorageService.fetchMandiRates();
+      setMandiRates(mandiData.rates || []);
+      setMandiLastUpdated(mandiData.lastUpdatedAt || null);
+    } catch (e) {
+      console.error('[App] handleUpdateMandiRates error:', e);
+    }
   };
 
-  const handleUpdateBreakingNews = (newList) => {
-    const updated = StorageService.saveBreakingNews(newList);
-    setBreakingNews(updated);
+  const handleUpdateBreakingNews = async (newList) => {
+    try {
+      await StorageService.saveBreakingNews(newList);
+      const bn = await StorageService.fetchBreakingNews();
+      setBreakingNews(bn || []);
+    } catch (e) {
+      console.error('[App] handleUpdateBreakingNews error:', e);
+    }
   };
 
   // Filtered Articles based on search or category
@@ -238,9 +286,8 @@ export default function App() {
       <AdminPanel
         onNavigateHome={navigateToHome}
         onNewsUpdated={() => {
+          loadDatabaseData();
           loadLiveFeeds();
-          const customArticles = StorageService.getCustomArticles();
-          setArticles(prev => [...customArticles, ...prev.filter(p => !p.id.startsWith('custom-'))]);
         }}
       />
     );
@@ -288,6 +335,7 @@ export default function App() {
       {/* 3. BEAWAR MANDI BHAV TICKER */}
       <MandiTicker
         rates={mandiRates}
+        lastUpdatedAt={mandiLastUpdated}
         onOpenFullMandi={() => setIsMandiModalOpen(true)}
       />
 
@@ -605,6 +653,7 @@ export default function App() {
         isOpen={isMandiModalOpen}
         onClose={() => setIsMandiModalOpen(false)}
         rates={mandiRates}
+        lastUpdatedAt={mandiLastUpdated}
       />
 
       {/* 4. Uncle's Editorial Admin CMS Modal */}

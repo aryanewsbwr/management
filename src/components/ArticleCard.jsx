@@ -190,12 +190,6 @@ export default function ArticleCard({
               <Clock className="w-3 h-3 text-gray-400" />
               <span>{timeAgo(article.publishedAt)}</span>
             </span>
-            {article.views && (
-              <span className="hidden sm:flex items-center gap-1">
-                <Eye className="w-3 h-3 text-gray-400" />
-                <span>{article.views.toLocaleString()}</span>
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-1.5">

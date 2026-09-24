@@ -138,13 +138,6 @@ export default function ArticleModal({
                 })}
               </span>
             </div>
-
-            {article.views && (
-              <span className="flex items-center gap-1 font-mono text-gray-400">
-                <Eye className="w-3.5 h-3.5" />
-                {article.views.toLocaleString()} पाठक
-              </span>
-            )}
           </div>
 
           {/* Featured Image */}
@@ -177,24 +170,38 @@ export default function ArticleModal({
             </button>
           </div>
 
-          {/* Content Text with line breaks */}
-          <div className={`mt-6 text-gray-800 dark:text-gray-200 font-hindi whitespace-pre-line ${fontClasses[fontSizeLevel]}`}>
-            {content}
-          </div>
+          {/* Content Text: Live Feed vs Custom Local News */}
+          {article.isLiveFeed || article.originalUrl ? (
+            <div className="mt-6 space-y-6">
+              <p className={`text-gray-800 dark:text-gray-200 font-hindi leading-relaxed ${fontClasses[fontSizeLevel]}`}>
+                {article.summaryHi || article.summaryEn || content}
+              </p>
 
-          {/* Original source link if live RSS */}
-          {article.originalUrl && (
-            <div className="mt-6 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-xs flex items-center justify-between">
-              <span className="text-gray-500">स्रोत: {article.sourceName || 'लाइव फीड'}</span>
-              <a
-                href={article.originalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-red-600 hover:underline font-bold"
-              >
-                <span>मूल स्रोत देखें</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+              <div className="p-4 sm:p-5 bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-800 dark:to-red-950/20 rounded-2xl border border-red-200 dark:border-red-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white font-hindi">
+                    यह समाचार {article.sourceName || 'मूल स्रोत'} द्वारा रिपोर्ट किया गया है
+                  </h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    विस्तृत रिपोर्ट एवं संपूर्ण विश्लेषण पढ़ने के लिए मूल स्रोत पर जाएं।
+                  </p>
+                </div>
+                {article.originalUrl && (
+                  <a
+                    href={article.originalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition active:scale-95 shrink-0"
+                  >
+                    <span>मूल स्रोत पर पूरी खबर पढ़ें</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className={`mt-6 text-gray-800 dark:text-gray-200 font-hindi whitespace-pre-line ${fontClasses[fontSizeLevel]}`}>
+              {content}
             </div>
           )}
 

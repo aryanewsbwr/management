@@ -2,12 +2,29 @@ import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, Minus, ChevronRight, X, Sparkles, Share2 } from 'lucide-react';
 import { MANDI_NOTICE } from '../data/mandiRates';
 
-export default function MandiTicker({ rates = [], onOpenFullMandi }) {
+export default function MandiTicker({ rates = [], lastUpdatedAt = null, onOpenFullMandi }) {
   if (!rates || rates.length === 0) return null;
+
+  const isToday = (isoStr) => {
+    if (!isoStr) return false;
+    const d = new Date(isoStr);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() &&
+           d.getMonth() === now.getMonth() &&
+           d.getDate() === now.getDate();
+  };
+
+  const updatedToday = isToday(lastUpdatedAt);
+  const formattedDate = lastUpdatedAt
+    ? new Date(lastUpdatedAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : null;
 
   const handleShareMandi = (e) => {
     e.stopPropagation();
-    let text = `*🌾 कृषि उपज मंडी ब्यावर - आज के भाव*\nतारीख: ${MANDI_NOTICE.date}\n\n`;
+    const dateLine = updatedToday
+      ? `आज के ताज़ा भाव (${formattedDate})`
+      : `अंतिम अपडेट: ${formattedDate || 'पूर्व भाव'} (आज के नए भाव प्रतीक्षित)`;
+    let text = `*🌾 कृषि उपज मंडी ब्यावर - मंडी भाव*\n${dateLine}\n\n`;
     rates.slice(0, 6).forEach(r => {
       text += `• *${r.cropHi}*: ₹${r.minPrice} - ₹${r.maxPrice} ${r.unit}\n`;
     });
@@ -24,8 +41,11 @@ export default function MandiTicker({ rates = [], onOpenFullMandi }) {
           onClick={onOpenFullMandi}
           className="shrink-0 flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition shadow"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping" />
-          <span>ब्यावर मंडी भाव</span>
+          <span className={`w-2 h-2 rounded-full ${updatedToday ? 'bg-emerald-300 animate-ping' : 'bg-amber-400'}`} />
+          <span>ब्यावर मंडी</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-normal ${updatedToday ? 'bg-emerald-800 text-emerald-200' : 'bg-amber-950 text-amber-300'}`}>
+            {updatedToday ? 'आज' : 'पूर्व भाव'}
+          </span>
         </div>
 
         {/* Scrolling Rate Items */}
