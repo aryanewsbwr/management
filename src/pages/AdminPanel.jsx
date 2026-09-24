@@ -93,8 +93,13 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         throw new Error('Supabase Auth कॉन्फ़िगर नहीं है। कृपया Vercel पर्यावरण चर (VITE_SUPABASE_URL और VITE_SUPABASE_ANON_KEY) जोड़ें।');
       }
 
+      let emailToAuth = adminEmail.trim();
+      if (!emailToAuth.includes('@')) {
+        emailToAuth = `${emailToAuth}@aryannewsagency.com`;
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: adminEmail.trim(),
+        email: emailToAuth,
         password: adminPassword
       });
 
@@ -304,21 +309,21 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             
-            {/* Email */}
+            {/* Username / Email */}
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                एडमिन ईमेल (Email)
+                यूजर आईडी या ईमेल (Username / Email)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <User className="w-4 h-4" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="एडमिन ईमेल दर्ज करें"
+                  placeholder="यूजर आईडी या ईमेल दर्ज करें"
                   className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:outline-none text-gray-900 dark:text-white"
                 />
               </div>
