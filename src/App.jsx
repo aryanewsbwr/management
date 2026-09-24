@@ -18,8 +18,8 @@ import AdminPanel from './pages/AdminPanel';
 import { StorageService } from './services/storage';
 import { fetchAllLiveCategories } from './services/newsApi';
 import { ttsService } from './services/ttsService';
-import { CATEGORIES, AGENCY_INFO } from './data/categories';
-import { INITIAL_ARTICLES } from './data/initialArticles';
+import { INITIAL_ARTICLES, INITIAL_BREAKING_NEWS } from './data/initialArticles';
+import { INITIAL_MANDI_RATES } from './data/mandiRates';
 import { Share2, PhoneCall, Sparkles, Filter, RefreshCw, Send } from 'lucide-react';
 
 export default function App() {
@@ -29,9 +29,9 @@ export default function App() {
   const [currentRoute, setCurrentRoute] = useState(isInitialAdmin ? 'admin' : 'home');
 
   // 1. Core States
-  const [articles, setArticles] = useState([]);
-  const [breakingNews, setBreakingNews] = useState([]);
-  const [mandiRates, setMandiRates] = useState([]);
+  const [articles, setArticles] = useState(INITIAL_ARTICLES);
+  const [breakingNews, setBreakingNews] = useState(INITIAL_BREAKING_NEWS);
+  const [mandiRates, setMandiRates] = useState(INITIAL_MANDI_RATES);
   const [mandiLastUpdated, setMandiLastUpdated] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -161,9 +161,6 @@ export default function App() {
     try {
       const liveItems = await fetchAllLiveCategories();
       if (liveItems && liveItems.length > 0) {
-        // Cache live items in local storage with 15-minute TTL
-        StorageService.saveCachedLiveArticles(liveItems);
-
         // Update breaking news ticker with top live headlines
         const topHeadlines = liveItems
           .filter(item => item.titleHi && item.titleHi.length > 15)
