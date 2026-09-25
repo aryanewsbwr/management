@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Share2, Volume2, Bookmark, Clock, Eye, 
-  ExternalLink, ChevronRight, Check, Edit3
+  ExternalLink, ChevronRight, Check
 } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
@@ -183,18 +183,6 @@ export default function ArticleCard({
             <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-md">
               {categoryLabel}
             </span>
-
-            {!article.isLiveFeed && (
-              <a
-                href={`/admin-panel?edit=${article.id}`}
-                onClick={(e) => e.stopPropagation()}
-                title="एडमिन: इस खबर का फोटो बदलें या संपादित करें"
-                className="absolute top-2.5 right-2.5 bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full shadow-md transition transform hover:scale-105 z-10"
-              >
-                <Edit3 className="w-3 h-3" />
-                <span>संपादित करें</span>
-              </a>
-            )}
 
             {article.isBreaking && (
               <span className="absolute top-2.5 right-2.5 bg-amber-500 text-gray-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse">
