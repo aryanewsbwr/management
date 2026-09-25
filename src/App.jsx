@@ -19,8 +19,6 @@ import { StorageService } from './services/storage';
 import { fetchAllLiveCategories } from './services/newsApi';
 import { ttsService } from './services/ttsService';
 import { CATEGORIES, AGENCY_INFO } from './data/categories';
-import { INITIAL_ARTICLES, INITIAL_BREAKING_NEWS } from './data/initialArticles';
-import { INITIAL_MANDI_RATES } from './data/mandiRates';
 import { Share2, PhoneCall, Sparkles, Filter, RefreshCw, Send } from 'lucide-react';
 
 export default function App() {
@@ -30,16 +28,17 @@ export default function App() {
   const [currentRoute, setCurrentRoute] = useState(isInitialAdmin ? 'admin' : 'home');
 
   // 1. Core States
-  const [articles, setArticles] = useState(INITIAL_ARTICLES);
-  const [breakingNews, setBreakingNews] = useState(INITIAL_BREAKING_NEWS);
-  const [mandiRates, setMandiRates] = useState(INITIAL_MANDI_RATES);
+  const [articles, setArticles] = useState([]);
+  const [breakingNews, setBreakingNews] = useState([]);
+  const [mandiRates, setMandiRates] = useState([]);
   const [mandiLastUpdated, setMandiLastUpdated] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [lang, setLang] = useState('hi');
   const [theme, setTheme] = useState('light');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoadingLiveNews, setIsLoadingLiveNews] = useState(false);
+  const [isLoadingLiveNews, setIsLoadingLiveNews] = useState(true);
+  const [newsError, setNewsError] = useState(false);
   const [liveUpdateToast, setLiveUpdateToast] = useState(false);
   const lastFetchTimeRef = useRef(0);
 
@@ -155,12 +154,16 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Fetch real-time live feeds with verified images
+  // Fetch real-time live feeds
   const loadLiveFeeds = async (showToast = false) => {
     setIsLoadingLiveNews(true);
+    setNewsError(false);
     lastFetchTimeRef.current = Date.now();
     try {
       const liveItems = await fetchAllLiveCategories();
+      const customArticles = await StorageService.fetchCustomArticles();
+      const combined = [...(customArticles || []), ...(liveItems || [])];
+
       if (liveItems && liveItems.length > 0) {
         // Update breaking news ticker with top live headlines
         const topHeadlines = liveItems
@@ -171,19 +174,22 @@ export default function App() {
         if (topHeadlines.length > 0) {
           setBreakingNews(topHeadlines);
         }
+      }
 
-        // Custom Beawar articles created by admin remain at the top
-        // Followed by genuine, real-time live articles with real photos
-        const customArticles = await StorageService.fetchCustomArticles();
-        setArticles([...customArticles, ...liveItems]);
+      if (combined.length > 0) {
+        setArticles(combined);
+        setNewsError(false);
+      } else {
+        setNewsError(true);
+      }
 
-        if (showToast) {
-          setLiveUpdateToast(true);
-          setTimeout(() => setLiveUpdateToast(false), 3500);
-        }
+      if (showToast && liveItems && liveItems.length > 0) {
+        setLiveUpdateToast(true);
+        setTimeout(() => setLiveUpdateToast(false), 3500);
       }
     } catch (e) {
       console.warn('Live news fetch notice:', e);
+      setNewsError(true);
     } finally {
       setIsLoadingLiveNews(false);
     }
@@ -455,6 +461,52 @@ export default function App() {
                 ))}
               </div>
             )}
+          </div>
+        ) : isLoadingLiveNews && articles.length === 0 ? (
+          /* SKELETON / LOADING STATE */
+          <div className="px-3 sm:px-6 py-12 max-w-5xl mx-auto">
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-lg font-bold text-gray-800 dark:text-gray-200 font-hindi animate-pulse">
+                खबरें लोड हो रही हैं…
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                विश्वसनीय एवं नवीनतम समाचार संकलित किए जा रहे हैं
+              </p>
+            </div>
+            {/* Skeleton Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm space-y-3">
+                  <div className="h-44 bg-gray-200 dark:bg-gray-800 rounded-xl" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full" />
+                  <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : newsError && articles.length === 0 ? (
+          /* ERROR STATE */
+          <div className="px-3 sm:px-6 py-16 max-w-xl mx-auto text-center">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-sm">
+              <div className="w-14 h-14 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+                ⚠️
+              </div>
+              <h3 className="text-lg sm:text-xl font-black font-hindi text-gray-900 dark:text-gray-100 mb-2">
+                खबरें अभी उपलब्ध नहीं हैं, कृपया थोड़ी देर बाद देखें
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-hindi mb-6 leading-relaxed">
+                सर्वर अथवा नेटवर्क से संपर्क स्थापित नहीं हो सका। कृपया अपना इंटरनेट कनेक्शन जांचें अथवा पुनः प्रयास करें।
+              </p>
+              <button
+                onClick={() => loadLiveFeeds(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-xl shadow transition"
+              >
+                <RefreshCw className="w-4 h-4" />
+                पुनः प्रयास करें
+              </button>
+            </div>
           </div>
         ) : (
           /* DEFAULT HOMEPAGE: "FIRST MIX CATEGORY THEN DIFFERENT CATEGORY" */

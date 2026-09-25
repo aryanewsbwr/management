@@ -4,6 +4,7 @@ import {
   ExternalLink, ArrowLeft, Type, Check, Send
 } from 'lucide-react';
 import { CATEGORIES, AGENCY_INFO } from '../data/categories';
+import CategoryPlaceholder from './CategoryPlaceholder';
 
 export default function ArticleModal({
   article,
@@ -140,23 +141,31 @@ export default function ArticleModal({
             </div>
           </div>
 
-          {/* Featured Image */}
-          <div className="my-5 rounded-2xl overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-800">
-            <img
-              src={article.image}
-              alt={title}
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&auto=format&fit=crop&q=80';
-              }}
-              className="w-full h-auto max-h-[420px] object-cover"
-            />
-            <div className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 font-hindi">
-              {article.isLiveFeed || article.originalUrl
-                ? `चित्र साभार: ${article.sourceName || 'मूल प्रकाशक'} • सर्वाधिकार मूल प्रकाशक के पास सुरक्षित`
-                : 'फोटो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)'}
+          {/* Featured Image or Category Placeholder */}
+          {article.isLiveFeed ? (
+            <div className="my-5">
+              <CategoryPlaceholder 
+                category={article.category} 
+                sourceName={article.sourceName} 
+                size="large" 
+              />
             </div>
-          </div>
+          ) : (
+            <div className="my-5 rounded-2xl overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-800">
+              <img
+                src={article.image}
+                alt={title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+                }}
+                className="w-full h-auto max-h-[420px] object-cover"
+              />
+              <div className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 font-hindi">
+                फोटो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)
+              </div>
+            </div>
+          )}
 
           {/* Audio Player Banner (Highlight) */}
           <div className="my-4 p-3 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-900/40 flex items-center justify-between">

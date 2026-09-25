@@ -4,6 +4,7 @@ import {
   ExternalLink, ChevronRight, Check
 } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
+import CategoryPlaceholder from './CategoryPlaceholder';
 
 export default function ArticleCard({
   article,
@@ -64,23 +65,28 @@ export default function ArticleCard({
       >
         {/* Left / Thumbnail */}
         <div className="relative w-28 h-24 sm:w-36 sm:h-28 shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-          <img
-            src={article.image}
-            alt={title}
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&auto=format&fit=crop&q=80';
-            }}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-          <span className="absolute top-1 left-1 bg-red-600/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow">
-            {categoryLabel}
-          </span>
-          {article.sourceName && (
-            <span className="absolute bottom-1 left-1 bg-black/80 text-gray-200 text-[8px] font-medium px-1.5 py-0.5 rounded backdrop-blur-sm">
-              {article.sourceName}
-            </span>
+          {article.isLiveFeed ? (
+            <CategoryPlaceholder 
+              category={article.category} 
+              sourceName={article.sourceName} 
+              size="horizontal" 
+            />
+          ) : (
+            <>
+              <img
+                src={article.image}
+                alt={title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+                }}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+              <span className="absolute top-1 left-1 bg-red-600/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow">
+                {categoryLabel}
+              </span>
+            </>
           )}
         </div>
 
@@ -153,33 +159,37 @@ export default function ArticleCard({
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <img
-          src={article.image}
-          alt={title}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1000&auto=format&fit=crop&q=80';
-          }}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        
-        {/* Category Badge */}
-        <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-md">
-          {categoryLabel}
-        </span>
+        {article.isLiveFeed ? (
+          <CategoryPlaceholder 
+            category={article.category} 
+            sourceName={article.sourceName} 
+            size="standard" 
+          />
+        ) : (
+          <>
+            <img
+              src={article.image}
+              alt={title}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+              }}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            {/* Category Badge */}
+            <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-md">
+              {categoryLabel}
+            </span>
 
-        {article.isBreaking && (
-          <span className="absolute top-2.5 right-2.5 bg-amber-500 text-gray-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse">
-            ब्रेकिंग
-          </span>
-        )}
-
-        {article.sourceName && (
-          <span className="absolute bottom-2 left-2 bg-black/75 text-gray-200 text-[10px] font-medium px-2 py-0.5 rounded-md backdrop-blur-sm">
-            स्रोत: {article.sourceName}
-          </span>
+            {article.isBreaking && (
+              <span className="absolute top-2.5 right-2.5 bg-amber-500 text-gray-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse">
+                ब्रेकिंग
+              </span>
+            )}
+          </>
         )}
       </div>
 

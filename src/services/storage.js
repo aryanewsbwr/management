@@ -145,7 +145,7 @@ export const StorageService = {
   async fetchMandiRates() {
     if (!isSupabaseConfigured || !supabase) {
       return {
-        rates: INITIAL_MANDI_RATES,
+        rates: [],
         lastUpdatedAt: null
       };
     }
@@ -158,7 +158,7 @@ export const StorageService = {
 
       if (error || !data || data.length === 0) {
         return {
-          rates: INITIAL_MANDI_RATES,
+          rates: [],
           lastUpdatedAt: null
         };
       }
@@ -188,7 +188,7 @@ export const StorageService = {
     } catch (err) {
       console.error('[StorageService] fetchMandiRates error:', err.message);
       return {
-        rates: INITIAL_MANDI_RATES,
+        rates: [],
         lastUpdatedAt: null
       };
     }
@@ -230,7 +230,7 @@ export const StorageService = {
 
   async fetchBreakingNews() {
     if (!isSupabaseConfigured || !supabase) {
-      return INITIAL_BREAKING_NEWS;
+      return [];
     }
 
     try {
@@ -240,13 +240,13 @@ export const StorageService = {
         .order('order_index', { ascending: true });
 
       if (error || !data || data.length === 0) {
-        return INITIAL_BREAKING_NEWS;
+        return [];
       }
 
       return data.map(item => item.text);
     } catch (err) {
       console.error('[StorageService] fetchBreakingNews error:', err.message);
-      return INITIAL_BREAKING_NEWS;
+      return [];
     }
   },
 

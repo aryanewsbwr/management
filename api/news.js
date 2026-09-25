@@ -95,25 +95,6 @@ async function parseFeed(feedConfig, feedIndex) {
       const cleanTitle = cleanHtml(rawTitle);
       const cleanDesc = cleanHtml(rawDesc);
 
-      // Extract image: media:content, enclosure, thumbnail, or regex inside description
-      let img = item['media:content']?.['@_url'] || 
-                item.enclosure?.['@_url'] || 
-                item['media:thumbnail']?.['@_url'] || 
-                item.thumbnail;
-
-      if (!img) {
-        const match = (rawDesc || '').match(/<img[^>]+src=["']([^"']+)["']/i);
-        if (match && match[1]) img = match[1];
-      }
-
-      // Upgrade BBC 240px image to high-res 800px
-      if (img && typeof img === 'string' && img.includes('ichef.bbci.co.uk')) {
-        img = img.replace('/240/', '/800/');
-      }
-
-      // Only include items with verified original news photos
-      if (!img || typeof img !== 'string' || img.length < 15) return;
-
       const category = detectCategory(cleanTitle, cleanDesc, feedConfig.category);
 
       let pubDate;
@@ -139,7 +120,7 @@ async function parseFeed(feedConfig, feedIndex) {
         contentHi: shortSummary,
         contentEn: shortSummary,
         category,
-        image: img,
+        image: null,
         publishedAt: pubDate,
         author: cleanHtml(item['dc:creator'] || item.author || feedConfig.sourceName),
         sourceName: feedConfig.sourceName,

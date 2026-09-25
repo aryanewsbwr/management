@@ -20,19 +20,19 @@ DROP POLICY IF EXISTS "Authenticated can upload news images" ON storage.objects;
 CREATE POLICY "Authenticated can upload news images"
 ON storage.objects FOR INSERT
 TO authenticated
-WITH CHECK (bucket_id = 'news-images');
+WITH CHECK (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 -- 4. Allow authenticated admin to update news images
 DROP POLICY IF EXISTS "Authenticated can update news images" ON storage.objects;
 CREATE POLICY "Authenticated can update news images"
 ON storage.objects FOR UPDATE
 TO authenticated
-USING (bucket_id = 'news-images')
-WITH CHECK (bucket_id = 'news-images');
+USING (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com')
+WITH CHECK (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 -- 5. Allow authenticated admin to delete news images
 DROP POLICY IF EXISTS "Authenticated can delete news images" ON storage.objects;
 CREATE POLICY "Authenticated can delete news images"
 ON storage.objects FOR DELETE
 TO authenticated
-USING (bucket_id = 'news-images');
+USING (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');

@@ -82,63 +82,63 @@ CREATE POLICY "Public can view breaking news"
 ON public.breaking_news FOR SELECT 
 USING (true);
 
--- 7. RLS POLICIES: AUTHENTICATED ADMIN WRITE ACCESS (Only logged-in admin can insert/update/delete)
+-- 7. RLS POLICIES: ADMIN-ONLY WRITE ACCESS (Only ananews@aryannewsagency.com can insert/update/delete)
 DROP POLICY IF EXISTS "Authenticated can insert articles" ON public.articles;
 CREATE POLICY "Authenticated can insert articles" 
 ON public.articles FOR INSERT 
 TO authenticated 
-WITH CHECK (true);
+WITH CHECK ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can update articles" ON public.articles;
 CREATE POLICY "Authenticated can update articles" 
 ON public.articles FOR UPDATE 
 TO authenticated 
-USING (true) 
-WITH CHECK (true);
+USING ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com') 
+WITH CHECK ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can delete articles" ON public.articles;
 CREATE POLICY "Authenticated can delete articles" 
 ON public.articles FOR DELETE 
 TO authenticated 
-USING (true);
+USING ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can insert mandi rates" ON public.mandi_rates;
 CREATE POLICY "Authenticated can insert mandi rates" 
 ON public.mandi_rates FOR INSERT 
 TO authenticated 
-WITH CHECK (true);
+WITH CHECK ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can update mandi rates" ON public.mandi_rates;
 CREATE POLICY "Authenticated can update mandi rates" 
 ON public.mandi_rates FOR UPDATE 
 TO authenticated 
-USING (true) 
-WITH CHECK (true);
+USING ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com') 
+WITH CHECK ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can delete mandi rates" ON public.mandi_rates;
 CREATE POLICY "Authenticated can delete mandi rates" 
 ON public.mandi_rates FOR DELETE 
 TO authenticated 
-USING (true);
+USING ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can insert breaking news" ON public.breaking_news;
 CREATE POLICY "Authenticated can insert breaking news" 
 ON public.breaking_news FOR INSERT 
 TO authenticated 
-WITH CHECK (true);
+WITH CHECK ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can update breaking news" ON public.breaking_news;
 CREATE POLICY "Authenticated can update breaking news" 
 ON public.breaking_news FOR UPDATE 
 TO authenticated 
-USING (true) 
-WITH CHECK (true);
+USING ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com') 
+WITH CHECK ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can delete breaking news" ON public.breaking_news;
 CREATE POLICY "Authenticated can delete breaking news" 
 ON public.breaking_news FOR DELETE 
 TO authenticated 
-USING (true);
+USING ((auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 -- 8. STORAGE BUCKET FOR ARTICLE IMAGES
 INSERT INTO storage.buckets (id, name, public) 
@@ -151,22 +151,22 @@ CREATE POLICY "Public can view news images"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'news-images');
 
--- Storage RLS: Authenticated admin can upload/update/delete images
+-- Storage RLS: Admin-only upload/update/delete images
 DROP POLICY IF EXISTS "Authenticated can upload news images" ON storage.objects;
 CREATE POLICY "Authenticated can upload news images"
 ON storage.objects FOR INSERT
 TO authenticated
-WITH CHECK (bucket_id = 'news-images');
+WITH CHECK (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can update news images" ON storage.objects;
 CREATE POLICY "Authenticated can update news images"
 ON storage.objects FOR UPDATE
 TO authenticated
-USING (bucket_id = 'news-images')
-WITH CHECK (bucket_id = 'news-images');
+USING (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com')
+WITH CHECK (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');
 
 DROP POLICY IF EXISTS "Authenticated can delete news images" ON storage.objects;
 CREATE POLICY "Authenticated can delete news images"
 ON storage.objects FOR DELETE
 TO authenticated
-USING (bucket_id = 'news-images');
+USING (bucket_id = 'news-images' AND (auth.jwt() ->> 'email') = 'ananews@aryannewsagency.com');

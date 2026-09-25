@@ -68,11 +68,13 @@ export default function MandiModal({ isOpen, onClose, rates = [], lastUpdatedAt 
             : 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-900/60'
         }`}>
           <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${updatedToday ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
+            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${rates.length === 0 ? 'bg-gray-400' : updatedToday ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
             <span>
-              {updatedToday 
-                ? 'स्थिति: मंडी खुली है • आज के ताज़ा भाव दर्ज हैं' 
-                : `⚠️ आज के नए मंडी भाव अभी दर्ज नहीं हुए हैं (अंतिम दर्ज: ${formattedDate || 'पूर्व रिकॉर्ड'})।`}
+              {rates.length === 0
+                ? 'आज के भाव उपलब्ध नहीं हैं'
+                : updatedToday 
+                  ? 'स्थिति: मंडी खुली है • आज के ताज़ा भाव दर्ज हैं' 
+                  : `⚠️ आज के नए मंडी भाव अभी दर्ज नहीं हुए हैं (अंतिम दर्ज: ${formattedDate || 'पूर्व रिकॉर्ड'})।`}
             </span>
           </div>
           <span className="hidden sm:inline text-[11px] text-gray-500 dark:text-gray-400 shrink-0">
@@ -82,58 +84,69 @@ export default function MandiModal({ isOpen, onClose, rates = [], lastUpdatedAt 
 
         {/* Rates Table */}
         <div className="p-4 sm:p-6 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <th className="pb-3">जिंस / फसल (Crop)</th>
-                <th className="pb-3 text-right">न्यूनतम भाव (Min)</th>
-                <th className="pb-3 text-right">अधिकतम भाव (Max)</th>
-                <th className="pb-3 text-right">इकाई</th>
-                <th className="pb-3 text-center">रुझान (Trend)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {rates.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-                  <td className="py-3 font-semibold text-gray-900 dark:text-gray-100 font-hindi">
-                    {row.cropHi}
-                    <span className="block text-[11px] text-gray-400 font-normal">
-                      {row.cropEn}
-                    </span>
-                  </td>
-                  <td className="py-3 text-right font-mono font-medium text-gray-700 dark:text-gray-300">
-                    ₹{row.minPrice.toLocaleString()}
-                  </td>
-                  <td className="py-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                    ₹{row.maxPrice.toLocaleString()}
-                  </td>
-                  <td className="py-3 text-right text-xs text-gray-500">
-                    {row.unit}
-                  </td>
-                  <td className="py-3 text-center">
-                    {row.trend === 'up' && (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full font-bold">
-                        <TrendingUp className="w-3 h-3" />
-                        {row.change}
-                      </span>
-                    )}
-                    {row.trend === 'down' && (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-red-600 bg-red-100 dark:bg-red-950 px-2 py-0.5 rounded-full font-bold">
-                        <TrendingDown className="w-3 h-3" />
-                        {row.change}
-                      </span>
-                    )}
-                    {row.trend === 'stable' && (
-                      <span className="inline-flex items-center gap-0.5 text-xs text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-medium">
-                        <Minus className="w-3 h-3" />
-                        स्थिर
-                      </span>
-                    )}
-                  </td>
+          {rates.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-lg font-bold text-gray-700 dark:text-gray-300 font-hindi mb-2">
+                आज के भाव उपलब्ध नहीं
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                कृषि उपज मंडी ब्यावर से भाव प्राप्त होते ही यहाँ अपडेट किए जाएंगे।
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="pb-3">जिंस / फसल (Crop)</th>
+                  <th className="pb-3 text-right">न्यूनतम भाव (Min)</th>
+                  <th className="pb-3 text-right">अधिकतम भाव (Max)</th>
+                  <th className="pb-3 text-right">इकाई</th>
+                  <th className="pb-3 text-center">रुझान (Trend)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {rates.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                    <td className="py-3 font-semibold text-gray-900 dark:text-gray-100 font-hindi">
+                      {row.cropHi}
+                      <span className="block text-[11px] text-gray-400 font-normal">
+                        {row.cropEn}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right font-mono font-medium text-gray-700 dark:text-gray-300">
+                      ₹{row.minPrice.toLocaleString()}
+                    </td>
+                    <td className="py-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                      ₹{row.maxPrice.toLocaleString()}
+                    </td>
+                    <td className="py-3 text-right text-xs text-gray-500">
+                      {row.unit}
+                    </td>
+                    <td className="py-3 text-center">
+                      {row.trend === 'up' && (
+                        <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full font-bold">
+                          <TrendingUp className="w-3 h-3" />
+                          {row.change}
+                        </span>
+                      )}
+                      {row.trend === 'down' && (
+                        <span className="inline-flex items-center gap-0.5 text-xs text-red-600 bg-red-100 dark:bg-red-950 px-2 py-0.5 rounded-full font-bold">
+                          <TrendingDown className="w-3 h-3" />
+                          {row.change}
+                        </span>
+                      )}
+                      {row.trend === 'stable' && (
+                        <span className="inline-flex items-center gap-0.5 text-xs text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-medium">
+                          <Minus className="w-3 h-3" />
+                          स्थिर
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Footer CTAs */}

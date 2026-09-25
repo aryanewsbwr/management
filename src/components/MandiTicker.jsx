@@ -3,7 +3,20 @@ import { TrendingUp, TrendingDown, Minus, ChevronRight, X, Sparkles, Share2 } fr
 import { MANDI_NOTICE } from '../data/mandiRates';
 
 export default function MandiTicker({ rates = [], lastUpdatedAt = null, onOpenFullMandi }) {
-  if (!rates || rates.length === 0) return null;
+  if (!rates || rates.length === 0) {
+    return (
+      <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-emerald-950 text-white border-y border-emerald-800/40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="font-bold">ब्यावर मंडी:</span>
+            <span className="text-emerald-200">आज के भाव उपलब्ध नहीं</span>
+          </div>
+          <span className="text-[11px] text-emerald-300/70 font-hindi">कृषि उपज मंडी समिति, ब्यावर</span>
+        </div>
+      </div>
+    );
+  }
 
   const isToday = (isoStr) => {
     if (!isoStr) return false;
