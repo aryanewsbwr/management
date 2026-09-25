@@ -117,7 +117,7 @@ export const StorageService = {
       throw new Error('Supabase Storage not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
     }
 
-    const fileExt = file.name.split('.').pop();
+    const fileExt = (file.name && file.name.includes('.')) ? file.name.split('.').pop() : 'jpg';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
     const filePath = `news/${fileName}`;
 
@@ -125,7 +125,8 @@ export const StorageService = {
       .from('news-images')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true,
+        contentType: file.type || 'image/jpeg'
       });
 
     if (uploadError) {

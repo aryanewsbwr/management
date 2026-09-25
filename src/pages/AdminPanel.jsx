@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Lock, User, Key, Eye, EyeOff, ShieldCheck, CheckCircle2, 
   AlertCircle, Upload, Image as ImageIcon, Trash2, ExternalLink, 
-  LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save 
+  LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save,
+  Edit3
 } from 'lucide-react';
 import { AGENCY_INFO } from '../data/categories';
 import { StorageService } from '../services/storage';
+import { compressImage } from '../utils/imageCompressor';
 
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 
@@ -22,13 +24,16 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   // Dashboard Active Tab: 'upload' | 'manage' | 'mandi' | 'breaking'
   const [activeTab, setActiveTab] = useState('upload');
 
-  // Form State for Non-Tech Upload
+  // Form State for Non-Tech Upload & Edit
+  const [editingArticle, setEditingArticle] = useState(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [author, setAuthor] = useState('संवाददाता, ब्यावर');
   const [area, setArea] = useState('चांग गेट, ब्यावर');
   const [imagePreview, setImagePreview] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [compressedDataUrl, setCompressedDataUrl] = useState('');
+  const [isCompressingImage, setIsCompressingImage] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -128,26 +133,89 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     setCurrentUserEmail('');
   };
 
-  // Image File Picker (Direct file upload)
-  const handleImageFileChange = (e) => {
-    const file = e.target.files[0];
+  // Start Editing an existing Beawar article
+  const handleStartEdit = (article) => {
+    setEditingArticle(article);
+    setTitle(article.titleHi || '');
+    setContent(article.contentHi || '');
+
+    const rawAuthor = article.author || 'संवाददाता, ब्यावर';
+    const match = rawAuthor.match(/^(.*?)(?:\s*\((.*?)\))?$/);
+    if (match && match[2]) {
+      setAuthor(match[1].trim());
+      setArea(match[2].trim());
+    } else {
+      setAuthor(rawAuthor);
+      setArea('चांग गेट, ब्यावर');
+    }
+
+    setImagePreview(article.image || '');
+    setSelectedFile(null);
+    setCompressedDataUrl('');
+    setUploadSuccess('');
+    setActiveTab('upload');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Cancel Editing
+  const handleCancelEdit = () => {
+    setEditingArticle(null);
+    setTitle('');
+    setContent('');
+    setAuthor('संवाददाता, ब्यावर');
+    setArea('चांग गेट, ब्यावर');
+    setImagePreview('');
+    setSelectedFile(null);
+    setCompressedDataUrl('');
+    setUploadSuccess('');
+  };
+
+  // Auto check URL query param ?edit=<id>
+  useEffect(() => {
+    if (beawarArticles.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const editId = urlParams.get('edit');
+      if (editId) {
+        const found = beawarArticles.find(a => a.id === editId);
+        if (found) {
+          handleStartEdit(found);
+        }
+      }
+    }
+  }, [beawarArticles]);
+
+  // Image File Picker with Client-Side Canvas Compression
+  const handleImageFileChange = async (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size limit (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('फोटो का साइज 5MB से कम होना चाहिए।');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('फोटो का साइज 15MB से कम होना चाहिए।');
       return;
     }
 
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+    setIsCompressingImage(true);
+    try {
+      // High-quality client-side compression (~50KB-90KB)
+      const { dataUrl, blob } = await compressImage(file);
+      setSelectedFile(blob);
+      setCompressedDataUrl(dataUrl);
+      setImagePreview(dataUrl);
+    } catch (err) {
+      console.warn('Canvas compression fallback to raw file:', err);
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setCompressedDataUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsCompressingImage(false);
+    }
   };
 
-  // Handle Beawar News Publish with Supabase Storage upload
+  // Handle Beawar News Publish or Update with Supabase Storage + DataURL Fallback
   const handlePublishNews = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
@@ -159,20 +227,30 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     setUploadSuccess('');
 
     try {
-      let finalImageUrl = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+      // Start with current image in preview (or existing image if editing)
+      let finalImageUrl = imagePreview || '';
 
-      // If user picked a file, upload to Supabase Storage (news-images bucket)
+      // If user selected a new file/blob, attempt Supabase Storage upload
       if (selectedFile) {
         try {
           finalImageUrl = await StorageService.uploadArticleImage(selectedFile);
         } catch (uploadErr) {
-          console.warn('Storage upload notice:', uploadErr.message);
-          // If storage fails, fall back to existing preview or default
+          console.warn('[Storage] Storage bucket upload failed, using high-quality compressed image data URL:', uploadErr.message);
+          // 100% RELIABLE FAILSAFE: Use compressed Data URL directly!
+          // NEVER fall back to Unsplash placeholder when user uploaded an image!
+          finalImageUrl = compressedDataUrl || imagePreview;
         }
       }
 
-      const newArticle = {
-        id: `custom-bwr-${Date.now()}`,
+      // If still empty (user never uploaded photo and no existing image)
+      if (!finalImageUrl) {
+        finalImageUrl = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+      }
+
+      const formattedAuthor = area.trim() ? `${author.trim()} (${area.trim()})` : author.trim();
+
+      const articlePayload = {
+        id: editingArticle ? editingArticle.id : `custom-bwr-${Date.now()}`,
         titleHi: title.trim(),
         titleEn: title.trim(),
         summaryHi: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
@@ -181,23 +259,23 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         contentEn: content.trim(),
         category: 'beawar',
         image: finalImageUrl,
-        publishedAt: new Date().toISOString(),
-        author: `${author} (${area})`,
+        publishedAt: editingArticle ? editingArticle.publishedAt : new Date().toISOString(),
+        author: formattedAuthor || 'संवाददाता, ब्यावर',
         isHero: false,
         isTrending: true,
         isBreaking: false,
         readTime: '2 मिनट'
       };
 
-      await StorageService.saveArticle(newArticle);
+      await StorageService.saveArticle(articlePayload);
 
-      // Reset Form
-      setTitle('');
-      setContent('');
-      setImagePreview('');
-      setSelectedFile(null);
+      const successMsg = editingArticle 
+        ? 'ब्यावर की खबर सफलतापूर्वक अपडेट (संपादित) कर दी गई है!' 
+        : 'ब्यावर की खबर सफलतापूर्वक डेटाबेस में सुरक्षित एवं प्रकाशित हो गई है!';
+
+      setUploadSuccess(successMsg);
+      handleCancelEdit();
       setIsSubmitting(false);
-      setUploadSuccess('ब्यावर की खबर सफलतापूर्वक डेटाबेस में सुरक्षित एवं प्रकाशित हो गई है!');
 
       await loadData();
       if (onNewsUpdated) onNewsUpdated();
@@ -205,9 +283,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       setTimeout(() => {
         setUploadSuccess('');
         setActiveTab('manage');
-      }, 1800);
+      }, 1500);
     } catch (err) {
-      alert(`खबर प्रकाशित करने में त्रुटि: ${err.message}`);
+      alert(`खबर प्रकाशित/अपडेट करने में त्रुटि: ${err.message}`);
       setIsSubmitting(false);
     }
   };
@@ -444,8 +522,17 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>📝 ब्यावर खबर अपलोड करें</span>
+            {editingArticle ? (
+              <>
+                <Edit3 className="w-4 h-4 text-amber-300" />
+                <span>✏️ खबर संपादन मोड (Edit)</span>
+              </>
+            ) : (
+              <>
+                <PlusCircle className="w-4 h-4" />
+                <span>📝 ब्यावर खबर अपलोड करें</span>
+              </>
+            )}
           </button>
 
           <button
@@ -496,15 +583,44 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
             
             <div className="mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
               <span className="text-xs font-bold text-red-600 uppercase tracking-wider">
-                सरल एवं आसान अपलोडर (Simple News Publisher)
+                {editingArticle ? 'संपादन मोड (Edit Article Mode)' : 'सरल एवं आसान अपलोडर (Simple News Publisher)'}
               </span>
               <h2 className="text-xl sm:text-2xl font-black font-hindi text-gray-900 dark:text-white mt-1">
-                ब्यावर की नई खबर वेबसाइट पर जोड़ें
+                {editingArticle ? 'प्रकाशित खबर में बदलाव / संपादन करें' : 'ब्यावर की नई खबर वेबसाइट पर जोड़ें'}
               </h2>
               <p className="text-xs text-gray-500 mt-1">
-                नीचे खबर का शीर्षक, फोटो और पूरी जानकारी भरें। 'प्रकाशित करें' दबाते ही खबर तुरंत वेबसाइट के "ब्यावर विशेष" व "मिक्स" में दिखने लगेगी।
+                {editingArticle 
+                  ? 'शीर्षक, फोटो या विवरण में बदलाव करें और नीचे "खबर अपडेट करें" दबाएं।'
+                  : 'नीचे खबर का शीर्षक, फोटो और पूरी जानकारी भरें। \'प्रकाशित करें\' दबाते ही खबर तुरंत वेबसाइट के "ब्यावर विशेष" व "मिक्स" में दिखने लगेगी।'
+                }
               </p>
             </div>
+
+            {/* Editing Active Notification Banner */}
+            {editingArticle && (
+              <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border-2 border-amber-300 dark:border-amber-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                    <Edit3 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black font-hindi text-amber-900 dark:text-amber-200">
+                      आप प्रकाशित खबर का संपादन (Edit) कर रहे हैं
+                    </h4>
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      आईडी: <span className="font-mono">{editingArticle.id}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="self-end sm:self-center px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <span>✕ संपादन रद्द करें (Cancel)</span>
+                </button>
+              </div>
+            )}
 
             {uploadSuccess && (
               <div className="mb-6 p-4 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-2xl text-sm font-bold flex items-center gap-2 border border-emerald-300">
@@ -557,7 +673,14 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
                   {/* Photo Preview Box */}
                   <div className="relative h-44 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                    {imagePreview ? (
+                    {isCompressingImage ? (
+                      <div className="text-center p-4">
+                        <RefreshCw className="w-8 h-8 mx-auto mb-2 text-red-600 animate-spin" />
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block font-hindi">
+                          फोटो को ऑप्टिमाइज़ किया जा रहा है...
+                        </span>
+                      </div>
+                    ) : imagePreview ? (
                       <>
                         <img
                           src={imagePreview}
@@ -566,12 +689,19 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                         />
                         <button
                           type="button"
-                          onClick={() => setImagePreview('')}
-                          className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-1 rounded-full text-xs"
+                          onClick={() => {
+                            setImagePreview('');
+                            setSelectedFile(null);
+                            setCompressedDataUrl('');
+                          }}
+                          className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-1 rounded-full text-xs shadow"
                           title="फोटो हटाएं"
                         >
                           ✕
                         </button>
+                        <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-hindi">
+                          {selectedFile ? 'नई फोटो चुनी गई' : 'मौजूदा फोटो'}
+                        </span>
                       </>
                     ) : (
                       <div className="text-center p-4 text-gray-400">
@@ -629,15 +759,39 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 </div>
               </div>
 
-              {/* Big Green Publish Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-black py-4 rounded-2xl text-base sm:text-lg font-hindi shadow-xl shadow-emerald-600/30 transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <Sparkles className="w-5 h-5 text-amber-300" />
-                <span>ब्यावर की खबर तुरंत प्रकाशित करें (Publish Now)</span>
-              </button>
+              {/* Big Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                {editingArticle && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="w-full sm:w-1/3 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-4 rounded-2xl text-base font-hindi transition"
+                  >
+                    रद्द करें (Cancel)
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isCompressingImage}
+                  className={`flex-1 ${
+                    editingArticle
+                      ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-700 hover:to-orange-700 shadow-amber-600/30'
+                      : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-600/30'
+                  } text-white font-black py-4 rounded-2xl text-base sm:text-lg font-hindi shadow-xl transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50`}
+                >
+                  {editingArticle ? (
+                    <>
+                      <Save className="w-5 h-5 text-white" />
+                      <span>{isSubmitting ? 'अपडेट हो रहा है...' : 'ब्यावर की खबर अपडेट करें (Update Now)'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 text-amber-300" />
+                      <span>{isSubmitting ? 'प्रकाशित हो रहा है...' : 'ब्यावर की खबर तुरंत प्रकाशित करें (Publish Now)'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
             </form>
 
@@ -661,8 +815,11 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
               </div>
 
               <button
-                onClick={() => setActiveTab('upload')}
-                className="flex items-center gap-1.5 bg-red-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl"
+                onClick={() => {
+                  handleCancelEdit();
+                  setActiveTab('upload');
+                }}
+                className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-sm transition"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
                 <span>नई खबर जोड़ें</span>
@@ -681,7 +838,10 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   वेबसाइट के ब्यावर सेक्शन में फिलहाल "अभी कोई खबर उपलब्ध नहीं है" का संदेश दिख रहा है। पहली खबर जोड़ने के लिए नीचे क्लिक करें।
                 </p>
                 <button
-                  onClick={() => setActiveTab('upload')}
+                  onClick={() => {
+                    handleCancelEdit();
+                    setActiveTab('upload');
+                  }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow"
                 >
                   ➕ पहली खबर अभी अपलोड करें
@@ -692,7 +852,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 {beawarArticles.map((art) => (
                   <div
                     key={art.id}
-                    className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-gray-300 dark:hover:border-gray-600 transition"
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <img
@@ -712,10 +872,19 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-center">
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <button
+                        onClick={() => handleStartEdit(art)}
+                        className="flex items-center gap-1.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
+                        title="खबर संपादित करें (Edit Post)"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        <span>संपादित करें</span>
+                      </button>
+
                       <button
                         onClick={() => handleDeleteArticle(art.id)}
-                        className="flex items-center gap-1 bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-xl text-xs font-bold transition"
+                        className="flex items-center gap-1 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 hover:bg-red-200 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
                         title="वेबसाइट से हटाएं"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
