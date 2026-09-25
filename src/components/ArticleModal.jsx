@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Share2, Volume2, Bookmark, Eye, Clock, 
-  ExternalLink, ArrowLeft, Type, Check, Send
+  ExternalLink, ArrowLeft, Type, Check, Send, Edit3
 } from 'lucide-react';
 import { CATEGORIES, AGENCY_INFO } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
@@ -139,6 +139,16 @@ export default function ArticleModal({
                 })}
               </span>
             </div>
+
+            {!article.isLiveFeed && (
+              <a
+                href={`/admin-panel?edit=${article.id}`}
+                className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 px-3 py-1 rounded-xl border border-amber-200 dark:border-amber-900 transition font-bold"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>एडमिन: खबर / फोटो बदलें (Edit)</span>
+              </a>
+            )}
           </div>
 
           {/* Featured Image or Category Placeholder */}
