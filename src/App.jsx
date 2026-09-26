@@ -296,10 +296,46 @@ export default function App() {
     StorageService.setLang(nextLang);
   };
 
-  // TTS Trigger
+  // TTS Trigger (Reads Headline + Full Article Content)
   const handlePlayTTS = (article) => {
-    const textToRead = `${lang === 'hi' ? article.titleHi : article.titleEn}. ${lang === 'hi' ? (article.summaryHi || article.contentHi) : (article.summaryEn || article.contentEn)}`;
-    ttsService.speak(textToRead, article.id, lang);
+    if (!article) return;
+    const isHi = lang === 'hi';
+    const headline = isHi ? article.titleHi : (article.titleEn || article.titleHi);
+
+    const content = isHi ? (article.contentHi || '') : (article.contentEn || article.contentHi || '');
+    const summary = isHi ? (article.summaryHi || '') : (article.summaryEn || article.summaryHi || '');
+
+    // Build comprehensive full story text
+    let fullBody = '';
+    if (content && content.trim()) {
+      const cleanSum = summary.trim();
+      const cleanCon = content.trim();
+      // If summary is distinct from content, include both; otherwise use full content
+      if (cleanSum && cleanSum !== cleanCon && !cleanCon.startsWith(cleanSum.slice(0, 30))) {
+        fullBody = `${cleanSum}। ${cleanCon}`;
+      } else {
+        fullBody = cleanCon;
+      }
+    } else if (summary && summary.trim()) {
+      fullBody = summary.trim();
+    }
+
+    let fullTextToRead;
+    if (isHi) {
+      if (fullBody) {
+        fullTextToRead = `मुख्य समाचार: ${headline}। अब विस्तार से खबर: ${fullBody}`;
+      } else {
+        fullTextToRead = `मुख्य समाचार: ${headline}।`;
+      }
+    } else {
+      if (fullBody) {
+        fullTextToRead = `Headline: ${headline}. Full story: ${fullBody}`;
+      } else {
+        fullTextToRead = `Headline: ${headline}.`;
+      }
+    }
+
+    ttsService.speak(fullTextToRead, article.id, lang);
   };
 
   // Bookmark Toggle
