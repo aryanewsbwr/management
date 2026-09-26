@@ -42,7 +42,7 @@ export default function ArticleCard({
   // WhatsApp 1-tap viral share
   const handleWhatsAppShare = (e) => {
     e.stopPropagation();
-    const shareUrl = `https://www.aryannewsagency.com/api/share?id=${article.id}`;
+    const shareUrl = `https://www.aryannewsagency.com/news/${article.id}`;
     const shareText = `*${title}*\n\n${summary ? summary.slice(0, 140) + '...' : ''}\n\n👉 पूरी खबर एवं फोटो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)* - सबसे तेज, सबसे विश्वसनीय।`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
   };

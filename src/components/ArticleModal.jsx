@@ -35,7 +35,7 @@ export default function ArticleModal({
   ];
 
   const handleWhatsAppShare = () => {
-    const shareUrl = `https://www.aryannewsagency.com/api/share?id=${article.id}`;
+    const shareUrl = `https://www.aryannewsagency.com/news/${article.id}`;
     const text = `*${title}*\n\n${content ? content.slice(0, 160) + '...' : ''}\n\n👉 पूरी खबर एवं फोटो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };

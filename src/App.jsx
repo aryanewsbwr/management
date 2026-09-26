@@ -97,14 +97,23 @@ export default function App() {
     }
   };
 
+  // Helper to extract article id from either /news/:id or ?article=:id or ?id=:id
+  const getArticleIdFromUrl = () => {
+    if (typeof window === 'undefined') return null;
+    if (window.location.pathname.startsWith('/news/')) {
+      const seg = window.location.pathname.replace('/news/', '').split('/')[0].split('?')[0];
+      if (seg) return decodeURIComponent(seg);
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('article') || urlParams.get('id');
+  };
+
   // Handle Article Open with URL Update & View Counter
   const handleOpenArticle = (article) => {
     if (!article) return;
     setActiveArticle(article);
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location);
-      url.searchParams.set('article', article.id);
-      window.history.pushState({}, '', url.pathname + url.search + url.hash);
+      window.history.pushState({}, '', `/news/${article.id}`);
     }
     // Increment view counter
     StorageService.incrementArticleViews(article.id);
@@ -115,9 +124,11 @@ export default function App() {
   const handleCloseArticle = () => {
     setActiveArticle(null);
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location);
-      url.searchParams.delete('article');
-      window.history.pushState({}, '', url.pathname + url.search + url.hash);
+      if (selectedCategory && selectedCategory !== 'all') {
+        window.history.pushState({}, '', `/?category=${selectedCategory}`);
+      } else {
+        window.history.pushState({}, '', '/');
+      }
     }
   };
 
@@ -151,7 +162,7 @@ export default function App() {
       const cat = urlParams.get('category');
       setSelectedCategory(cat && (cat === 'all' || CATEGORIES.some(c => c.id === cat)) ? cat : 'all');
 
-      const articleId = urlParams.get('article');
+      const articleId = getArticleIdFromUrl();
       if (articleId) {
         setArticles(currentArticles => {
           const found = currentArticles.find(a => a.id === articleId);
@@ -206,8 +217,7 @@ export default function App() {
   // Check URL for article deep-link on load or when articles populate
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const urlParams = new URLSearchParams(window.location.search);
-    const articleId = urlParams.get('article');
+    const articleId = getArticleIdFromUrl();
     if (articleId && !hasCheckedUrlArticleRef.current) {
       const match = articles.find(a => a.id === articleId);
       if (match) {
