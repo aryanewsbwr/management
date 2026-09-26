@@ -1,25 +1,51 @@
 import { XMLParser } from 'fast-xml-parser';
 
 const FEEDS = [
+  // 1. Rajasthan State News (Dedicated verified feed)
   {
-    category: 'national',
-    sourceName: 'दैनिक भास्कर',
-    url: 'https://www.bhaskar.com/rss-v1--category-1061.xml'
+    category: 'rajasthan',
+    sourceName: 'अमर उजाला (राजस्थान)',
+    url: 'https://www.amarujala.com/rss/rajasthan.xml'
   },
+  // 2. Pure Entertainment & Cinema (Dedicated verified feed)
   {
-    category: 'business',
-    sourceName: 'दैनिक भास्कर (बिजनेस)',
-    url: 'https://www.bhaskar.com/rss-v1--category-1051.xml'
+    category: 'entertainment',
+    sourceName: 'अमर उजाला (मनोरंजन)',
+    url: 'https://www.amarujala.com/rss/entertainment.xml'
+  },
+  // 3. Sports & Games (Dedicated verified feeds)
+  {
+    category: 'sports',
+    sourceName: 'अमर उजाला (खेल)',
+    url: 'https://www.amarujala.com/rss/sports.xml'
   },
   {
     category: 'sports',
     sourceName: 'दैनिक भास्कर (स्पोर्ट्स)',
     url: 'https://www.bhaskar.com/rss-v1--category-1053.xml'
   },
+  // 4. Business & Economy (Dedicated verified feeds)
   {
-    category: 'entertainment',
-    sourceName: 'दैनिक भास्कर (मनोरंजन)',
-    url: 'https://www.bhaskar.com/rss-v1--category-1057.xml'
+    category: 'business',
+    sourceName: 'अमर उजाला (कारोबार)',
+    url: 'https://www.amarujala.com/rss/business.xml'
+  },
+  {
+    category: 'business',
+    sourceName: 'दैनिक भास्कर (बिजनेस)',
+    url: 'https://www.bhaskar.com/rss-v1--category-1051.xml'
+  },
+  // 5. Crime & Police (Dedicated verified feed)
+  {
+    category: 'crime',
+    sourceName: 'अमर उजाला (क्राइम)',
+    url: 'https://www.amarujala.com/rss/crime.xml'
+  },
+  // 6. National & World News (Dedicated verified feeds)
+  {
+    category: 'national',
+    sourceName: 'दैनिक भास्कर (देश)',
+    url: 'https://www.bhaskar.com/rss-v1--category-1061.xml'
   },
   {
     category: 'national',
@@ -43,36 +69,16 @@ function cleanHtml(str = '') {
 }
 
 function detectCategory(title = '', desc = '', feedCategory = 'national') {
-  // 1. Dedicated feeds (sports, entertainment, business) MUST NEVER be overridden
-  if (feedCategory === 'sports' || feedCategory === 'entertainment' || feedCategory === 'business') {
+  // 1. Dedicated feeds (rajasthan, entertainment, sports, business, crime) MUST NEVER be overridden
+  if (['rajasthan', 'entertainment', 'sports', 'business', 'crime'].includes(feedCategory)) {
     return feedCategory;
   }
 
   const text = (title + ' ' + desc).toLowerCase();
 
-  // 2. High-confidence Rajasthan state news (from general feeds)
+  // 2. High-confidence Rajasthan state news from national feeds
   if (/राजस्थान में|जयपुर में|जोधपुर में|अजमेर में|ब्यावर में|कोटा में|उदयपुर में|भीलवाड़ा में|भजनलाल शर्मा|राजस्थान पुलिस|राजस्थान सरकार|अशोक गहलोत|वसुंधरा राजे/i.test(text)) {
     return 'rajasthan';
-  }
-
-  // 3. High-confidence Crime news (from general feeds)
-  if (/हत्याकांड|कत्ल|गोली मारकर हत्या|पुलिस ने किया गिरफ्तार|हिरासत में लिया|चोरी की वारदात|लूट की वारदात|बलात्कार का मामला|सीबीआई ने|ईडी ने छापा|एनआईए ने|साइबर धोखाधड़ी/i.test(text)) {
-    return 'crime';
-  }
-
-  // 4. Strict Entertainment news (only explicit cinema terms, no loose words like 'स्टार' or 'गाना')
-  if (/बॉलीवुड फिल्म|बॉक्स ऑफिस कलेक्शन|फिल्म का ट्रेलर|ओटीटी रिलीज|सिनेमाघरों में रिलीज|अभिनेता|अभिनेत्री|हॉलीवुड फिल्म/i.test(text)) {
-    return 'entertainment';
-  }
-
-  // 5. Strict Sports news (from general feeds)
-  if (/क्रिकेट मैच|टीम इंडिया|आईपीएल 202|विश्व कप फाइनल|टेस्ट मैच|टी20 मैच|ओलंपिक पदक|बीसीसीआई ने|विराट कोहली|रोहित शर्मा/i.test(text)) {
-    return 'sports';
-  }
-
-  // 6. Strict Business news (from general feeds)
-  if (/शेयर बाजार|सेंसेक्स में|निफ्टी में|सोने के दाम|चांदी के भाव|आरबीआई की मौद्रिक नीति|जीएसटी कलेक्शन|भारतीय अर्थव्यवस्था|रुपया बनाम डॉलर/i.test(text)) {
-    return 'business';
   }
 
   return 'national';
