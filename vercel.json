@@ -4,6 +4,44 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/news/:id",
+      "destination": "/api/share?id=:id"
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "query",
+          "key": "article"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebookexternalhit|[Ff]acebot|[Tt]witterbot|[Tt]elegram[Bb]ot|[Ll]inked[Ii]n[Bb]ot|[Ss]lackbot|[Ss]kype[Uu]ri[Pp]review|meta-externalagent).*"
+        }
+      ],
+      "destination": "/api/share"
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "query",
+          "key": "id"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ww]hats[Aa]pp|[Ff]acebookexternalhit|[Ff]acebot|[Tt]witterbot|[Tt]elegram[Bb]ot|[Ll]inked[Ii]n[Bb]ot|[Ss]lackbot|[Ss]kype[Uu]ri[Pp]review|meta-externalagent).*"
+        }
+      ],
+      "destination": "/api/share"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

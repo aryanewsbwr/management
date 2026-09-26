@@ -3,7 +3,19 @@
 // and immediately redirects humans to the full article on the website.
 
 export default async function handler(req, res) {
-  const articleId = req.query.id || req.query.article;
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Extract articleId from query (id, article, or fallback parse from url)
+  let articleId = req.query.id || req.query.article;
+  if (!articleId && req.url) {
+    const match = req.url.match(/[?&](?:article|id)=([^&#]+)/);
+    if (match) {
+      articleId = decodeURIComponent(match[1]);
+    }
+  }
+
   const siteUrl = 'https://www.aryannewsagency.com';
 
   if (!articleId) {
@@ -45,7 +57,8 @@ export default async function handler(req, res) {
     ? article.image
     : `${siteUrl}/logo.png`;
 
-  const targetUrl = `${siteUrl}/?article=${encodeURIComponent(articleId)}`;
+  const category = article?.category || req.query.category || 'beawar';
+  const targetUrl = `${siteUrl}/?category=${encodeURIComponent(category)}&article=${encodeURIComponent(articleId)}`;
 
   const html = `<!DOCTYPE html>
 <html lang="hi" prefix="og: https://ogp.me/ns#">
@@ -66,6 +79,7 @@ export default async function handler(req, res) {
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="${image}">
   <meta property="og:image:secure_url" content="${image}">
+  <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="${escapeHtml(title)}">
