@@ -1,11 +1,10 @@
 import React from 'react';
-import { Home, MapPin, Zap, TrendingUp, Menu } from 'lucide-react';
+import { Home, MapPin, Zap, Landmark, Menu } from 'lucide-react';
 
 export default function MobileBottomNav({
   activeTab,
   onSelectTab,
   onOpenQuickRead,
-  onOpenMandi,
   onOpenMobileMenu
 }) {
   return (
@@ -52,13 +51,17 @@ export default function MobileBottomNav({
           <span className="text-[10px] mt-0.5 font-bold text-gray-800 dark:text-gray-200">शॉर्ट्स</span>
         </button>
 
-        {/* Mandi Bhav */}
+        {/* Rajasthan */}
         <button
-          onClick={onOpenMandi}
-          className="flex flex-col items-center justify-center py-1 px-2 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-900 transition"
+          onClick={() => onSelectTab('rajasthan')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+            activeTab === 'rajasthan'
+              ? 'text-red-600 dark:text-red-400 font-bold'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900'
+          }`}
         >
-          <TrendingUp className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">मंडी भाव</span>
+          <Landmark className="w-5 h-5" />
+          <span className="text-[10px] mt-0.5">राजस्थान</span>
         </button>
 
         {/* Categories / Menu */}

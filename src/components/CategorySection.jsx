@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   ArrowRight, Sparkles, MapPin, Landmark, Globe, 
-  Trophy, Film, Briefcase, ShieldAlert, TrendingUp 
+  Trophy, Film, Briefcase, ShieldAlert 
 } from 'lucide-react';
 import ArticleCard from './ArticleCard';
 import { CATEGORIES } from '../data/categories';
@@ -14,7 +14,6 @@ const ICON_MAP = {
   entertainment: Film,
   business: Briefcase,
   crime: ShieldAlert,
-  mandi: TrendingUp,
 };
 
 export default function CategorySection({

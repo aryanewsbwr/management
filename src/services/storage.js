@@ -1,5 +1,4 @@
 import { INITIAL_ARTICLES, INITIAL_BREAKING_NEWS } from '../data/initialArticles';
-import { INITIAL_MANDI_RATES } from '../data/mandiRates';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const USER_PREF_KEYS = {
@@ -48,12 +47,74 @@ export const StorageService = {
         isTrending: Boolean(item.is_trending),
         isBreaking: Boolean(item.is_breaking),
         readTime: item.read_time || '2 मिनट',
+        views: item.views || 0,
         created_at: item.created_at,
         updated_at: item.updated_at
       }));
     } catch (err) {
       console.error('[StorageService] fetchCustomArticles error:', err.message);
       return [];
+    }
+  },
+
+  async fetchArticleById(id) {
+    if (!isSupabaseConfigured || !supabase || !id) return null;
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error || !data) return null;
+
+      return {
+        id: data.id,
+        titleHi: data.title_hi,
+        titleEn: data.title_en || data.title_hi,
+        summaryHi: data.summary_hi,
+        summaryEn: data.summary_en || data.summary_hi,
+        contentHi: data.content_hi,
+        contentEn: data.content_en || data.content_hi,
+        category: data.category || 'beawar',
+        image: data.image,
+        publishedAt: data.published_at,
+        author: data.author || 'आर्यन ब्यूरो, ब्यावर',
+        isHero: Boolean(data.is_hero),
+        isTrending: Boolean(data.is_trending),
+        isBreaking: Boolean(data.is_breaking),
+        readTime: data.read_time || '2 मिनट',
+        views: data.views || 0,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+    } catch (e) {
+      console.warn('[StorageService] fetchArticleById notice:', e.message);
+      return null;
+    }
+  },
+
+  async incrementArticleViews(id) {
+    if (!isSupabaseConfigured || !supabase || !id) return;
+    try {
+      // 1. Try PostgreSQL RPC increment
+      const { error: rpcError } = await supabase.rpc('increment_article_views', { article_id: id });
+      if (!rpcError) return;
+
+      // 2. Direct update fallback
+      const { data: current } = await supabase
+        .from('articles')
+        .select('views')
+        .eq('id', id)
+        .maybeSingle();
+
+      const newViews = ((current?.views) || 0) + 1;
+      await supabase
+        .from('articles')
+        .update({ views: newViews })
+        .eq('id', id);
+    } catch (e) {
+      console.warn('[StorageService] incrementArticleViews notice:', e.message);
     }
   },
 
@@ -78,6 +139,7 @@ export const StorageService = {
       is_trending: Boolean(article.isTrending),
       is_breaking: Boolean(article.isBreaking),
       read_time: article.readTime || '2 मिनट',
+      views: article.views || 0,
       updated_at: new Date().toISOString()
     };
 
@@ -136,92 +198,6 @@ export const StorageService = {
 
     const { data } = supabase.storage.from('news-images').getPublicUrl(filePath);
     return data.publicUrl;
-  },
-
-  // ==========================================
-  // 2. MANDI RATES (Supabase DB)
-  // ==========================================
-
-  async fetchMandiRates() {
-    if (!isSupabaseConfigured || !supabase) {
-      return {
-        rates: [],
-        lastUpdatedAt: null
-      };
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('mandi_rates')
-        .select('*')
-        .order('id', { ascending: true });
-
-      if (error || !data || data.length === 0) {
-        return {
-          rates: [],
-          lastUpdatedAt: null
-        };
-      }
-
-      const rates = data.map(r => ({
-        id: r.id,
-        cropHi: r.crop_hi,
-        cropEn: r.crop_en,
-        minPrice: r.min_price,
-        maxPrice: r.max_price,
-        unit: r.unit || '₹/क्विंटल',
-        trend: r.trend || 'stable',
-        change: r.change || 'स्थिर',
-        updatedAt: r.updated_at
-      }));
-
-      const latestTimestamp = data.reduce((latest, r) => {
-        if (!r.updated_at) return latest;
-        const time = new Date(r.updated_at).getTime();
-        return time > latest ? time : latest;
-      }, 0);
-
-      return {
-        rates,
-        lastUpdatedAt: latestTimestamp ? new Date(latestTimestamp).toISOString() : null
-      };
-    } catch (err) {
-      console.error('[StorageService] fetchMandiRates error:', err.message);
-      return {
-        rates: [],
-        lastUpdatedAt: null
-      };
-    }
-  },
-
-  async saveMandiRates(rates) {
-    if (!isSupabaseConfigured || !supabase) {
-      throw new Error('Supabase credentials not configured.');
-    }
-
-    const nowIso = new Date().toISOString();
-    const records = rates.map(r => ({
-      id: r.id,
-      crop_hi: r.cropHi,
-      crop_en: r.cropEn || r.cropHi,
-      min_price: Number(r.minPrice),
-      max_price: Number(r.maxPrice),
-      unit: r.unit || '₹/क्विंटल',
-      trend: r.trend || 'stable',
-      change: r.change || 'स्थिर',
-      updated_at: nowIso
-    }));
-
-    const { error } = await supabase
-      .from('mandi_rates')
-      .upsert(records);
-
-    if (error) {
-      console.error('[StorageService] saveMandiRates error:', error.message);
-      throw error;
-    }
-
-    return nowIso;
   },
 
   // ==========================================

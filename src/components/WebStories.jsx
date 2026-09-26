@@ -1,11 +1,27 @@
 import React, { useState } from 'react';
-import { Sparkles, X, ChevronRight, ChevronLeft, Share2 } from 'lucide-react';
-import { INITIAL_WEB_STORIES } from '../data/initialArticles';
+import { Sparkles, X, ChevronRight, ChevronLeft, Share2, BookOpen } from 'lucide-react';
 
-export default function WebStories() {
+export default function WebStories({ articles = [], onOpenArticle }) {
   const [activeStoryIndex, setActiveStoryIndex] = useState(null);
 
-  const stories = INITIAL_WEB_STORIES;
+  // Dynamically filter Beawar news uploaded by the admin
+  const beawarArticles = articles.filter(a => a.category === 'beawar' || !a.isLiveFeed);
+
+  const stories = beawarArticles.length > 0
+    ? beawarArticles.slice(0, 12).map((a) => ({
+        id: a.id,
+        title: a.titleHi,
+        image: a.image || 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80',
+        summary: a.summaryHi || a.contentHi?.slice(0, 140) || '',
+        author: a.author || 'आर्यन ब्यूरो, ब्यावर',
+        tag: 'ब्यावर विशेष',
+        article: a
+      }))
+    : [];
+
+  if (stories.length === 0) {
+    return null;
+  }
 
   const handleOpenStory = (index) => {
     setActiveStoryIndex(index);
@@ -30,7 +46,8 @@ export default function WebStories() {
   };
 
   const handleShareStory = (story) => {
-    const text = `*वेब स्टोरी: ${story.title}*\nआर्यन न्यूज़ एजेंसी (ब्यावर)\nhttps://www.aryannewsagency.com/`;
+    const shareUrl = `https://www.aryannewsagency.com/api/share?id=${story.id}`;
+    const text = `*वेब स्टोरी: ${story.title}*\n\n${story.summary ? story.summary.slice(0, 120) + '...' : ''}\n\n👉 पूरी खबर देखें: ${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -138,20 +155,36 @@ export default function WebStories() {
                 {stories[activeStoryIndex].title}
               </h3>
 
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <button
-                  onClick={() => handleShareStory(stories[activeStoryIndex])}
-                  className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span>व्हाट्सएप पर शेयर करें</span>
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="p-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+              <div className="mt-4 flex flex-col gap-2">
+                {onOpenArticle && stories[activeStoryIndex].article && (
+                  <button
+                    onClick={() => {
+                      const selected = stories[activeStoryIndex].article;
+                      handleClose();
+                      onOpenArticle(selected);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg transition active:scale-95"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>📖 पूरी खबर विस्तार से पढ़ें</span>
+                  </button>
+                )}
+
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => handleShareStory(stories[activeStoryIndex])}
+                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>व्हाट्सएप पर शेयर करें</span>
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    className="p-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
 

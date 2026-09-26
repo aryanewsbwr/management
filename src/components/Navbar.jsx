@@ -59,13 +59,6 @@ export default function Navbar({
           <span className="hidden lg:inline bg-red-900/60 px-2 py-0.5 rounded text-[11px] text-amber-200">
             तापमान: 31°C धूप
           </span>
-
-          {/* Live API Status Indicator */}
-          <span className="hidden sm:inline-flex items-center gap-1 bg-black/30 text-emerald-300 font-medium px-2 py-0.5 rounded text-[11px] border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            <span>लाइव API</span>
-            <span className="font-mono font-bold text-white">({liveCount || 50}+)</span>
-          </span>
         </div>
 
         <div className="flex items-center space-x-1 sm:space-x-3 shrink-0">

@@ -41,7 +41,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [beawarArticles, setBeawarArticles] = useState([]);
 
   // Mandi & Breaking States
-  const [mandiRates, setMandiRates] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
   const [newTicker, setNewTicker] = useState('');
 
@@ -76,9 +75,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     try {
       const customArticles = await StorageService.fetchCustomArticles();
       setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
-
-      const mandiData = await StorageService.fetchMandiRates();
-      setMandiRates(mandiData.rates || []);
 
       const bn = await StorageService.fetchBreakingNews();
       setBreakingNews(bn || []);
@@ -300,18 +296,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       } catch (err) {
         alert(`हटाने में त्रुटि: ${err.message}`);
       }
-    }
-  };
-
-  // Save Mandi Rates
-  const handleSaveMandi = async () => {
-    try {
-      await StorageService.saveMandiRates(mandiRates);
-      alert('ब्यावर मंडी भाव डेटाबेस में सफलतापूर्वक अपडेट कर दिए गए हैं!');
-      await loadData();
-      if (onNewsUpdated) onNewsUpdated();
-    } catch (err) {
-      alert(`मंडी भाव सहेजने में त्रुटि: ${err.message}`);
     }
   };
 
@@ -544,18 +528,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
             }`}
           >
             <span>📋 अपलोड की गई खबरें ({beawarArticles.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('mandi')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition ${
-              activeTab === 'mandi'
-                ? 'bg-red-600 text-white shadow-md shadow-red-500/30'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-            <span>🌾 ब्यावर मंडी भाव</span>
           </button>
 
           <button
@@ -864,10 +836,14 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                         <h4 className="text-sm font-bold font-hindi text-gray-900 dark:text-white line-clamp-2">
                           {art.titleHi}
                         </h4>
-                        <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-1">
+                        <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-1 flex-wrap">
                           <span className="font-semibold text-red-600">{art.author}</span>
                           <span>•</span>
                           <span>{new Date(art.publishedAt).toLocaleDateString('hi-IN')}</span>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">
+                            👁️ {art.views || 0} बार देखा गया (Views)
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -900,85 +876,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         )}
 
         {/* ==================================================== */}
-        {/* 3. BEAWAR MANDI RATES EDITOR */}
-        {/* ==================================================== */}
-        {activeTab === 'mandi' && (
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-              <div>
-                <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
-                  कृषि उपज मंडी ब्यावर • दैनिक भाव संपादक
-                </h3>
-                <p className="text-xs text-gray-500">
-                  यहाँ से आप ब्यावर मंडी में आज के फसलों के भाव बदल सकते हैं।
-                </p>
-              </div>
-
-              <button
-                onClick={handleSaveMandi}
-                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow"
-              >
-                <Save className="w-4 h-4" />
-                <span>भाव सेव करें (Save)</span>
-              </button>
-            </div>
-
-            <div className="space-y-2.5">
-              {mandiRates.map((row, idx) => (
-                <div
-                  key={row.id}
-                  className="p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl grid grid-cols-1 sm:grid-cols-4 gap-2 items-center text-xs"
-                >
-                  <div className="font-bold text-sm text-gray-900 dark:text-white font-hindi">
-                    🌾 {row.cropHi}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-gray-400">न्यूनतम:</span>
-                    <input
-                      type="number"
-                      value={row.minPrice}
-                      onChange={(e) => {
-                        const copy = [...mandiRates];
-                        copy[idx].minPrice = Number(e.target.value);
-                        setMandiRates(copy);
-                      }}
-                      className="w-24 px-2.5 py-1.5 border rounded-lg dark:bg-gray-700 font-mono font-bold"
-                    />
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-gray-400">अधिकतम:</span>
-                    <input
-                      type="number"
-                      value={row.maxPrice}
-                      onChange={(e) => {
-                        const copy = [...mandiRates];
-                        copy[idx].maxPrice = Number(e.target.value);
-                        setMandiRates(copy);
-                      }}
-                      className="w-24 px-2.5 py-1.5 border rounded-lg dark:bg-gray-700 font-mono font-bold text-emerald-600"
-                    />
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-gray-400">बदलाव:</span>
-                    <input
-                      type="text"
-                      value={row.change}
-                      onChange={(e) => {
-                        const copy = [...mandiRates];
-                        copy[idx].change = e.target.value;
-                        setMandiRates(copy);
-                      }}
-                      className="w-24 px-2.5 py-1.5 border rounded-lg dark:bg-gray-700"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ==================================================== */}
-        {/* 4. BREAKING TICKER MANAGER */}
+        {/* 3. BREAKING TICKER MANAGER */}
         {/* ==================================================== */}
         {activeTab === 'breaking' && (
           <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800">

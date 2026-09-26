@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import BreakingTicker from './components/BreakingTicker';
-import MandiTicker from './components/MandiTicker';
 import WebStories from './components/WebStories';
 import HeroMixedSection from './components/HeroMixedSection';
 import CategorySection from './components/CategorySection';
 import ArticleCard from './components/ArticleCard';
 import ArticleModal from './components/ArticleModal';
 import QuickReadModal from './components/QuickReadModal';
-import MandiModal from './components/MandiModal';
 import SubmitNewsModal from './components/SubmitNewsModal';
 import BookmarksModal from './components/BookmarksModal';
 import MobileBottomNav from './components/MobileBottomNav';
@@ -27,13 +25,23 @@ export default function App() {
     (window.location.pathname.includes('admin') || window.location.hash.includes('admin'));
   const [currentRoute, setCurrentRoute] = useState(isInitialAdmin ? 'admin' : 'home');
 
+  // Helper to determine initial category from URL (?category=beawar)
+  const getInitialCategory = () => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cat = urlParams.get('category');
+      if (cat && (cat === 'all' || CATEGORIES.some(c => c.id === cat))) {
+        return cat;
+      }
+    }
+    return 'all';
+  };
+
   // 1. Core States
   const [articles, setArticles] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
-  const [mandiRates, setMandiRates] = useState([]);
-  const [mandiLastUpdated, setMandiLastUpdated] = useState(null);
   const [bookmarks, setBookmarks] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(getInitialCategory);
   const [lang, setLang] = useState('hi');
   const [theme, setTheme] = useState('light');
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,23 +49,22 @@ export default function App() {
   const [newsError, setNewsError] = useState(false);
   const [liveUpdateToast, setLiveUpdateToast] = useState(false);
   const lastFetchTimeRef = useRef(0);
+  const hasCheckedUrlArticleRef = useRef(false);
 
   // 2. Modals States
   const [activeArticle, setActiveArticle] = useState(null);
   const [isQuickReadOpen, setIsQuickReadOpen] = useState(false);
-  const [isMandiModalOpen, setIsMandiModalOpen] = useState(false);
   const [isSubmitNewsOpen, setIsSubmitNewsOpen] = useState(false);
   const [isBookmarksModalOpen, setIsBookmarksModalOpen] = useState(false);
 
   // 3. Audio TTS State
   const [currentTTSState, setCurrentTTSState] = useState({ isPlaying: false, articleId: null });
 
-  // 4. Load Database Data (Custom Articles, Mandi Rates, Breaking News)
+  // 4. Load Database Data (Custom Articles, Breaking News)
   const loadDatabaseData = async () => {
     try {
-      const [customArticles, mandiData, bn] = await Promise.all([
+      const [customArticles, bn] = await Promise.all([
         StorageService.fetchCustomArticles(),
-        StorageService.fetchMandiRates(),
         StorageService.fetchBreakingNews()
       ]);
 
@@ -68,16 +75,49 @@ export default function App() {
         });
       }
 
-      if (mandiData && mandiData.rates) {
-        setMandiRates(mandiData.rates);
-        setMandiLastUpdated(mandiData.lastUpdatedAt || null);
-      }
-
       if (bn && bn.length > 0) {
         setBreakingNews(bn);
       }
     } catch (err) {
       console.warn('Database data fetch notice:', err);
+    }
+  };
+
+  // Handle Category Selection with URL Update
+  const handleSelectCategory = (catId) => {
+    setSelectedCategory(catId);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      if (catId && catId !== 'all') {
+        url.searchParams.set('category', catId);
+      } else {
+        url.searchParams.delete('category');
+      }
+      window.history.pushState({}, '', url.pathname + url.search + url.hash);
+    }
+  };
+
+  // Handle Article Open with URL Update & View Counter
+  const handleOpenArticle = (article) => {
+    if (!article) return;
+    setActiveArticle(article);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      url.searchParams.set('article', article.id);
+      window.history.pushState({}, '', url.pathname + url.search + url.hash);
+    }
+    // Increment view counter
+    StorageService.incrementArticleViews(article.id);
+    setArticles(prev => prev.map(a => a.id === article.id ? { ...a, views: (a.views || 0) + 1 } : a));
+  };
+
+  // Handle Article Close and URL cleanup
+  const handleCloseArticle = () => {
+    setActiveArticle(null);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      url.searchParams.delete('article');
+      window.history.pushState({}, '', url.pathname + url.search + url.hash);
     }
   };
 
@@ -102,10 +142,31 @@ export default function App() {
     // Subscribe to TTS changes
     const unsubscribeTTS = ttsService.subscribe(setCurrentTTSState);
 
-    // Listen to URL route changes
+    // Listen to URL route changes (Back / Forward navigation)
     const handlePopState = () => {
       const isAdmin = window.location.pathname.includes('admin') || window.location.hash.includes('admin');
       setCurrentRoute(isAdmin ? 'admin' : 'home');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const cat = urlParams.get('category');
+      setSelectedCategory(cat && (cat === 'all' || CATEGORIES.some(c => c.id === cat)) ? cat : 'all');
+
+      const articleId = urlParams.get('article');
+      if (articleId) {
+        setArticles(currentArticles => {
+          const found = currentArticles.find(a => a.id === articleId);
+          if (found) {
+            setActiveArticle(found);
+          } else {
+            StorageService.fetchArticleById(articleId).then(art => {
+              if (art) setActiveArticle(art);
+            });
+          }
+          return currentArticles;
+        });
+      } else {
+        setActiveArticle(null);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('hashchange', handlePopState);
@@ -141,6 +202,27 @@ export default function App() {
       window.removeEventListener('hashchange', handlePopState);
     };
   }, []);
+
+  // Check URL for article deep-link on load or when articles populate
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const articleId = urlParams.get('article');
+    if (articleId && !hasCheckedUrlArticleRef.current) {
+      const match = articles.find(a => a.id === articleId);
+      if (match) {
+        hasCheckedUrlArticleRef.current = true;
+        handleOpenArticle(match);
+      } else if (articles.length > 0) {
+        hasCheckedUrlArticleRef.current = true;
+        StorageService.fetchArticleById(articleId).then(art => {
+          if (art) {
+            handleOpenArticle(art);
+          }
+        });
+      }
+    }
+  }, [articles]);
 
   const navigateToAdmin = () => {
     window.history.pushState({}, '', '/admin-panel');
@@ -247,17 +329,6 @@ export default function App() {
     }
   };
 
-  const handleUpdateMandiRates = async (newRates) => {
-    try {
-      await StorageService.saveMandiRates(newRates);
-      const mandiData = await StorageService.fetchMandiRates();
-      setMandiRates(mandiData.rates || []);
-      setMandiLastUpdated(mandiData.lastUpdatedAt || null);
-    } catch (e) {
-      console.error('[App] handleUpdateMandiRates error:', e);
-    }
-  };
-
   const handleUpdateBreakingNews = async (newList) => {
     try {
       await StorageService.saveBreakingNews(newList);
@@ -301,7 +372,7 @@ export default function App() {
       {/* 1. MAIN NAVIGATION */}
       <Navbar
         selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={handleSelectCategory}
         lang={lang}
         onToggleLang={handleToggleLang}
         theme={theme}
@@ -329,19 +400,12 @@ export default function App() {
         items={breakingNews}
         onSelectHeadline={(headline) => {
           const match = articles.find(a => a.titleHi.includes(headline.slice(0, 15)));
-          if (match) setActiveArticle(match);
+          if (match) handleOpenArticle(match);
         }}
       />
 
-      {/* 3. BEAWAR MANDI BHAV TICKER */}
-      <MandiTicker
-        rates={mandiRates}
-        lastUpdatedAt={mandiLastUpdated}
-        onOpenFullMandi={() => setIsMandiModalOpen(true)}
-      />
-
-      {/* 4. WEB STORIES REEL (Mobile-first engaging visual carousel) */}
-      <WebStories />
+      {/* 3. WEB STORIES REEL (Mobile-first engaging visual carousel featuring Beawar local news) */}
+      <WebStories articles={articles} onOpenArticle={handleOpenArticle} />
 
       {/* MAIN VIEWPORT CONTAINER */}
       <main className="flex-1 max-w-7xl w-full mx-auto pb-12 overflow-x-hidden">
@@ -375,7 +439,7 @@ export default function App() {
                     article={art}
                     lang={lang}
                     layout="standard"
-                    onOpenArticle={setActiveArticle}
+                    onOpenArticle={handleOpenArticle}
                     onPlayTTS={handlePlayTTS}
                     isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === art.id}
                     isBookmarked={bookmarks.includes(art.id)}
@@ -406,7 +470,7 @@ export default function App() {
               </div>
 
               <button
-                onClick={() => setSelectedCategory('all')}
+                onClick={() => handleSelectCategory('all')}
                 className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline"
               >
                 ← सभी मुख्य खबरें देखें
@@ -452,7 +516,7 @@ export default function App() {
                     article={art}
                     lang={lang}
                     layout="standard"
-                    onOpenArticle={setActiveArticle}
+                    onOpenArticle={handleOpenArticle}
                     onPlayTTS={handlePlayTTS}
                     isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === art.id}
                     isBookmarked={bookmarks.includes(art.id)}
@@ -515,12 +579,12 @@ export default function App() {
             <HeroMixedSection
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onSelectCategory={setSelectedCategory}
+              onSelectCategory={handleSelectCategory}
             />
 
             {/* 2. SPONSORED BANNER (Beawar Tilpatti & Local Business Advertisement) */}
@@ -559,12 +623,12 @@ export default function App() {
               categoryId="beawar"
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={setSelectedCategory}
+              onViewMoreCategory={handleSelectCategory}
             />
 
             {/* 🏛️ राजस्थान (Rajasthan State) */}
@@ -572,12 +636,12 @@ export default function App() {
               categoryId="rajasthan"
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={setSelectedCategory}
+              onViewMoreCategory={handleSelectCategory}
             />
 
             {/* 🇮🇳 देश - विदेश (National & World Live) */}
@@ -585,12 +649,12 @@ export default function App() {
               categoryId="national"
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={setSelectedCategory}
+              onViewMoreCategory={handleSelectCategory}
             />
 
             {/* 🏏 खेल जगत (Sports) */}
@@ -598,12 +662,12 @@ export default function App() {
               categoryId="sports"
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={setSelectedCategory}
+              onViewMoreCategory={handleSelectCategory}
             />
 
             {/* 🎬 मनोरंजन (Cinema & Culture) */}
@@ -611,12 +675,12 @@ export default function App() {
               categoryId="entertainment"
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={setSelectedCategory}
+              onViewMoreCategory={handleSelectCategory}
             />
 
             {/* 💼 व्यापार (Business) */}
@@ -624,12 +688,12 @@ export default function App() {
               categoryId="business"
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={setSelectedCategory}
+              onViewMoreCategory={handleSelectCategory}
             />
 
             {/* 🚨 क्राइम व पुलिस (Crime & Police) */}
@@ -637,12 +701,12 @@ export default function App() {
               categoryId="crime"
               articles={articles}
               lang={lang}
-              onOpenArticle={setActiveArticle}
+              onOpenArticle={handleOpenArticle}
               onPlayTTS={handlePlayTTS}
               currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
               bookmarks={bookmarks}
               onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={setSelectedCategory}
+              onViewMoreCategory={handleSelectCategory}
             />
           </>
         )}
@@ -651,7 +715,7 @@ export default function App() {
 
       {/* FOOTER */}
       <Footer
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={handleSelectCategory}
         onOpenSubmitNews={() => setIsSubmitNewsOpen(true)}
         lang={lang}
       />
@@ -659,9 +723,8 @@ export default function App() {
       {/* MOBILE STICKY BOTTOM NAVIGATION (For 95% mobile usage) */}
       <MobileBottomNav
         activeTab={selectedCategory}
-        onSelectTab={setSelectedCategory}
+        onSelectTab={handleSelectCategory}
         onOpenQuickRead={() => setIsQuickReadOpen(true)}
-        onOpenMandi={() => setIsMandiModalOpen(true)}
         onOpenMobileMenu={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       />
 
@@ -671,14 +734,14 @@ export default function App() {
       <ArticleModal
         article={activeArticle}
         isOpen={!!activeArticle}
-        onClose={() => setActiveArticle(null)}
+        onClose={handleCloseArticle}
         lang={lang}
         onPlayTTS={handlePlayTTS}
         isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === activeArticle?.id}
         isBookmarked={activeArticle ? bookmarks.includes(activeArticle.id) : false}
         onToggleBookmark={handleToggleBookmark}
         relatedArticles={articles.filter(a => a.id !== activeArticle?.id && (a.category === activeArticle?.category || a.category === 'beawar'))}
-        onSelectRelated={setActiveArticle}
+        onSelectRelated={handleOpenArticle}
       />
 
       {/* 2. 60-Word Inshorts Quick Read Modal */}
@@ -694,27 +757,19 @@ export default function App() {
         onToggleBookmark={handleToggleBookmark}
       />
 
-      {/* 3. Beawar Mandi Bhav Rates Modal */}
-      <MandiModal
-        isOpen={isMandiModalOpen}
-        onClose={() => setIsMandiModalOpen(false)}
-        rates={mandiRates}
-        lastUpdatedAt={mandiLastUpdated}
-      />
-
-      {/* 4. Citizen Journalism: Submit News via WhatsApp Modal */}
+      {/* 3. Citizen Journalism: Submit News via WhatsApp Modal */}
       <SubmitNewsModal
         isOpen={isSubmitNewsOpen}
         onClose={() => setIsSubmitNewsOpen(false)}
       />
 
-      {/* 6. Saved Bookmarks Modal */}
+      {/* 4. Saved Bookmarks Modal */}
       <BookmarksModal
         isOpen={isBookmarksModalOpen}
         onClose={() => setIsBookmarksModalOpen(false)}
         bookmarkedArticles={bookmarkedArticles}
         lang={lang}
-        onOpenArticle={setActiveArticle}
+        onOpenArticle={handleOpenArticle}
         onPlayTTS={handlePlayTTS}
         currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
         onToggleBookmark={handleToggleBookmark}

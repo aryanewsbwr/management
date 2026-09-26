@@ -42,24 +42,40 @@ function cleanHtml(str = '') {
     .trim();
 }
 
-function detectCategory(title = '', desc = '', defaultCat = 'national') {
+function detectCategory(title = '', desc = '', feedCategory = 'national') {
+  // 1. Dedicated feeds (sports, entertainment, business) MUST NEVER be overridden
+  if (feedCategory === 'sports' || feedCategory === 'entertainment' || feedCategory === 'business') {
+    return feedCategory;
+  }
+
   const text = (title + ' ' + desc).toLowerCase();
-  if (/राजस्थान|जयपुर|जोधपुर|अजमेर|ब्यावर|कोटा|उदयपुर|बीकानेर|भीलवाड़ा|सीकर|अलवर|पाली|बाड़मेर|चित्तौड़गढ़|भजनलाल|गहलोत/i.test(text)) {
+
+  // 2. High-confidence Rajasthan state news (from general feeds)
+  if (/राजस्थान में|जयपुर में|जोधपुर में|अजमेर में|ब्यावर में|कोटा में|उदयपुर में|भीलवाड़ा में|भजनलाल शर्मा|राजस्थान पुलिस|राजस्थान सरकार|अशोक गहलोत|वसुंधरा राजे/i.test(text)) {
     return 'rajasthan';
   }
-  if (/हत्या|मर्डर|गिरफ्तार|कत्ल|सुसाइड|क्राइम|पुलिस|हथियार|गोलीबारी|गोली|चोरी|डकैती|लूट|गैंग|धोखाधड़ी|बलात्कार|सीबीआई|ईडी|एनआईए|अरेस्ट|कोर्ट|हिरासत/i.test(text)) {
+
+  // 3. High-confidence Crime news (from general feeds)
+  if (/हत्याकांड|कत्ल|गोली मारकर हत्या|पुलिस ने किया गिरफ्तार|हिरासत में लिया|चोरी की वारदात|लूट की वारदात|बलात्कार का मामला|सीबीआई ने|ईडी ने छापा|एनआईए ने|साइबर धोखाधड़ी/i.test(text)) {
     return 'crime';
   }
-  if (/क्रिकेट|ipl|मैच|विश्व कप|टूर्नामेंट|हॉकी|फुटबॉल|खिलाड़ी|मेडल|एशियन गेम्स|विराट|रोहित|धोनी|बीसीसीआई|शमी|ओलंपिक/i.test(text)) {
-    return 'sports';
-  }
-  if (/शेयर|सेंसेक्स|निफ्टी|सोना|चांदी|मार्केट|रुपया|डॉलर|अर्थव्यवस्था|आरबीआई|बैंक|अडाणी|अंबानी|कारोबार|मंडी|जीएसटी|बजट/i.test(text)) {
-    return 'business';
-  }
-  if (/बॉलीवुड|फिल्म|सिनेमा|एक्टर|एक्ट्रेस|सलमान|शाहरुख|ओटीटी|ट्रेलर|गाना|स्टार|बॉक्स ऑफिस|सीरीज|हॉलीवुड/i.test(text)) {
+
+  // 4. Strict Entertainment news (only explicit cinema terms, no loose words like 'स्टार' or 'गाना')
+  if (/बॉलीवुड फिल्म|बॉक्स ऑफिस कलेक्शन|फिल्म का ट्रेलर|ओटीटी रिलीज|सिनेमाघरों में रिलीज|अभिनेता|अभिनेत्री|हॉलीवुड फिल्म/i.test(text)) {
     return 'entertainment';
   }
-  return defaultCat;
+
+  // 5. Strict Sports news (from general feeds)
+  if (/क्रिकेट मैच|टीम इंडिया|आईपीएल 202|विश्व कप फाइनल|टेस्ट मैच|टी20 मैच|ओलंपिक पदक|बीसीसीआई ने|विराट कोहली|रोहित शर्मा/i.test(text)) {
+    return 'sports';
+  }
+
+  // 6. Strict Business news (from general feeds)
+  if (/शेयर बाजार|सेंसेक्स में|निफ्टी में|सोने के दाम|चांदी के भाव|आरबीआई की मौद्रिक नीति|जीएसटी कलेक्शन|भारतीय अर्थव्यवस्था|रुपया बनाम डॉलर/i.test(text)) {
+    return 'business';
+  }
+
+  return 'national';
 }
 
 const xmlParser = new XMLParser({

@@ -35,7 +35,8 @@ export default function ArticleModal({
   ];
 
   const handleWhatsAppShare = () => {
-    const text = `*${title}*\n\n${content ? content.slice(0, 160) + '...' : ''}\n\n👉 पूरी खबर पढ़ें: https://www.aryannewsagency.com/\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const shareUrl = `https://www.aryannewsagency.com/api/share?id=${article.id}`;
+    const text = `*${title}*\n\n${content ? content.slice(0, 160) + '...' : ''}\n\n👉 पूरी खबर एवं फोटो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -125,7 +126,7 @@ export default function ArticleModal({
 
           {/* Meta Info */}
           <div className="mt-4 pb-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-wrap gap-2 text-xs text-gray-500">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="font-bold text-gray-800 dark:text-gray-200">
                 {article.author || 'आर्यन ब्यूरो, ब्यावर'}
               </span>
@@ -138,6 +139,15 @@ export default function ArticleModal({
                   year: 'numeric'
                 })}
               </span>
+              {article.views !== undefined && (
+                <>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-300 font-bold bg-red-50 dark:bg-red-950/60 px-2 py-0.5 rounded-full text-[11px] border border-red-200 dark:border-red-900">
+                    <Eye className="w-3.5 h-3.5 text-red-600" />
+                    <span>{article.views || 1} बार देखा गया (Views)</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
 

@@ -42,7 +42,8 @@ export default function ArticleCard({
   // WhatsApp 1-tap viral share
   const handleWhatsAppShare = (e) => {
     e.stopPropagation();
-    const shareText = `*${title}*\n\n${summary ? summary.slice(0, 140) + '...' : ''}\n\n👉 पूरी खबर पढ़ें: https://www.aryannewsagency.com/\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)* - सबसे तेज, सबसे विश्वसनीय।`;
+    const shareUrl = `https://www.aryannewsagency.com/api/share?id=${article.id}`;
+    const shareText = `*${title}*\n\n${summary ? summary.slice(0, 140) + '...' : ''}\n\n👉 पूरी खबर एवं फोटो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)* - सबसे तेज, सबसे विश्वसनीय।`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
   };
 
@@ -103,10 +104,18 @@ export default function ArticleCard({
 
           {/* Meta & Action Bar */}
           <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-50 dark:border-gray-800/80 text-[11px] text-gray-500">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3 text-gray-400" />
-              <span>{timeAgo(article.publishedAt)}</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-gray-400" />
+                <span>{timeAgo(article.publishedAt)}</span>
+              </span>
+              {article.views !== undefined && article.views > 0 && (
+                <span className="flex items-center gap-0.5 text-gray-400 text-[10px]">
+                  <Eye className="w-3 h-3 text-red-500" />
+                  <span>{article.views}</span>
+                </span>
+              )}
+            </div>
 
             <div className="flex items-center gap-1.5">
               {/* Audio Listen */}
@@ -211,6 +220,12 @@ export default function ArticleCard({
               <Clock className="w-3 h-3 text-gray-400" />
               <span>{timeAgo(article.publishedAt)}</span>
             </span>
+            {article.views !== undefined && article.views > 0 && (
+              <span className="flex items-center gap-0.5 text-gray-400">
+                <Eye className="w-3 h-3 text-red-500" />
+                <span>{article.views}</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">

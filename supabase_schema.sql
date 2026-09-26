@@ -21,9 +21,28 @@ CREATE TABLE IF NOT EXISTS public.articles (
     is_trending BOOLEAN DEFAULT FALSE,
     is_breaking BOOLEAN DEFAULT FALSE,
     read_time TEXT DEFAULT '2 मिनट',
+    views INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+-- Migration for existing instances:
+ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 0;
+
+-- RPC FUNCTION: Securely increment article view count (callable by public anon & authenticated)
+CREATE OR REPLACE FUNCTION public.increment_article_views(article_id TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE public.articles
+    SET views = COALESCE(views, 0) + 1
+    WHERE id = article_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.increment_article_views(TEXT) TO anon, authenticated;
 
 -- 2. MANDI RATES TABLE (Beawar Krishi Upaj Mandi bhav)
 CREATE TABLE IF NOT EXISTS public.mandi_rates (
