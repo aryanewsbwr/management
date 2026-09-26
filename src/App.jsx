@@ -330,18 +330,22 @@ export default function App() {
       fullBody = summary.trim();
     }
 
+    const sourceAttribution = article.isLiveFeed && article.sourceName 
+      ? (isHi ? `स्रोत: ${article.sourceName}। ` : `Source: ${article.sourceName}. `)
+      : '';
+
     let fullTextToRead;
     if (isHi) {
       if (fullBody) {
-        fullTextToRead = `मुख्य समाचार: ${headline}। अब विस्तार से खबर: ${fullBody}`;
+        fullTextToRead = `मुख्य समाचार: ${headline}। ${sourceAttribution}अब विस्तार से खबर: ${fullBody}`;
       } else {
-        fullTextToRead = `मुख्य समाचार: ${headline}।`;
+        fullTextToRead = `मुख्य समाचार: ${headline}। ${sourceAttribution}`;
       }
     } else {
       if (fullBody) {
-        fullTextToRead = `Headline: ${headline}. Full story: ${fullBody}`;
+        fullTextToRead = `Headline: ${headline}. ${sourceAttribution}Full story: ${fullBody}`;
       } else {
-        fullTextToRead = `Headline: ${headline}.`;
+        fullTextToRead = `Headline: ${headline}. ${sourceAttribution}`;
       }
     }
 
