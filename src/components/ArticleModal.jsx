@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { CATEGORIES, AGENCY_INFO } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
+import MediaCarousel from './MediaCarousel';
 
 export default function ArticleModal({
   article,
@@ -162,17 +163,22 @@ export default function ArticleModal({
             </div>
           ) : (
             <div className="my-5 rounded-2xl overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-800">
-              <img
-                src={article.image}
-                alt={title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
-                }}
-                className="w-full h-auto max-h-[420px] object-cover"
+              <MediaCarousel
+                images={article.gallery && article.gallery.length > 0 ? article.gallery : [article.image]}
+                videoUrl={article.videoUrl}
+                mediaType={article.mediaType}
+                title={title}
+                aspectRatio="w-full h-auto min-h-[260px] max-h-[460px]"
+                autoPlayInterval={3500}
+                showControls={true}
               />
-              <div className="p-2 text-center text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 font-hindi">
-                फोटो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)
+              <div className="p-2.5 text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 font-hindi border-t border-gray-100 dark:border-gray-800 flex items-center justify-between px-4">
+                <span>फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)</span>
+                {article.gallery && article.gallery.length > 1 && (
+                  <span className="text-amber-600 dark:text-amber-400 font-bold">
+                    कुल {article.gallery.length} फोटो (ऑटो स्लाइड शो)
+                  </span>
+                )}
               </div>
             </div>
           )}

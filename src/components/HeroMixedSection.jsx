@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import ArticleCard from './ArticleCard';
 import CategoryPlaceholder from './CategoryPlaceholder';
+import MediaCarousel from './MediaCarousel';
 
 export default function HeroMixedSection({
   articles = [],
@@ -102,15 +103,17 @@ export default function HeroMixedSection({
                 />
               </div>
             ) : (
-              <img
-                src={heroArticle.image}
-                alt={heroTitle}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
-                }}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80"
-              />
+              <div className="absolute inset-0 w-full h-full">
+                <MediaCarousel
+                  images={heroArticle.gallery && heroArticle.gallery.length > 0 ? heroArticle.gallery : [heroArticle.image]}
+                  videoUrl={heroArticle.videoUrl}
+                  mediaType={heroArticle.mediaType}
+                  title={heroTitle}
+                  aspectRatio="w-full h-full"
+                  autoPlayInterval={4000}
+                  showControls={false}
+                />
+              </div>
             )}
             {/* Dark overlay gradients */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />

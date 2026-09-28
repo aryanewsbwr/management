@@ -3,7 +3,7 @@ import {
   Lock, User, Key, Eye, EyeOff, ShieldCheck, CheckCircle2, 
   AlertCircle, Upload, Image as ImageIcon, Trash2, ExternalLink, 
   LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save,
-  Edit3
+  Edit3, Radio, PowerOff, Video, Film, Play, X, Layers
 } from 'lucide-react';
 import { AGENCY_INFO } from '../data/categories';
 import { StorageService } from '../services/storage';
@@ -24,17 +24,33 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   // Dashboard Active Tab: 'upload' | 'manage' | 'mandi' | 'breaking'
   const [activeTab, setActiveTab] = useState('upload');
 
+  // Live API News Kill Switch State
+  const [isApiNewsEnabled, setIsApiNewsEnabled] = useState(true);
+  const [isTogglingKillSwitch, setIsTogglingKillSwitch] = useState(false);
+
   // Form State for Non-Tech Upload & Edit
   const [editingArticle, setEditingArticle] = useState(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [author, setAuthor] = useState('संवाददाता, ब्यावर');
   const [area, setArea] = useState('चांग गेट, ब्यावर');
-  const [imagePreview, setImagePreview] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [compressedDataUrl, setCompressedDataUrl] = useState('');
+
+  // Media Mode: 'photos' (Single/Multiple Photos for Auto-Carousel) | 'video' (Short Video Clip)
+  const [mediaMode, setMediaMode] = useState('photos');
+  
+  // Gallery Items: array of { id, file, blob, dataUrl, isExisting }
+  const [galleryItems, setGalleryItems] = useState([]);
+  
+  // Video State
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
+  const [videoPosterFile, setVideoPosterFile] = useState(null);
+  const [videoPosterPreview, setVideoPosterPreview] = useState('');
+  const [videoSizeMb, setVideoSizeMb] = useState('');
+
   const [isCompressingImage, setIsCompressingImage] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState('');
+  const [uploadStatusText, setUploadStatusText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Uploaded Beawar articles list
@@ -73,11 +89,14 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   const loadData = async () => {
     try {
-      const customArticles = await StorageService.fetchCustomArticles();
+      const [customArticles, bn, apiNewsStatus] = await Promise.all([
+        StorageService.fetchCustomArticles(),
+        StorageService.fetchBreakingNews(),
+        StorageService.fetchApiNewsEnabled()
+      ]);
       setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
-
-      const bn = await StorageService.fetchBreakingNews();
       setBreakingNews(bn || []);
+      setIsApiNewsEnabled(apiNewsStatus);
     } catch (e) {
       console.error('[AdminPanel] Error loading data:', e);
     }
@@ -129,6 +148,25 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     setCurrentUserEmail('');
   };
 
+  // Toggle Live API News Kill Switch (Persisted in Supabase & Local Cache)
+  const handleToggleKillSwitch = async () => {
+    setIsTogglingKillSwitch(true);
+    try {
+      const nextStatus = !isApiNewsEnabled;
+      await StorageService.setApiNewsEnabled(nextStatus);
+      setIsApiNewsEnabled(nextStatus);
+      if (onNewsUpdated) onNewsUpdated();
+      alert(nextStatus
+        ? '✅ लाइव API समाचार सफलतापूर्वक चालू कर दिए गए हैं। अब राजस्थान, देश, खेल व अन्य श्रेणियां भी दर्शकों को दिखेंगी।'
+        : '⛔ लाइव API समाचार पूरी तरह बंद (किल) कर दिए गए हैं। अब वेबसाइट पर केवल ब्यावर की स्थानीय खबरें प्रदर्शित होंगी।'
+      );
+    } catch (err) {
+      alert(`किल-स्विच अपडेट करने में त्रुटि: ${err.message}`);
+    } finally {
+      setIsTogglingKillSwitch(false);
+    }
+  };
+
   // Start Editing an existing Beawar article
   const handleStartEdit = (article) => {
     setEditingArticle(article);
@@ -145,10 +183,31 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       setArea('चांग गेट, ब्यावर');
     }
 
-    setImagePreview(article.image || '');
-    setSelectedFile(null);
-    setCompressedDataUrl('');
+    // Media Setup
+    if (article.videoUrl || article.mediaType === 'video') {
+      setMediaMode('video');
+      setVideoFile(null);
+      setVideoPreviewUrl(article.videoUrl || '');
+      setVideoPosterPreview(article.image || '');
+      setVideoPosterFile(null);
+      setGalleryItems([]);
+    } else {
+      setMediaMode('photos');
+      const gallery = article.gallery && article.gallery.length > 0 
+        ? article.gallery 
+        : (article.image ? [article.image] : []);
+      
+      setGalleryItems(gallery.map((url, i) => ({
+        id: `existing-${i}-${Date.now()}`,
+        dataUrl: url,
+        isExisting: true
+      })));
+      setVideoFile(null);
+      setVideoPreviewUrl('');
+    }
+
     setUploadSuccess('');
+    setUploadStatusText('');
     setActiveTab('upload');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -160,10 +219,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     setContent('');
     setAuthor('संवाददाता, ब्यावर');
     setArea('चांग गेट, ब्यावर');
-    setImagePreview('');
-    setSelectedFile(null);
-    setCompressedDataUrl('');
+    setMediaMode('photos');
+    setGalleryItems([]);
+    setVideoFile(null);
+    setVideoPreviewUrl('');
+    setVideoPosterFile(null);
+    setVideoPosterPreview('');
+    setVideoSizeMb('');
     setUploadSuccess('');
+    setUploadStatusText('');
   };
 
   // Auto check URL query param ?edit=<id>
@@ -180,38 +244,96 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     }
   }, [beawarArticles]);
 
-  // Image File Picker with Client-Side Canvas Compression
-  const handleImageFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Multiple Photos Picker with Client-Side Canvas Compression
+  const handleMultipleImagesChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      alert('फोटो का साइज 15MB से कम होना चाहिए।');
+    const oversized = files.filter(f => f.size > 20 * 1024 * 1024);
+    if (oversized.length > 0) {
+      alert('कृपया 20MB से छोटी फोटो चुनें।');
       return;
     }
 
     setIsCompressingImage(true);
     try {
-      // High-quality client-side compression (~50KB-90KB)
-      const { dataUrl, blob } = await compressImage(file);
-      setSelectedFile(blob);
-      setCompressedDataUrl(dataUrl);
-      setImagePreview(dataUrl);
-    } catch (err) {
-      console.warn('Canvas compression fallback to raw file:', err);
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setCompressedDataUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+      const newItems = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const { dataUrl, blob } = await compressImage(file);
+          newItems.push({
+            id: `new-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 5)}`,
+            file,
+            blob,
+            dataUrl,
+            isExisting: false
+          });
+        } catch (err) {
+          console.warn('Canvas compression fallback to raw file:', err);
+          const rawUrl = URL.createObjectURL(file);
+          newItems.push({
+            id: `new-${Date.now()}-${i}`,
+            file,
+            blob: file,
+            dataUrl: rawUrl,
+            isExisting: false
+          });
+        }
+      }
+      setGalleryItems(prev => [...prev, ...newItems]);
     } finally {
       setIsCompressingImage(false);
+      e.target.value = '';
     }
   };
 
-  // Handle Beawar News Publish or Update with Supabase Storage + DataURL Fallback
+  const handleRemovePhoto = (idToRemove) => {
+    setGalleryItems(prev => prev.filter(item => item.id !== idToRemove));
+  };
+
+  const handleMakeCoverPhoto = (indexToMove) => {
+    setGalleryItems(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(indexToMove, 1);
+      return [moved, ...updated];
+    });
+  };
+
+  // Video File Picker
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    if (file.size > 50 * 1024 * 1024) {
+      alert(`वीडियो का आकार ${sizeMb} MB है। सुचारू अपलोड के लिए कृपया 50 MB से कम का शॉर्ट वीडियो चुनें।`);
+      return;
+    }
+
+    setVideoSizeMb(sizeMb);
+    setVideoFile(file);
+    const objUrl = URL.createObjectURL(file);
+    setVideoPreviewUrl(objUrl);
+    e.target.value = '';
+  };
+
+  // Video Poster / Cover Image Picker
+  const handleVideoPosterChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { dataUrl, blob } = await compressImage(file);
+      setVideoPosterFile(blob);
+      setVideoPosterPreview(dataUrl);
+    } catch {
+      setVideoPosterFile(file);
+      setVideoPosterPreview(URL.createObjectURL(file));
+    }
+    e.target.value = '';
+  };
+
+  // Handle Beawar News Publish or Update (Supports Multi-Photos Carousel & Video)
   const handlePublishNews = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
@@ -219,29 +341,76 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       return;
     }
 
+    if (mediaMode === 'video' && !videoPreviewUrl && !videoFile) {
+      alert('कृपया एक शॉर्ट वीडियो क्लिप चुनें या फोटो मोड चुनें।');
+      return;
+    }
+
     setIsSubmitting(true);
     setUploadSuccess('');
+    setUploadStatusText('');
 
     try {
-      // Start with current image in preview (or existing image if editing)
-      let finalImageUrl = imagePreview || '';
+      let finalGallery = [];
+      let finalVideoUrl = null;
+      let finalPrimaryImage = '';
 
-      // If user selected a new file/blob, attempt Supabase Storage upload
-      if (selectedFile) {
-        try {
-          finalImageUrl = await StorageService.uploadArticleImage(selectedFile);
-        } catch (uploadErr) {
-          console.warn('[Storage] Storage bucket upload failed, using high-quality compressed image data URL:', uploadErr.message);
-          // 100% RELIABLE FAILSAFE: Use compressed Data URL directly!
-          // NEVER fall back to Unsplash placeholder when user uploaded an image!
-          finalImageUrl = compressedDataUrl || imagePreview;
+      if (mediaMode === 'video') {
+        // 1. Upload Video Clip
+        if (videoFile) {
+          setUploadStatusText('🎥 वीडियो अपलोड हो रहा है... कृपया प्रतीक्षा करें');
+          try {
+            finalVideoUrl = await StorageService.uploadArticleMedia(videoFile);
+          } catch (vidErr) {
+            console.error('[Admin] Video upload failed:', vidErr);
+            throw new Error(`वीडियो अपलोड करने में विफलता: ${vidErr.message}`);
+          }
+        } else {
+          finalVideoUrl = videoPreviewUrl;
+        }
+
+        // 2. Upload Video Cover/Poster
+        if (videoPosterFile) {
+          setUploadStatusText('🖼️ वीडियो कवर फोटो अपलोड हो रही है...');
+          try {
+            finalPrimaryImage = await StorageService.uploadArticleMedia(videoPosterFile);
+          } catch {
+            finalPrimaryImage = videoPosterPreview || 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+          }
+        } else if (videoPosterPreview && videoPosterPreview.startsWith('http')) {
+          finalPrimaryImage = videoPosterPreview;
+        } else {
+          finalPrimaryImage = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+        }
+
+      } else {
+        // PHOTOS / GALLERY MODE
+        if (galleryItems.length === 0) {
+          finalPrimaryImage = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+          finalGallery = [finalPrimaryImage];
+        } else {
+          for (let i = 0; i < galleryItems.length; i++) {
+            const item = galleryItems[i];
+            if (item.isExisting && item.dataUrl && item.dataUrl.startsWith('http')) {
+              finalGallery.push(item.dataUrl);
+            } else if (item.blob || item.file) {
+              setUploadStatusText(`📷 फोटो ${i + 1}/${galleryItems.length} अपलोड हो रही है...`);
+              try {
+                const uploadedUrl = await StorageService.uploadArticleMedia(item.blob || item.file);
+                finalGallery.push(uploadedUrl);
+              } catch (upErr) {
+                console.warn('[Admin] Storage upload failed for photo, using compressed data URL:', upErr.message);
+                finalGallery.push(item.dataUrl);
+              }
+            } else if (item.dataUrl) {
+              finalGallery.push(item.dataUrl);
+            }
+          }
+          finalPrimaryImage = finalGallery[0];
         }
       }
 
-      // If still empty (user never uploaded photo and no existing image)
-      if (!finalImageUrl) {
-        finalImageUrl = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
-      }
+      setUploadStatusText('💾 खबर डेटाबेस में सुरक्षित हो रही है...');
 
       const formattedAuthor = area.trim() ? `${author.trim()} (${area.trim()})` : author.trim();
 
@@ -254,7 +423,10 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         contentHi: content.trim(),
         contentEn: content.trim(),
         category: 'beawar',
-        image: finalImageUrl,
+        image: finalPrimaryImage,
+        gallery: finalGallery,
+        videoUrl: finalVideoUrl,
+        mediaType: mediaMode === 'video' ? 'video' : (finalGallery.length > 1 ? 'gallery' : 'image'),
         publishedAt: editingArticle ? editingArticle.publishedAt : new Date().toISOString(),
         author: formattedAuthor || 'संवाददाता, ब्यावर',
         isHero: false,
@@ -283,6 +455,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     } catch (err) {
       alert(`खबर प्रकाशित/अपडेट करने में त्रुटि: ${err.message}`);
       setIsSubmitting(false);
+      setUploadStatusText('');
     }
   };
 
@@ -548,6 +721,75 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       <main className="max-w-5xl w-full mx-auto p-4 sm:p-6 flex-1">
         
         {/* ==================================================== */}
+        {/* LIVE API NEWS KILL SWITCH CONTROL BANNER */}
+        {/* ==================================================== */}
+        <div className={`mb-6 p-4 sm:p-5 rounded-3xl border-2 transition-all shadow-sm ${
+          isApiNewsEnabled
+            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
+            : 'bg-red-50 dark:bg-red-950/40 border-red-400 dark:border-red-800'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-md ${
+                isApiNewsEnabled
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-red-600 text-white animate-pulse'
+              }`}>
+                {isApiNewsEnabled ? <Radio className="w-6 h-6" /> : <PowerOff className="w-6 h-6" />}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm sm:text-base font-black font-hindi text-gray-950 dark:text-white">
+                    लाइव API समाचार नियंत्रण (Live News Kill Switch)
+                  </h3>
+                  <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                    isApiNewsEnabled
+                      ? 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200'
+                      : 'bg-red-200 text-red-950 dark:bg-red-900 dark:text-red-200 animate-bounce'
+                  }`}>
+                    {isApiNewsEnabled ? '● चालू (Active)' : '■ किल-स्विच चालू (Killed)'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-300 font-hindi mt-1 leading-relaxed">
+                  {isApiNewsEnabled 
+                    ? 'वेबसाइट पर राजस्थान, देश, खेल, मनोरंजन, व्यापार और ब्यावर की सभी खबरें सुचारू रूप से दिखाई दे रही हैं।' 
+                    : '⚠️ चेतावनी: बाहरी API समाचार पूरी तरह बंद हैं। वेबसाइट पर केवल ब्यावर की स्थानीय खबरें प्रदर्शित हो रही हैं।'
+                  }
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={isTogglingKillSwitch}
+              onClick={handleToggleKillSwitch}
+              className={`self-start sm:self-center px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm font-hindi transition-all shadow-md active:scale-95 flex items-center gap-2 whitespace-nowrap ${
+                isApiNewsEnabled
+                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+              }`}
+            >
+              {isTogglingKillSwitch ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>अपडेट हो रहा है...</span>
+                </>
+              ) : isApiNewsEnabled ? (
+                <>
+                  <PowerOff className="w-4 h-4" />
+                  <span>⛔ API न्यूज़ बंद करें (केवल ब्यावर दिखाएं)</span>
+                </>
+              ) : (
+                <>
+                  <Radio className="w-4 h-4" />
+                  <span>✅ API न्यूज़ फिर से चालू करें</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* ==================================================== */}
         {/* 1. SIMPLE NON-TECH BEAWAR NEWS UPLOADER FORM */}
         {/* ==================================================== */}
         {activeTab === 'upload' && (
@@ -618,73 +860,246 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 />
               </div>
 
-              {/* 2. Photo Upload (Very simple for mobile/PC) */}
-              <div>
-                <label className="block text-sm font-black font-hindi text-gray-800 dark:text-gray-200 mb-1.5">
-                  2. खबर की फोटो (Select Photo from Phone / PC)
-                </label>
+              {/* 2. Media Upload: Multiple Photos Auto-Carousel OR Short Video */}
+              <div className="bg-gray-50 dark:bg-gray-800/60 p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-gray-700/80 space-y-4">
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                  
-                  {/* File Upload Button */}
-                  <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-red-300 dark:border-red-900/60 rounded-2xl bg-red-50/50 dark:bg-red-950/20 hover:bg-red-100/50 cursor-pointer transition text-center">
-                    <Upload className="w-8 h-8 text-red-600 mb-2" />
-                    <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
-                      मोबाइल गैलरी / कंप्यूटर से फोटो चुनें
-                    </span>
-                    <span className="text-[11px] text-gray-500 mt-0.5">
-                      (JPG, PNG समर्थित)
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFileChange}
-                      className="hidden"
-                    />
-                  </label>
-
-                  {/* Photo Preview Box */}
-                  <div className="relative h-44 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                    {isCompressingImage ? (
-                      <div className="text-center p-4">
-                        <RefreshCw className="w-8 h-8 mx-auto mb-2 text-red-600 animate-spin" />
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block font-hindi">
-                          फोटो को ऑप्टिमाइज़ किया जा रहा है...
-                        </span>
-                      </div>
-                    ) : imagePreview ? (
-                      <>
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImagePreview('');
-                            setSelectedFile(null);
-                            setCompressedDataUrl('');
-                          }}
-                          className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-1 rounded-full text-xs shadow"
-                          title="फोटो हटाएं"
-                        >
-                          ✕
-                        </button>
-                        <span className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md font-hindi">
-                          {selectedFile ? 'नई फोटो चुनी गई' : 'मौजूदा फोटो'}
-                        </span>
-                      </>
-                    ) : (
-                      <div className="text-center p-4 text-gray-400">
-                        <ImageIcon className="w-8 h-8 mx-auto mb-1 opacity-50" />
-                        <span className="text-xs font-medium block">फोटो प्रीव्यू यहाँ दिखेगा</span>
-                        <span className="text-[10px] text-gray-400">(अगर फोटो नहीं चुनेंगे तो ब्यावर की मानक फोटो लग जाएगी)</span>
-                      </div>
-                    )}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 pb-3">
+                  <div>
+                    <label className="block text-sm font-black font-hindi text-gray-900 dark:text-white">
+                      2. खबर का मीडिया (फोटो कैरोज़ल अथवा शॉर्ट वीडियो) *
+                    </label>
+                    <p className="text-xs text-gray-500 font-hindi mt-0.5">
+                      आप एक या एक से अधिक फोटो (जो वेबसाइट पर ऑटो-स्लाइड होंगी) या शॉर्ट वीडियो क्लिप जोड़ सकते हैं।
+                    </p>
                   </div>
 
+                  {/* Mode Selector Tabs */}
+                  <div className="flex items-center gap-1.5 bg-gray-200 dark:bg-gray-700 p-1 rounded-xl shrink-0 self-start sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => setMediaMode('photos')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        mediaMode === 'photos'
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-gray-900'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>फोटो / कैरोज़ल</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMediaMode('video')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        mediaMode === 'video'
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-gray-900'
+                      }`}
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      <span>शॉर्ट वीडियो</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* TAB 1: MULTIPLE PHOTOS (AUTO-CAROUSEL) */}
+                {mediaMode === 'photos' && (
+                  <div className="space-y-3">
+                    
+                    {/* Upload Trigger Button */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-red-300 dark:border-red-800 rounded-xl bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition shadow-sm text-xs font-bold text-gray-900 dark:text-white">
+                        <Upload className="w-4 h-4 text-red-600" />
+                        <span>गैलरी / कंप्यूटर से फोटो चुनें (1 या अधिक)</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleMultipleImagesChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <span className="text-[11px] text-gray-500 font-hindi">
+                        (एक साथ कई फोटो चुन सकते हैं • JPG, PNG)
+                      </span>
+                    </div>
+
+                    {/* Compression indicator */}
+                    {isCompressingImage && (
+                      <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-200">
+                        <RefreshCw className="w-4 h-4 animate-spin text-amber-600" />
+                        <span>फोटो ऑप्टिमाइज़ की जा रही हैं... कृपया प्रतीक्षा करें</span>
+                      </div>
+                    )}
+
+                    {/* Multiple Photos Thumbnails Grid */}
+                    {galleryItems.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {galleryItems.map((item, idx) => (
+                            <div 
+                              key={item.id} 
+                              className={`relative rounded-xl overflow-hidden bg-gray-900 border-2 aspect-[4/3] group shadow-sm ${
+                                idx === 0 ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-gray-200 dark:border-gray-700'
+                              }`}
+                            >
+                              <img
+                                src={item.dataUrl}
+                                alt={`Preview ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+
+                              {/* Top Badge: Cover Photo or Index */}
+                              <div className="absolute top-1.5 left-1.5 z-10">
+                                {idx === 0 ? (
+                                  <span className="bg-emerald-600 text-white font-bold text-[9px] px-2 py-0.5 rounded-md shadow">
+                                    ★ मुख्य कवर फोटो
+                                  </span>
+                                ) : (
+                                  <span className="bg-black/70 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-md">
+                                    फोटो {idx + 1}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Top Right: Delete Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(item.id)}
+                                className="absolute top-1.5 right-1.5 z-10 w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs shadow hover:scale-110 active:scale-95 transition"
+                                title="यह फोटो हटाएं"
+                              >
+                                ✕
+                              </button>
+
+                              {/* Bottom: Make Cover action on hover if not cover */}
+                              {idx !== 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMakeCoverPhoto(idx)}
+                                  className="absolute bottom-1.5 left-1.5 right-1.5 bg-black/80 hover:bg-emerald-700 text-white text-[10px] font-bold py-1 rounded transition opacity-90 group-hover:opacity-100"
+                                >
+                                  मुख्य बनाएं
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Informative Carousel Notice */}
+                        {galleryItems.length > 1 && (
+                          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 font-hindi">
+                            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>
+                              शानदार! कुल {galleryItems.length} फोटो चुनी गई हैं। वेबसाइट पर पाठक इसे 3.5 सेकंड के ऑटोमैटिक स्लाइडिंग कैरोज़ल में देख सकेंगे।
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-850">
+                        <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-300 font-hindi">
+                          अभी कोई फोटो नहीं चुनी गई है।
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          (अगर फोटो नहीं चुनेंगे तो ब्यावर की मानक हेरिटेज फोटो स्वतः लग जाएगी)
+                        </p>
+                      </div>
+                    )}
+
+                  </div>
+                )}
+
+                {/* TAB 2: SHORT VIDEO UPLOAD */}
+                {mediaMode === 'video' && (
+                  <div className="space-y-4">
+                    
+                    {/* Video File Picker */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="flex items-center gap-2 px-4 py-3 border-2 border-dashed border-red-300 dark:border-red-800 rounded-xl bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition shadow-sm text-xs font-bold text-gray-900 dark:text-white">
+                        <Video className="w-4 h-4 text-red-600" />
+                        <span>शॉर्ट वीडियो क्लिप चुनें (MP4, WebM)</span>
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm,video/quicktime,video/*"
+                          onChange={handleVideoFileChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <span className="text-[11px] text-gray-500 font-hindi">
+                        (सुचारू स्ट्रीमिंग हेतु 50MB से कम का वीडियो रखें)
+                      </span>
+                    </div>
+
+                    {/* Video Preview Player */}
+                    {videoPreviewUrl ? (
+                      <div className="space-y-3">
+                        <div className="relative rounded-2xl overflow-hidden bg-black shadow-md border border-gray-200 dark:border-gray-700">
+                          <video
+                            src={videoPreviewUrl}
+                            controls
+                            playsInline
+                            className="w-full max-h-56 object-contain mx-auto"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVideoFile(null);
+                              setVideoPreviewUrl('');
+                              setVideoSizeMb('');
+                            }}
+                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full text-xs shadow hover:bg-red-700 transition"
+                            title="वीडियो हटाएं"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300 font-hindi px-1">
+                          <span className="flex items-center gap-1.5 font-bold text-emerald-600">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>वीडियो तैयार है {videoSizeMb ? `(${videoSizeMb} MB)` : ''}</span>
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            वेबसाइट पर पाठक इसे सीधे प्ले कर सकेंगे
+                          </span>
+                        </div>
+
+                        {/* Optional Custom Cover Photo for Video */}
+                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
+                          <label className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-lg text-xs font-bold cursor-pointer transition">
+                            <ImageIcon className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
+                            <span>वीडियो का कवर/थंबनेल फोटो बदलें (वैकल्पिक)</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleVideoPosterChange}
+                              className="hidden"
+                            />
+                          </label>
+                          {videoPosterPreview && (
+                            <span className="text-xs text-emerald-600 font-bold">
+                              ✓ कस्टम कवर फोटो चुनी गई
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-850">
+                        <Film className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-xs font-bold text-gray-600 dark:text-gray-300 font-hindi">
+                          अभी कोई वीडियो क्लिप नहीं चुनी गई है।
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          (घटनास्थल, रैली, उद्घाटन या जनसमस्या का छोटा वीडियो अपलोड करें)
+                        </p>
+                      </div>
+                    )}
+
+                  </div>
+                )}
+
               </div>
 
               {/* 3. Full Story Description */}
@@ -730,6 +1145,14 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   />
                 </div>
               </div>
+
+              {/* Live Upload Progress Indicator */}
+              {uploadStatusText && (
+                <div className="p-3.5 bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 rounded-2xl text-xs font-bold flex items-center gap-2.5 border-2 border-amber-300 dark:border-amber-700 animate-pulse font-hindi">
+                  <RefreshCw className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
+                  <span>{uploadStatusText}</span>
+                </div>
+              )}
 
               {/* Big Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -844,6 +1267,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                           <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">
                             👁️ {art.views || 0} बार देखा गया (Views)
                           </span>
+                          {art.videoUrl ? (
+                            <span className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-bold px-2 py-0.5 rounded-md border border-red-200 dark:border-red-900">
+                              🎥 वीडियो
+                            </span>
+                          ) : art.gallery && art.gallery.length > 1 ? (
+                            <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900">
+                              📷 {art.gallery.length} फोटो कैरोज़ल
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </div>

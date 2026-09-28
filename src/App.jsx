@@ -42,6 +42,7 @@ export default function App() {
   const [breakingNews, setBreakingNews] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(getInitialCategory);
+  const [isApiNewsEnabled, setIsApiNewsEnabled] = useState(StorageService.getApiNewsEnabledSync);
   const [lang, setLang] = useState('hi');
   const [theme, setTheme] = useState('light');
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,16 +61,22 @@ export default function App() {
   // 3. Audio TTS State
   const [currentTTSState, setCurrentTTSState] = useState({ isPlaying: false, articleId: null });
 
-  // 4. Load Database Data (Custom Articles, Breaking News)
+  // 4. Load Database Data (Custom Articles, Breaking News, Site Settings)
   const loadDatabaseData = async () => {
     try {
-      const [customArticles, bn] = await Promise.all([
+      const [customArticles, bn, apiEnabled] = await Promise.all([
         StorageService.fetchCustomArticles(),
-        StorageService.fetchBreakingNews()
+        StorageService.fetchBreakingNews(),
+        StorageService.fetchApiNewsEnabled()
       ]);
+
+      setIsApiNewsEnabled(apiEnabled);
 
       if (customArticles && customArticles.length > 0) {
         setArticles(prev => {
+          if (!apiEnabled) {
+            return customArticles;
+          }
           const liveOnly = prev.filter(p => p.isLiveFeed);
           return [...customArticles, ...liveOnly];
         });
@@ -246,14 +253,30 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Fetch real-time live feeds
+  // Fetch real-time live feeds (respecting Kill Switch)
   const loadLiveFeeds = async (showToast = false) => {
     setIsLoadingLiveNews(true);
     setNewsError(false);
     lastFetchTimeRef.current = Date.now();
     try {
-      const liveItems = await fetchAllLiveCategories();
+      const apiEnabled = await StorageService.fetchApiNewsEnabled();
+      setIsApiNewsEnabled(apiEnabled);
+
       const customArticles = await StorageService.fetchCustomArticles();
+
+      // If Kill Switch is active, do not fetch or display syndicated API feeds
+      if (!apiEnabled) {
+        setArticles(customArticles || []);
+        setIsLoadingLiveNews(false);
+        setNewsError(false);
+        if (customArticles && customArticles.length > 0) {
+          const customHeadlines = customArticles.map(a => a.titleHi).filter(Boolean).slice(0, 8);
+          setBreakingNews(prev => prev.length > 0 ? prev : customHeadlines);
+        }
+        return;
+      }
+
+      const liveItems = await fetchAllLiveCategories();
       const combined = [...(customArticles || []), ...(liveItems || [])];
 
       if (liveItems && liveItems.length > 0) {
@@ -681,83 +704,88 @@ export default function App() {
               onViewMoreCategory={handleSelectCategory}
             />
 
-            {/* 🏛️ राजस्थान (Rajasthan State) */}
-            <CategorySection
-              categoryId="rajasthan"
-              articles={articles}
-              lang={lang}
-              onOpenArticle={handleOpenArticle}
-              onPlayTTS={handlePlayTTS}
-              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={handleSelectCategory}
-            />
+            {/* OTHER SECTIONS (Visible when API news is enabled) */}
+            {isApiNewsEnabled && (
+              <>
+                {/* 🏛️ राजस्थान (Rajasthan State) */}
+                <CategorySection
+                  categoryId="rajasthan"
+                  articles={articles}
+                  lang={lang}
+                  onOpenArticle={handleOpenArticle}
+                  onPlayTTS={handlePlayTTS}
+                  currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={handleToggleBookmark}
+                  onViewMoreCategory={handleSelectCategory}
+                />
 
-            {/* 🇮🇳 देश - विदेश (National & World Live) */}
-            <CategorySection
-              categoryId="national"
-              articles={articles}
-              lang={lang}
-              onOpenArticle={handleOpenArticle}
-              onPlayTTS={handlePlayTTS}
-              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={handleSelectCategory}
-            />
+                {/* 🇮🇳 देश - विदेश (National & World Live) */}
+                <CategorySection
+                  categoryId="national"
+                  articles={articles}
+                  lang={lang}
+                  onOpenArticle={handleOpenArticle}
+                  onPlayTTS={handlePlayTTS}
+                  currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={handleToggleBookmark}
+                  onViewMoreCategory={handleSelectCategory}
+                />
 
-            {/* 🏏 खेल जगत (Sports) */}
-            <CategorySection
-              categoryId="sports"
-              articles={articles}
-              lang={lang}
-              onOpenArticle={handleOpenArticle}
-              onPlayTTS={handlePlayTTS}
-              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={handleSelectCategory}
-            />
+                {/* 🏏 खेल जगत (Sports) */}
+                <CategorySection
+                  categoryId="sports"
+                  articles={articles}
+                  lang={lang}
+                  onOpenArticle={handleOpenArticle}
+                  onPlayTTS={handlePlayTTS}
+                  currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={handleToggleBookmark}
+                  onViewMoreCategory={handleSelectCategory}
+                />
 
-            {/* 🎬 मनोरंजन (Cinema & Culture) */}
-            <CategorySection
-              categoryId="entertainment"
-              articles={articles}
-              lang={lang}
-              onOpenArticle={handleOpenArticle}
-              onPlayTTS={handlePlayTTS}
-              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={handleSelectCategory}
-            />
+                {/* 🎬 मनोरंजन (Cinema & Culture) */}
+                <CategorySection
+                  categoryId="entertainment"
+                  articles={articles}
+                  lang={lang}
+                  onOpenArticle={handleOpenArticle}
+                  onPlayTTS={handlePlayTTS}
+                  currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={handleToggleBookmark}
+                  onViewMoreCategory={handleSelectCategory}
+                />
 
-            {/* 💼 व्यापार (Business) */}
-            <CategorySection
-              categoryId="business"
-              articles={articles}
-              lang={lang}
-              onOpenArticle={handleOpenArticle}
-              onPlayTTS={handlePlayTTS}
-              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={handleSelectCategory}
-            />
+                {/* 💼 व्यापार (Business) */}
+                <CategorySection
+                  categoryId="business"
+                  articles={articles}
+                  lang={lang}
+                  onOpenArticle={handleOpenArticle}
+                  onPlayTTS={handlePlayTTS}
+                  currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={handleToggleBookmark}
+                  onViewMoreCategory={handleSelectCategory}
+                />
 
-            {/* 🚨 क्राइम व पुलिस (Crime & Police) */}
-            <CategorySection
-              categoryId="crime"
-              articles={articles}
-              lang={lang}
-              onOpenArticle={handleOpenArticle}
-              onPlayTTS={handlePlayTTS}
-              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={handleSelectCategory}
-            />
+                {/* 🚨 क्राइम व पुलिस (Crime & Police) */}
+                <CategorySection
+                  categoryId="crime"
+                  articles={articles}
+                  lang={lang}
+                  onOpenArticle={handleOpenArticle}
+                  onPlayTTS={handlePlayTTS}
+                  currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={handleToggleBookmark}
+                  onViewMoreCategory={handleSelectCategory}
+                />
+              </>
+            )}
           </>
         )}
 

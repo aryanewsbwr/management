@@ -7,6 +7,64 @@ const USER_PREF_KEYS = {
   THEME: 'arya_news_theme_v4'
 };
 
+// Helper to embed media metadata (gallery, videoUrl, mediaType) cleanly
+function embedMediaMeta(content, { gallery, videoUrl, mediaType }) {
+  const cleanContent = (content || '').replace(/<!--MEDIA_META:[\s\S]*?-->\n?/g, '').trim();
+  const normalizedGallery = Array.isArray(gallery) ? gallery.filter(Boolean) : [];
+  
+  if (normalizedGallery.length <= 1 && !videoUrl && (!mediaType || mediaType === 'image')) {
+    return cleanContent;
+  }
+
+  const meta = {
+    gallery: normalizedGallery,
+    videoUrl: videoUrl || null,
+    mediaType: mediaType || (videoUrl ? 'video' : (normalizedGallery.length > 1 ? 'gallery' : 'image'))
+  };
+
+  return `<!--MEDIA_META:${JSON.stringify(meta)}-->\n${cleanContent}`;
+}
+
+// Helper to extract media metadata from content or record
+function extractMediaMeta(rawContent, item = {}) {
+  let content = rawContent || '';
+  let gallery = item.gallery || [];
+  let videoUrl = item.video_url || item.videoUrl || null;
+  let mediaType = item.media_type || item.mediaType || 'image';
+
+  const metaMatch = content.match(/<!--MEDIA_META:([\s\S]*?)-->/);
+  if (metaMatch) {
+    try {
+      const parsed = JSON.parse(metaMatch[1]);
+      if (Array.isArray(parsed.gallery) && parsed.gallery.length > 0) {
+        gallery = parsed.gallery;
+      }
+      if (parsed.videoUrl) {
+        videoUrl = parsed.videoUrl;
+      }
+      if (parsed.mediaType) {
+        mediaType = parsed.mediaType;
+      }
+      content = content.replace(/<!--MEDIA_META:[\s\S]*?-->\n?/, '').trim();
+    } catch (e) {
+      console.warn('[StorageService] Failed to parse MEDIA_META:', e);
+    }
+  }
+
+  // Ensure gallery has at least the primary image if gallery is empty
+  if ((!gallery || gallery.length === 0) && item.image) {
+    gallery = [item.image];
+  }
+
+  if (videoUrl && (!mediaType || mediaType === 'image')) {
+    mediaType = 'video';
+  } else if (gallery.length > 1 && (!mediaType || mediaType === 'image')) {
+    mediaType = 'gallery';
+  }
+
+  return { content, gallery, videoUrl, mediaType };
+}
+
 export const StorageService = {
   // ==========================================
   // 1. ARTICLES (Supabase DB + Storage)
@@ -22,6 +80,7 @@ export const StorageService = {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
+        .neq('category', '_system')
         .order('published_at', { ascending: false });
 
       if (error) {
@@ -31,26 +90,34 @@ export const StorageService = {
 
       if (!data) return [];
 
-      return data.map(item => ({
-        id: item.id,
-        titleHi: item.title_hi,
-        titleEn: item.title_en || item.title_hi,
-        summaryHi: item.summary_hi,
-        summaryEn: item.summary_en || item.summary_hi,
-        contentHi: item.content_hi,
-        contentEn: item.content_en || item.content_hi,
-        category: item.category || 'beawar',
-        image: item.image,
-        publishedAt: item.published_at,
-        author: item.author || 'आर्यन ब्यूरो, ब्यावर',
-        isHero: Boolean(item.is_hero),
-        isTrending: Boolean(item.is_trending),
-        isBreaking: Boolean(item.is_breaking),
-        readTime: item.read_time || '2 मिनट',
-        views: item.views || 0,
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
+      return data.map(item => {
+        const { content: cleanContentHi, gallery, videoUrl, mediaType } = extractMediaMeta(item.content_hi, item);
+        const { content: cleanContentEn } = extractMediaMeta(item.content_en || item.content_hi, item);
+
+        return {
+          id: item.id,
+          titleHi: item.title_hi,
+          titleEn: item.title_en || item.title_hi,
+          summaryHi: item.summary_hi,
+          summaryEn: item.summary_en || item.summary_hi,
+          contentHi: cleanContentHi,
+          contentEn: cleanContentEn || cleanContentHi,
+          category: item.category || 'beawar',
+          image: item.image,
+          gallery: gallery && gallery.length > 0 ? gallery : (item.image ? [item.image] : []),
+          videoUrl: videoUrl,
+          mediaType: mediaType,
+          publishedAt: item.published_at,
+          author: item.author || 'आर्यन ब्यूरो, ब्यावर',
+          isHero: Boolean(item.is_hero),
+          isTrending: Boolean(item.is_trending),
+          isBreaking: Boolean(item.is_breaking),
+          readTime: item.read_time || '2 मिनट',
+          views: item.views || 0,
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        };
+      });
     } catch (err) {
       console.error('[StorageService] fetchCustomArticles error:', err.message);
       return [];
@@ -66,7 +133,10 @@ export const StorageService = {
         .eq('id', id)
         .maybeSingle();
 
-      if (error || !data) return null;
+      if (error || !data || data.category === '_system') return null;
+
+      const { content: cleanContentHi, gallery, videoUrl, mediaType } = extractMediaMeta(data.content_hi, data);
+      const { content: cleanContentEn } = extractMediaMeta(data.content_en || data.content_hi, data);
 
       return {
         id: data.id,
@@ -74,10 +144,13 @@ export const StorageService = {
         titleEn: data.title_en || data.title_hi,
         summaryHi: data.summary_hi,
         summaryEn: data.summary_en || data.summary_hi,
-        contentHi: data.content_hi,
-        contentEn: data.content_en || data.content_hi,
+        contentHi: cleanContentHi,
+        contentEn: cleanContentEn || cleanContentHi,
         category: data.category || 'beawar',
         image: data.image,
+        gallery: gallery && gallery.length > 0 ? gallery : (data.image ? [data.image] : []),
+        videoUrl: videoUrl,
+        mediaType: mediaType,
         publishedAt: data.published_at,
         author: data.author || 'आर्यन ब्यूरो, ब्यावर',
         isHero: Boolean(data.is_hero),
@@ -123,16 +196,28 @@ export const StorageService = {
       throw new Error('Supabase credentials not configured in environment variables.');
     }
 
+    const gallery = Array.isArray(article.gallery) ? article.gallery.filter(Boolean) : (article.image ? [article.image] : []);
+    const primaryImage = gallery[0] || article.image || null;
+    const videoUrl = article.videoUrl || null;
+    const mediaType = article.mediaType || (videoUrl ? 'video' : (gallery.length > 1 ? 'gallery' : 'image'));
+
+    // Embed rich media metadata into content_hi for 100% bulletproof storage
+    const contentHiWithMeta = embedMediaMeta(article.contentHi, {
+      gallery,
+      videoUrl,
+      mediaType
+    });
+
     const record = {
       id: article.id || `custom-bwr-${Date.now()}`,
       title_hi: article.titleHi,
       title_en: article.titleEn || article.titleHi,
       summary_hi: article.summaryHi,
       summary_en: article.summaryEn || article.summaryHi,
-      content_hi: article.contentHi,
+      content_hi: contentHiWithMeta,
       content_en: article.contentEn || article.contentHi,
       category: article.category || 'beawar',
-      image: article.image || null,
+      image: primaryImage,
       published_at: article.publishedAt || new Date().toISOString(),
       author: article.author || 'आर्यन ब्यूरो, ब्यावर',
       is_hero: Boolean(article.isHero),
@@ -174,30 +259,128 @@ export const StorageService = {
     return true;
   },
 
-  async uploadArticleImage(file) {
+  // Upload single media file (Image or Video) to Supabase Storage
+  async uploadArticleMedia(file) {
     if (!isSupabaseConfigured || !supabase) {
       throw new Error('Supabase Storage not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
     }
 
-    const fileExt = (file.name && file.name.includes('.')) ? file.name.split('.').pop() : 'jpg';
+    const isVideo = file.type && file.type.startsWith('video/');
+    const fileExt = (file.name && file.name.includes('.')) ? file.name.split('.').pop() : (isVideo ? 'mp4' : 'jpg');
+    const folder = isVideo ? 'videos' : 'news';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const filePath = `news/${fileName}`;
+    const filePath = `${folder}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('news-images')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
-        contentType: file.type || 'image/jpeg'
+        contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg')
       });
 
     if (uploadError) {
-      console.error('[StorageService] Supabase image upload failed:', uploadError.message);
+      console.error('[StorageService] Supabase media upload failed:', uploadError.message);
       throw uploadError;
     }
 
     const { data } = supabase.storage.from('news-images').getPublicUrl(filePath);
     return data.publicUrl;
+  },
+
+  // Alias for backward compatibility
+  async uploadArticleImage(file) {
+    return this.uploadArticleMedia(file);
+  },
+
+  // Upload multiple media items sequentially/parallelly
+  async uploadMultipleMedia(files) {
+    if (!files || files.length === 0) return [];
+    const uploadPromises = files.map(file => this.uploadArticleMedia(file));
+    return Promise.all(uploadPromises);
+  },
+
+  // ==========================================
+  // 2. LIVE API NEWS KILL SWITCH (Site Settings)
+  // ==========================================
+
+  getApiNewsEnabledSync() {
+    try {
+      const cached = localStorage.getItem('arya_api_news_enabled');
+      return cached !== null ? cached !== 'false' : true;
+    } catch {
+      return true;
+    }
+  },
+
+  async fetchApiNewsEnabled() {
+    let isEnabled = this.getApiNewsEnabledSync();
+
+    if (!isSupabaseConfigured || !supabase) {
+      return isEnabled;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('title_hi')
+        .eq('id', 'setting-api-news-status')
+        .maybeSingle();
+
+      if (!error && data) {
+        isEnabled = data.title_hi !== 'disabled';
+        localStorage.setItem('arya_api_news_enabled', isEnabled ? 'true' : 'false');
+      }
+    } catch (err) {
+      console.warn('[StorageService] fetchApiNewsEnabled notice:', err.message);
+    }
+
+    return isEnabled;
+  },
+
+  async setApiNewsEnabled(enabled) {
+    localStorage.setItem('arya_api_news_enabled', enabled ? 'true' : 'false');
+
+    if (!isSupabaseConfigured || !supabase) {
+      return enabled;
+    }
+
+    try {
+      const record = {
+        id: 'setting-api-news-status',
+        title_hi: enabled ? 'enabled' : 'disabled',
+        title_en: enabled ? 'enabled' : 'disabled',
+        summary_hi: 'System Setting for Live API News Kill Switch',
+        summary_en: 'System Setting for Live API News Kill Switch',
+        content_hi: enabled 
+          ? 'API News is ON (Active syndicated feeds)' 
+          : 'API News is KILLED/DISABLED - Only Beawar news is displayed on website',
+        content_en: enabled ? 'API News is ON' : 'API News is KILLED/DISABLED',
+        category: '_system',
+        image: null,
+        published_at: new Date().toISOString(),
+        author: 'System Admin',
+        is_hero: false,
+        is_trending: false,
+        is_breaking: false,
+        views: 0,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('articles')
+        .upsert(record);
+
+      if (error) {
+        console.error('[StorageService] Error saving API news kill switch setting:', error.message);
+        throw error;
+      }
+    } catch (err) {
+      console.error('[StorageService] setApiNewsEnabled error:', err.message);
+      throw err;
+    }
+
+    return enabled;
   },
 
   // ==========================================

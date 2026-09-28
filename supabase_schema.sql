@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS public.articles (
 
 -- Migration for existing instances:
 ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 0;
+ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS gallery TEXT[];
+ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE public.articles ADD COLUMN IF NOT EXISTS media_type TEXT DEFAULT 'image';
 
 -- RPC FUNCTION: Securely increment article view count (callable by public anon & authenticated)
 CREATE OR REPLACE FUNCTION public.increment_article_views(article_id TEXT)

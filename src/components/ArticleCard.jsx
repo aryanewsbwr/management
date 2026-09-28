@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
+import MediaCarousel from './MediaCarousel';
 
 export default function ArticleCard({
   article,
@@ -74,17 +75,16 @@ export default function ArticleCard({
             />
           ) : (
             <>
-              <img
-                src={article.image}
-                alt={title}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
-                }}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
+              <MediaCarousel
+                images={article.gallery && article.gallery.length > 0 ? article.gallery : [article.image]}
+                videoUrl={article.videoUrl}
+                mediaType={article.mediaType}
+                title={title}
+                aspectRatio="w-full h-full"
+                autoPlayInterval={3500}
+                showControls={false}
               />
-              <span className="absolute top-1 left-1 bg-red-600/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow">
+              <span className="absolute top-1 left-1 z-20 bg-red-600/90 text-white font-bold text-[9px] px-1.5 py-0.5 rounded shadow">
                 {categoryLabel}
               </span>
             </>
@@ -176,25 +176,23 @@ export default function ArticleCard({
           />
         ) : (
           <>
-            <img
-              src={article.image}
-              alt={title}
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
-              }}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
+            <MediaCarousel
+              images={article.gallery && article.gallery.length > 0 ? article.gallery : [article.image]}
+              videoUrl={article.videoUrl}
+              mediaType={article.mediaType}
+              title={title}
+              aspectRatio="w-full h-full"
+              autoPlayInterval={3500}
+              showControls={false}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
             {/* Category Badge */}
-            <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-md">
+            <span className="absolute top-2.5 left-2.5 z-20 bg-red-600 text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-full shadow-md">
               {categoryLabel}
             </span>
 
             {article.isBreaking && (
-              <span className="absolute top-2.5 right-2.5 bg-amber-500 text-gray-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse">
+              <span className="absolute top-2.5 right-2.5 z-20 bg-amber-500 text-gray-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow animate-pulse">
                 ब्रेकिंग
               </span>
             )}
