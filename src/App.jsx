@@ -66,7 +66,7 @@ export default function App() {
   const loadDatabaseData = async () => {
     try {
       const [customArticles, bn, apiEnabled] = await Promise.all([
-        StorageService.fetchCustomArticles(),
+        StorageService.fetchCustomArticles().then(list => list.filter(a => !a.isHidden)),
         StorageService.fetchBreakingNews(),
         StorageService.fetchApiNewsEnabled()
       ]);
@@ -291,7 +291,7 @@ export default function App() {
       const apiEnabled = await StorageService.fetchApiNewsEnabled();
       setIsApiNewsEnabled(apiEnabled);
 
-      const customArticles = await StorageService.fetchCustomArticles();
+      const customArticles = await StorageService.fetchCustomArticles().then(list => list.filter(a => !a.isHidden));
 
       // If Kill Switch is active, do not fetch or display syndicated API feeds
       if (!apiEnabled) {
@@ -414,7 +414,7 @@ export default function App() {
   const handleAddArticle = async (newArt) => {
     try {
       await StorageService.saveArticle(newArt);
-      const customArticles = await StorageService.fetchCustomArticles();
+      const customArticles = await StorageService.fetchCustomArticles().then(list => list.filter(a => !a.isHidden));
       setArticles(prev => [...customArticles, ...prev.filter(p => p.isLiveFeed)]);
     } catch (e) {
       console.error('[App] handleAddArticle error:', e);
@@ -424,7 +424,7 @@ export default function App() {
   const handleDeleteArticle = async (articleId) => {
     try {
       await StorageService.deleteArticle(articleId);
-      const customArticles = await StorageService.fetchCustomArticles();
+      const customArticles = await StorageService.fetchCustomArticles().then(list => list.filter(a => !a.isHidden));
       setArticles(prev => [...customArticles, ...prev.filter(p => p.isLiveFeed)]);
     } catch (e) {
       console.error('[App] handleDeleteArticle error:', e);
@@ -886,3 +886,4 @@ export default function App() {
     </div>
   );
 }
+

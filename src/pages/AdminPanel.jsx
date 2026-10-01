@@ -477,6 +477,8 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   };
 
   // Add Breaking Ticker
+  const handleToggleHideArticle = async (article) => { if (confirm(`Are you sure you want to ${article.isHidden ? 'SHOW' : 'HIDE'} this news on the main website?`)) { try { await StorageService.saveArticle({ ...article, isHidden: !article.isHidden }); await loadData(); if (onNewsUpdated) onNewsUpdated(); } catch (err) { alert(`Failed to update: ${err.message}`); } } };
+
   const handleAddTicker = async (e) => {
     e.preventDefault();
     if (!newTicker.trim()) return;
@@ -1299,7 +1301,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                       <button
-                        onClick={() => handleStartEdit(art)}
+                          onClick={() => handleToggleHideArticle(art)}
+                          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${ art.isHidden ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 hover:bg-emerald-200' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300' }`}
+                          title={art.isHidden ? 'Show on Website' : 'Hide from Website'}
+                        >
+                          {art.isHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          <span>{art.isHidden ? 'Show' : 'Hide'}</span>
+                        </button>
+                        <button
+                          onClick={() => handleStartEdit(art)}
                         className="flex items-center gap-1.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm"
                         title="खबर संपादित करें (Edit Post)"
                       >
@@ -1382,5 +1392,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     </div>
   );
 }
+
 
 

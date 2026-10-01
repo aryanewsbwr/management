@@ -8,11 +8,11 @@ const USER_PREF_KEYS = {
 };
 
 // Helper to embed media metadata cleanly
-function embedMediaMeta(content, { gallery, videoUrl, mediaType, mediaCaption }) {
+function embedMediaMeta(content, { gallery, videoUrl, mediaType, mediaCaption, isHidden }) {
   const cleanContent = (content || '').replace(/<!--MEDIA_META:[\s\S]*?-->\n?/g, '').trim();
   const normalizedGallery = Array.isArray(gallery) ? gallery.filter(Boolean) : [];
   
-  if (normalizedGallery.length <= 1 && !videoUrl && (!mediaType || mediaType === 'image') && !mediaCaption) {
+  if (normalizedGallery.length <= 1 && !videoUrl && (!mediaType || mediaType === 'image') && !mediaCaption && typeof isHidden === 'undefined') {
     return cleanContent;
   }
 
@@ -20,7 +20,8 @@ function embedMediaMeta(content, { gallery, videoUrl, mediaType, mediaCaption })
     gallery: normalizedGallery,
     videoUrl: videoUrl || null,
     mediaType: mediaType || (videoUrl ? 'video' : (normalizedGallery.length > 1 ? 'gallery' : 'image')),
-    mediaCaption: mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)'
+    mediaCaption: mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)',
+    isHidden: isHidden === true
   };
 
   return `<!--MEDIA_META:${JSON.stringify(meta)}-->\n${cleanContent}`;
@@ -33,6 +34,7 @@ function extractMediaMeta(rawContent, item = {}) {
   let videoUrl = item.video_url || item.videoUrl || null;
   let mediaType = item.media_type || item.mediaType || 'image';
   let mediaCaption = item.mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)';
+  let isHidden = item.isHidden === true;
 
   const metaMatch = content.match(/<!--MEDIA_META:([\s\S]*?)-->/);
   if (metaMatch) {
@@ -46,6 +48,9 @@ function extractMediaMeta(rawContent, item = {}) {
       }
       if (parsed.mediaType) {
         mediaType = parsed.mediaType;
+      }
+      if (typeof parsed.isHidden === 'boolean') {
+        isHidden = parsed.isHidden;
       }
       if (parsed.mediaCaption) {
         mediaCaption = parsed.mediaCaption;
@@ -67,7 +72,7 @@ function extractMediaMeta(rawContent, item = {}) {
     mediaType = 'gallery';
   }
 
-  return { content, gallery, videoUrl, mediaType, mediaCaption };
+  return { content, gallery, videoUrl, mediaType, mediaCaption, isHidden };
 }
 
 export const StorageService = {
@@ -112,7 +117,7 @@ export const StorageService = {
           gallery: gallery && gallery.length > 0 ? gallery : (item.image ? [item.image] : []),
           videoUrl: videoUrl,
           mediaType: mediaType,
-          mediaCaption: mediaCaption,
+          mediaCaption: mediaCaption, isHidden: isHidden,
           publishedAt: item.published_at,
           author: item.author || 'आर्यन ब्यूरो, ब्यावर',
           isHero: Boolean(item.is_hero),
@@ -157,7 +162,7 @@ export const StorageService = {
         gallery: gallery && gallery.length > 0 ? gallery : (data.image ? [data.image] : []),
         videoUrl: videoUrl,
         mediaType: mediaType,
-        mediaCaption: mediaCaption,
+        mediaCaption: mediaCaption, isHidden: isHidden,
         publishedAt: data.published_at,
         author: data.author || 'आर्यन ब्यूरो, ब्यावर',
         isHero: Boolean(data.is_hero),
@@ -207,6 +212,7 @@ export const StorageService = {
     const primaryImage = gallery[0] || article.image || null;
     const videoUrl = article.videoUrl || null;
     const mediaType = article.mediaType || (videoUrl ? 'video' : (gallery.length > 1 ? 'gallery' : 'image'));
+    const isHidden = article.isHidden === true;
 
     const mediaCaption = article.mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)';
 
@@ -215,8 +221,9 @@ export const StorageService = {
       gallery,
       videoUrl,
       mediaType,
-      mediaCaption
-    });
+      mediaCaption,
+        isHidden
+      });
 
     const record = {
       id: article.id || `custom-bwr-${Date.now()}`,
@@ -500,3 +507,8 @@ export const StorageService = {
     localStorage.setItem(USER_PREF_KEYS.THEME, theme);
   }
 };
+
+
+
+
+
