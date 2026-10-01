@@ -52,10 +52,23 @@ export default async function handler(req, res) {
   const rawDesc = article?.summary_hi || article?.content_hi || 'ब्यावर एवं राजस्थान की ताज़ा व विश्वसनीय खबरें।';
   const description = rawDesc.replace(/\s+/g, ' ').slice(0, 180).trim() + (rawDesc.length > 180 ? '...' : '');
   
-  // Prefer real uploaded image, fallback to high-res site banner
-  const image = article?.image && article.image.startsWith('http')
-    ? article.image
-    : `${siteUrl}/logo.png`;
+  let videoUrl = null;
+  if (article?.content_hi) {
+    const metaMatch = article.content_hi.match(/<!--MEDIA_META:([\s\S]*?)-->/);
+    if (metaMatch) {
+      try {
+        const parsed = JSON.parse(metaMatch[1]);
+        if (parsed.videoUrl) videoUrl = parsed.videoUrl;
+      } catch (e) {}
+    }
+  }
+
+  let image = `${siteUrl}/logo.png`;
+  if (article?.image && article.image.startsWith('http') && !article.image.includes('unsplash.com')) {
+    image = article.image;
+  } else if (videoUrl && videoUrl.includes('cloudinary.com')) {
+    image = videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg');
+  }
 
   const category = article?.category || req.query.category || 'beawar';
   const targetUrl = `${siteUrl}/?category=${encodeURIComponent(category)}&article=${encodeURIComponent(articleId)}`;
