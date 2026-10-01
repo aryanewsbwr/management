@@ -266,17 +266,19 @@ export const StorageService = {
     }
 
     const isVideo = file.type && file.type.startsWith('video/');
-    const fileExt = (file.name && file.name.includes('.')) ? file.name.split('.').pop() : (isVideo ? 'mp4' : 'jpg');
+    const defaultExt = isVideo ? 'mp4' : (file.type === 'image/webp' ? 'webp' : 'jpg');
+    const fileExt = (file.name && file.name.includes('.')) ? file.name.split('.').pop() : defaultExt;
     const folder = isVideo ? 'videos' : 'news';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
+    // Aggressive CDN & browser caching (1 year immutable) to prevent Supabase bandwidth drain
     const { error: uploadError } = await supabase.storage
       .from('news-images')
       .upload(filePath, file, {
-        cacheControl: '3600',
+        cacheControl: '31536000, public, immutable',
         upsert: true,
-        contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg')
+        contentType: file.type || (isVideo ? 'video/mp4' : (fileExt === 'webp' ? 'image/webp' : 'image/jpeg'))
       });
 
     if (uploadError) {

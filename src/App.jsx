@@ -54,6 +54,7 @@ export default function App() {
 
   // 2. Modals States
   const [activeArticle, setActiveArticle] = useState(null);
+  const [isArticleLoading, setIsArticleLoading] = useState(false);
   const [isQuickReadOpen, setIsQuickReadOpen] = useState(false);
   const [isSubmitNewsOpen, setIsSubmitNewsOpen] = useState(false);
   const [isBookmarksModalOpen, setIsBookmarksModalOpen] = useState(false);
@@ -119,6 +120,7 @@ export default function App() {
   const handleOpenArticle = (article) => {
     if (!article) return;
     setActiveArticle(article);
+    setIsArticleLoading(false);
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', `/news/${article.id}`);
     }
@@ -130,6 +132,7 @@ export default function App() {
   // Handle Article Close and URL cleanup
   const handleCloseArticle = () => {
     setActiveArticle(null);
+    setIsArticleLoading(false);
     if (typeof window !== 'undefined') {
       if (selectedCategory && selectedCategory !== 'all') {
         window.history.pushState({}, '', `/?category=${selectedCategory}`);
@@ -175,21 +178,46 @@ export default function App() {
           const found = currentArticles.find(a => a.id === articleId);
           if (found) {
             setActiveArticle(found);
+            setIsArticleLoading(false);
           } else {
+            setIsArticleLoading(true);
             StorageService.fetchArticleById(articleId).then(art => {
-              if (art) setActiveArticle(art);
+              if (art) {
+                setActiveArticle(art);
+              }
+              setIsArticleLoading(false);
+            }).catch(() => {
+              setIsArticleLoading(false);
             });
           }
           return currentArticles;
         });
       } else {
         setActiveArticle(null);
+        setIsArticleLoading(false);
       }
     };
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('hashchange', handlePopState);
 
-    // Fetch live news feeds and database data immediately
+    // Instant Deep Link Fetch on Initial Load (Zero Waiting for Feeds)
+    const initialArticleId = getArticleIdFromUrl();
+    if (initialArticleId) {
+      hasCheckedUrlArticleRef.current = true;
+      setIsArticleLoading(true);
+      StorageService.fetchArticleById(initialArticleId).then(art => {
+        if (art) {
+          handleOpenArticle(art);
+        } else {
+          setIsArticleLoading(false);
+        }
+      }).catch(err => {
+        console.warn('Initial article fetch notice:', err);
+        setIsArticleLoading(false);
+      });
+    }
+
+    // Fetch live news feeds and database data in background
     loadLiveFeeds(false);
     loadDatabaseData();
 
@@ -221,22 +249,23 @@ export default function App() {
     };
   }, []);
 
-  // Check URL for article deep-link on load or when articles populate
+  // Fallback Check URL for article deep-link when articles populate
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const articleId = getArticleIdFromUrl();
     if (articleId && !hasCheckedUrlArticleRef.current) {
+      hasCheckedUrlArticleRef.current = true;
       const match = articles.find(a => a.id === articleId);
       if (match) {
-        hasCheckedUrlArticleRef.current = true;
         handleOpenArticle(match);
-      } else if (articles.length > 0) {
-        hasCheckedUrlArticleRef.current = true;
+      } else {
+        setIsArticleLoading(true);
         StorageService.fetchArticleById(articleId).then(art => {
           if (art) {
             handleOpenArticle(art);
           }
-        });
+          setIsArticleLoading(false);
+        }).catch(() => setIsArticleLoading(false));
       }
     }
   }, [articles]);
@@ -811,7 +840,8 @@ export default function App() {
       {/* 1. Full Article Reader Modal */}
       <ArticleModal
         article={activeArticle}
-        isOpen={!!activeArticle}
+        isOpen={!!activeArticle || isArticleLoading}
+        isLoading={isArticleLoading}
         onClose={handleCloseArticle}
         lang={lang}
         onPlayTTS={handlePlayTTS}

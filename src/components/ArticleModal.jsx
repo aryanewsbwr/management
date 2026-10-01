@@ -10,6 +10,7 @@ import MediaCarousel from './MediaCarousel';
 export default function ArticleModal({
   article,
   isOpen,
+  isLoading = false,
   onClose,
   lang = 'hi',
   onPlayTTS,
@@ -21,7 +22,62 @@ export default function ArticleModal({
 }) {
   const [fontSizeLevel, setFontSizeLevel] = useState(1); // 0: normal, 1: medium, 2: large
 
-  if (!isOpen || !article) return null;
+  if (!isOpen) return null;
+
+  // Instant Skeleton Reader when loading from deep-link or slow connection
+  if (isLoading || !article) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center overflow-y-auto">
+        <div className="relative w-full max-w-3xl bg-white dark:bg-gray-900 min-h-screen sm:min-h-0 sm:my-8 sm:rounded-2xl shadow-2xl overflow-hidden border-0 sm:border border-gray-200 dark:border-gray-800 flex flex-col p-4 sm:p-6 animate-pulse">
+          {/* Sticky Top Control Skeleton */}
+          <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition"
+              title="वापस जाएं"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-xs font-bold text-red-600 dark:text-red-400">खबर लोड हो रही है...</span>
+            </div>
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Title Skeleton */}
+          <div className="mt-6 space-y-3">
+            <div className="h-7 sm:h-9 bg-gray-200 dark:bg-gray-800 rounded-lg w-11/12"></div>
+            <div className="h-7 sm:h-9 bg-gray-200 dark:bg-gray-800 rounded-lg w-3/4"></div>
+          </div>
+
+          {/* Meta Skeleton */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-28"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-36"></div>
+          </div>
+
+          {/* Media Card Skeleton */}
+          <div className="w-full aspect-[16/10] sm:aspect-[16/9] min-h-[240px] sm:min-h-[360px] bg-gray-200 dark:bg-gray-800 rounded-2xl my-3 flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-xs font-semibold text-gray-500">आर्यन न्यूज़ एजेंसी (ब्यावर)</p>
+            </div>
+          </div>
+
+          {/* Paragraphs Skeleton */}
+          <div className="space-y-3 mt-6">
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-4/6"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const categoryMeta = CATEGORIES.find(c => c.id === article.category) || CATEGORIES[1];
   const categoryLabel = lang === 'hi' ? categoryMeta.nameHi : categoryMeta.nameEn;
