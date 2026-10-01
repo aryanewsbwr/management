@@ -34,6 +34,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [content, setContent] = useState('');
   const [author, setAuthor] = useState('संवाददाता, ब्यावर');
   const [area, setArea] = useState('चांग गेट, ब्यावर');
+  const [mediaCaption, setMediaCaption] = useState('फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)');
 
   // Media Mode: 'photos' (Single/Multiple Photos for Auto-Carousel) | 'video' (Short Video Clip)
   const [mediaMode, setMediaMode] = useState('photos');
@@ -172,6 +173,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     setEditingArticle(article);
     setTitle(article.titleHi || '');
     setContent(article.contentHi || '');
+    setMediaCaption(article.mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)');
 
     const rawAuthor = article.author || 'संवाददाता, ब्यावर';
     const match = rawAuthor.match(/^(.*?)(?:\s*\((.*?)\))?$/);
@@ -217,6 +219,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     setEditingArticle(null);
     setTitle('');
     setContent('');
+    setMediaCaption('फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)');
     setAuthor('संवाददाता, ब्यावर');
     setArea('चांग गेट, ब्यावर');
     setMediaMode('photos');
@@ -427,6 +430,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         gallery: finalGallery,
         videoUrl: finalVideoUrl,
         mediaType: mediaMode === 'video' ? 'video' : (finalGallery.length > 1 ? 'gallery' : 'image'),
+        mediaCaption: mediaCaption.trim(),
         publishedAt: editingArticle ? editingArticle.publishedAt : new Date().toISOString(),
         author: formattedAuthor || 'संवाददाता, ब्यावर',
         isHero: false,
@@ -1102,10 +1106,23 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
               </div>
 
-              {/* 3. Full Story Description */}
+              {/* 3. Media Caption */}
               <div>
                 <label className="block text-sm font-black font-hindi text-gray-800 dark:text-gray-200 mb-1.5">
-                  3. खबर का पूरा विवरण (Full News Content) *
+                  3. फोटो / वीडियो का कैप्शन (Media Caption)
+                </label>
+                <input
+                  type="text"
+                  value={mediaCaption}
+                  onChange={(e) => setMediaCaption(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm font-hindi focus:border-red-500 focus:bg-white dark:focus:bg-gray-850 focus:outline-none text-gray-900 dark:text-white"
+                />
+              </div>
+
+              {/* 4. Full Story Description */}
+              <div>
+                <label className="block text-sm font-black font-hindi text-gray-800 dark:text-gray-200 mb-1.5">
+                  4. खबर का पूरा विवरण (Full News Content) *
                 </label>
                 <textarea
                   required
@@ -1117,11 +1134,11 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 />
               </div>
 
-              {/* 4. Reporter Name & Area in Beawar */}
+              {/* 5 & 6. Reporter Name & Area in Beawar */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    4. संवाददाता / ब्यूरो का नाम
+                    5. संवाददाता / ब्यूरो का नाम
                   </label>
                   <input
                     type="text"
@@ -1134,7 +1151,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    5. क्षेत्र / वार्ड (Area in Beawar)
+                    6. क्षेत्र / वार्ड (Area in Beawar)
                   </label>
                   <input
                     type="text"

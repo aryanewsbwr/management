@@ -220,7 +220,7 @@ export default function ArticleModal({
                 showControls={true}
               />
               <div className="p-2.5 text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 font-hindi border-t border-gray-100 dark:border-gray-800 flex items-center justify-between px-4">
-                <span>फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)</span>
+                <span>{article.mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)'}</span>
                 {article.gallery && article.gallery.length > 1 && (
                   <span className="text-amber-600 dark:text-amber-400 font-bold">
                     कुल {article.gallery.length} फोटो (ऑटो स्लाइड शो)

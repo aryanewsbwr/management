@@ -7,19 +7,20 @@ const USER_PREF_KEYS = {
   THEME: 'arya_news_theme_v4'
 };
 
-// Helper to embed media metadata (gallery, videoUrl, mediaType) cleanly
-function embedMediaMeta(content, { gallery, videoUrl, mediaType }) {
+// Helper to embed media metadata cleanly
+function embedMediaMeta(content, { gallery, videoUrl, mediaType, mediaCaption }) {
   const cleanContent = (content || '').replace(/<!--MEDIA_META:[\s\S]*?-->\n?/g, '').trim();
   const normalizedGallery = Array.isArray(gallery) ? gallery.filter(Boolean) : [];
   
-  if (normalizedGallery.length <= 1 && !videoUrl && (!mediaType || mediaType === 'image')) {
+  if (normalizedGallery.length <= 1 && !videoUrl && (!mediaType || mediaType === 'image') && !mediaCaption) {
     return cleanContent;
   }
 
   const meta = {
     gallery: normalizedGallery,
     videoUrl: videoUrl || null,
-    mediaType: mediaType || (videoUrl ? 'video' : (normalizedGallery.length > 1 ? 'gallery' : 'image'))
+    mediaType: mediaType || (videoUrl ? 'video' : (normalizedGallery.length > 1 ? 'gallery' : 'image')),
+    mediaCaption: mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)'
   };
 
   return `<!--MEDIA_META:${JSON.stringify(meta)}-->\n${cleanContent}`;
@@ -31,6 +32,7 @@ function extractMediaMeta(rawContent, item = {}) {
   let gallery = item.gallery || [];
   let videoUrl = item.video_url || item.videoUrl || null;
   let mediaType = item.media_type || item.mediaType || 'image';
+  let mediaCaption = item.mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)';
 
   const metaMatch = content.match(/<!--MEDIA_META:([\s\S]*?)-->/);
   if (metaMatch) {
@@ -44,6 +46,9 @@ function extractMediaMeta(rawContent, item = {}) {
       }
       if (parsed.mediaType) {
         mediaType = parsed.mediaType;
+      }
+      if (parsed.mediaCaption) {
+        mediaCaption = parsed.mediaCaption;
       }
       content = content.replace(/<!--MEDIA_META:[\s\S]*?-->\n?/, '').trim();
     } catch (e) {
@@ -62,7 +67,7 @@ function extractMediaMeta(rawContent, item = {}) {
     mediaType = 'gallery';
   }
 
-  return { content, gallery, videoUrl, mediaType };
+  return { content, gallery, videoUrl, mediaType, mediaCaption };
 }
 
 export const StorageService = {
@@ -91,7 +96,7 @@ export const StorageService = {
       if (!data) return [];
 
       return data.map(item => {
-        const { content: cleanContentHi, gallery, videoUrl, mediaType } = extractMediaMeta(item.content_hi, item);
+        const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption } = extractMediaMeta(item.content_hi, item);
         const { content: cleanContentEn } = extractMediaMeta(item.content_en || item.content_hi, item);
 
         return {
@@ -107,6 +112,7 @@ export const StorageService = {
           gallery: gallery && gallery.length > 0 ? gallery : (item.image ? [item.image] : []),
           videoUrl: videoUrl,
           mediaType: mediaType,
+          mediaCaption: mediaCaption,
           publishedAt: item.published_at,
           author: item.author || 'आर्यन ब्यूरो, ब्यावर',
           isHero: Boolean(item.is_hero),
@@ -135,7 +141,7 @@ export const StorageService = {
 
       if (error || !data || data.category === '_system') return null;
 
-      const { content: cleanContentHi, gallery, videoUrl, mediaType } = extractMediaMeta(data.content_hi, data);
+      const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption } = extractMediaMeta(data.content_hi, data);
       const { content: cleanContentEn } = extractMediaMeta(data.content_en || data.content_hi, data);
 
       return {
@@ -151,6 +157,7 @@ export const StorageService = {
         gallery: gallery && gallery.length > 0 ? gallery : (data.image ? [data.image] : []),
         videoUrl: videoUrl,
         mediaType: mediaType,
+        mediaCaption: mediaCaption,
         publishedAt: data.published_at,
         author: data.author || 'आर्यन ब्यूरो, ब्यावर',
         isHero: Boolean(data.is_hero),
@@ -201,11 +208,14 @@ export const StorageService = {
     const videoUrl = article.videoUrl || null;
     const mediaType = article.mediaType || (videoUrl ? 'video' : (gallery.length > 1 ? 'gallery' : 'image'));
 
+    const mediaCaption = article.mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)';
+
     // Embed rich media metadata into content_hi for 100% bulletproof storage
     const contentHiWithMeta = embedMediaMeta(article.contentHi, {
       gallery,
       videoUrl,
-      mediaType
+      mediaType,
+      mediaCaption
     });
 
     const record = {
