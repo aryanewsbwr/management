@@ -101,7 +101,7 @@ export const StorageService = {
       if (!data) return [];
 
       return data.map(item => {
-        const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption } = extractMediaMeta(item.content_hi, item);
+        const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption, isHidden } = extractMediaMeta(item.content_hi, item);
         const { content: cleanContentEn } = extractMediaMeta(item.content_en || item.content_hi, item);
 
         return {
@@ -146,7 +146,7 @@ export const StorageService = {
 
       if (error || !data || data.category === '_system') return null;
 
-      const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption } = extractMediaMeta(data.content_hi, data);
+      const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption, isHidden } = extractMediaMeta(data.content_hi, data);
       const { content: cleanContentEn } = extractMediaMeta(data.content_en || data.content_hi, data);
 
       return {
