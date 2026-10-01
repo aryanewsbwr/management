@@ -47,6 +47,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
   const [videoPosterFile, setVideoPosterFile] = useState(null);
   const [videoPosterPreview, setVideoPosterPreview] = useState('');
+  const [videoTrimStart, setVideoTrimStart] = useState('');
+  const [videoTrimEnd, setVideoTrimEnd] = useState('');
+  const videoRef = React.useRef(null);
   const [videoSizeMb, setVideoSizeMb] = useState('');
 
   const [isCompressingImage, setIsCompressingImage] = useState(false);
@@ -319,6 +322,24 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     const objUrl = URL.createObjectURL(file);
     setVideoPreviewUrl(objUrl);
     e.target.value = '';
+  };
+
+  const handleCaptureThumbnail = async () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    setVideoPosterPreview(dataUrl);
+    try {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
+      setVideoPosterFile(file);
+    } catch(e) { console.error('Capture error:', e); }
   };
 
   // Video Poster / Cover Image Picker
@@ -1043,11 +1064,11 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                       <div className="space-y-3">
                         <div className="relative rounded-2xl overflow-hidden bg-black shadow-md border border-gray-200 dark:border-gray-700">
                           <video
-                            src={videoPreviewUrl}
+                            ref={videoRef} crossOrigin="anonymous" src={videoPreviewUrl}
                             controls
                             playsInline
-                            className="w-full max-h-56 object-contain mx-auto"
-                          />
+                            className="w-full max-h-56 object-contain mx-auto" />
+                          <button type="button" onClick={handleCaptureThumbnail} className="absolute bottom-10 right-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition z-10">Capture Frame as Thumbnail</button>
                           <button
                             type="button"
                             onClick={() => {
