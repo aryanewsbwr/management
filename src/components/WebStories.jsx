@@ -11,7 +11,7 @@ export default function WebStories({ articles = [], onOpenArticle }) {
     ? beawarArticles.slice(0, 12).map((a) => ({
         id: a.id,
         title: a.titleHi,
-        image: a.image || (a.videoUrl && a.videoUrl.includes('cloudinary.com') ? a.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg') : 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80'),
+        image: (a.image && !a.image.includes('unsplash.com')) ? a.image : (a.videoUrl && a.videoUrl.includes('cloudinary.com') ? a.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg') : 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80'),
         summary: a.summaryHi || a.contentHi?.slice(0, 140) || '',
         author: a.author || 'आर्यन ब्यूरो, ब्यावर',
         tag: 'ब्यावर विशेष',
