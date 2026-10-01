@@ -27,6 +27,7 @@ export default function MediaCarousel({
   const [isPlaying, setIsPlaying] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [fullscreenImg, setFullscreenImg] = useState(null);
   const videoRef = useRef(null);
 
   // Auto-play timer for image carousel
@@ -62,6 +63,11 @@ export default function MediaCarousel({
     setIsPlaying((prev) => !prev);
   };
 
+  let effectivePoster = imageList[0];
+  if (!effectivePoster && videoUrl && videoUrl.includes('cloudinary.com')) {
+    effectivePoster = videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg');
+  }
+
   // 1. VIDEO RENDERING
   if (isVideo && videoUrl) {
     if (showControls) {
@@ -71,8 +77,10 @@ export default function MediaCarousel({
           <video
             ref={videoRef}
             src={videoUrl}
-            poster={imageList[0] || undefined}
+            poster={effectivePoster || undefined}
             controls
+            autoPlay
+            muted
             playsInline
             className="w-full h-auto max-h-[460px] object-contain mx-auto bg-black"
           />
@@ -95,9 +103,9 @@ export default function MediaCarousel({
         onClick={onOpen}
         className={`relative w-full overflow-hidden bg-black group/video ${aspectRatio} ${className}`}
       >
-        {imageList[0] ? (
+        {effectivePoster ? (
           <img
-            src={imageList[0]}
+            src={effectivePoster}
             alt={title}
             className="w-full h-full object-cover group-hover/video:scale-105 transition-transform duration-500"
             loading="lazy"
@@ -157,12 +165,7 @@ export default function MediaCarousel({
             e.currentTarget.onerror = null;
             e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
           }}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-        />
-      </div>
-    );
-  }
+          onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imageList[0]); } }} className={`w-full h-full object-cover transition-transform duration-500 `} loading="lazy" /> {fullscreenImg && ( <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setFullscreenImg(null); }}> <img src={fullscreenImg} alt="Zoomed preview" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" /> <button type="button" className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition"> <span className="font-bold px-3 py-1">? ??? ???? (Close)</span> </button> </div> )} </div> ); }
 
   // 3. MULTIPLE IMAGES AUTO-RUNNING CAROUSEL
   return (
@@ -195,9 +198,7 @@ export default function MediaCarousel({
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
               }}
-              className="w-full h-full object-cover"
-              loading={idx === 0 ? 'eager' : 'lazy'}
-            />
+              onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imgUrl); } }} className={`w-full h-full object-cover ${showControls ? 'cursor-zoom-in' : ''}`} loading={idx === 0 ? 'eager' : 'lazy'} />
           </div>
         ))}
       </div>
@@ -275,6 +276,31 @@ export default function MediaCarousel({
           />
         </div>
       )}
+
+      {/* Fullscreen Zoom Overlay */}
+      {fullscreenImg && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setFullscreenImg(null);
+          }}
+        >
+          <img 
+            src={fullscreenImg} 
+            alt="Zoomed preview" 
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+          />
+          <button 
+            type="button"
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition"
+          >
+            <span className="font-bold px-3 py-1">✕ बंद करें (Close)</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+
+
