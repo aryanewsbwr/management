@@ -378,18 +378,18 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           try {
             finalPrimaryImage = await StorageService.uploadArticleMedia(videoPosterFile);
           } catch {
-            finalPrimaryImage = videoPosterPreview || 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+            finalPrimaryImage = videoPosterPreview || '';
           }
         } else if (videoPosterPreview && videoPosterPreview.startsWith('http')) {
           finalPrimaryImage = videoPosterPreview;
         } else {
-          finalPrimaryImage = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+          finalPrimaryImage = '';
         }
 
       } else {
         // PHOTOS / GALLERY MODE
         if (galleryItems.length === 0) {
-          finalPrimaryImage = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
+          finalPrimaryImage = '';
           finalGallery = [finalPrimaryImage];
         } else {
           for (let i = 0; i < galleryItems.length; i++) {
@@ -1382,3 +1382,5 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     </div>
   );
 }
+
+

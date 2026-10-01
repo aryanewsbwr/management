@@ -17,8 +17,8 @@ export default function MediaCarousel({
 }) {
   // Normalize images to an array of non-empty strings
   const imageList = Array.isArray(images) 
-    ? images.filter(img => typeof img === 'string' && img.trim().length > 0)
-    : (typeof images === 'string' && images.trim().length > 0 ? [images] : []);
+    ? images.filter(img => typeof img === 'string' && img.trim().length > 0 && !img.includes('unsplash.com'))
+    : (typeof images === 'string' && images.trim().length > 0 && !images.includes('unsplash.com') ? [images] : []);
 
   const hasMultipleImages = imageList.length > 1;
   const isVideo = mediaType === 'video' || Boolean(videoUrl);
@@ -302,5 +302,7 @@ export default function MediaCarousel({
     </div>
   );
 }
+
+
 
 
