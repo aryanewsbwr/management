@@ -171,8 +171,16 @@ export default function MediaCarousel({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Slides Container */}
-      <div className="relative w-full h-full">
+      {/* In-flow spacer image so container never collapses to 0 height */}
+      <img
+        src={imageList[0]}
+        alt=""
+        className="w-full h-full object-cover invisible pointer-events-none select-none max-h-[500px]"
+        aria-hidden="true"
+      />
+
+      {/* Direct Absolute Slides Container */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
         {imageList.map((imgUrl, idx) => (
           <div
             key={idx}

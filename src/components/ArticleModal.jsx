@@ -140,15 +140,6 @@ export default function ArticleModal({
                   year: 'numeric'
                 })}
               </span>
-              {article.views !== undefined && (
-                <>
-                  <span>•</span>
-                  <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-300 font-bold bg-red-50 dark:bg-red-950/60 px-2 py-0.5 rounded-full text-[11px] border border-red-200 dark:border-red-900">
-                    <Eye className="w-3.5 h-3.5 text-red-600" />
-                    <span>{article.views || 1} बार देखा गया (Views)</span>
-                  </span>
-                </>
-              )}
             </div>
           </div>
 
@@ -168,7 +159,7 @@ export default function ArticleModal({
                 videoUrl={article.videoUrl}
                 mediaType={article.mediaType}
                 title={title}
-                aspectRatio="w-full h-auto min-h-[260px] max-h-[460px]"
+                aspectRatio="w-full aspect-[16/10] sm:aspect-[16/9] min-h-[260px] sm:min-h-[380px] max-h-[500px]"
                 autoPlayInterval={3500}
                 showControls={true}
               />

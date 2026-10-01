@@ -56,9 +56,6 @@ export default function Navbar({
           </span>
           <span className="hidden md:inline text-red-200">|</span>
           <span className="hidden md:inline text-gray-100">{currentDateTime}</span>
-          <span className="hidden lg:inline bg-red-900/60 px-2 py-0.5 rounded text-[11px] text-amber-200">
-            तापमान: 31°C धूप
-          </span>
         </div>
 
         <div className="flex items-center space-x-1 sm:space-x-3 shrink-0">

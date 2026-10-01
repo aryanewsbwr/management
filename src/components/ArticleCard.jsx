@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Share2, Volume2, Bookmark, Clock, Eye, 
+  Share2, Volume2, Bookmark, Clock, 
   ExternalLink, ChevronRight, Check
 } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
@@ -109,12 +109,6 @@ export default function ArticleCard({
                 <Clock className="w-3 h-3 text-gray-400" />
                 <span>{timeAgo(article.publishedAt)}</span>
               </span>
-              {article.views !== undefined && article.views > 0 && (
-                <span className="flex items-center gap-0.5 text-gray-400 text-[10px]">
-                  <Eye className="w-3 h-3 text-red-500" />
-                  <span>{article.views}</span>
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -218,12 +212,6 @@ export default function ArticleCard({
               <Clock className="w-3 h-3 text-gray-400" />
               <span>{timeAgo(article.publishedAt)}</span>
             </span>
-            {article.views !== undefined && article.views > 0 && (
-              <span className="flex items-center gap-0.5 text-gray-400">
-                <Eye className="w-3 h-3 text-red-500" />
-                <span>{article.views}</span>
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-1.5">
