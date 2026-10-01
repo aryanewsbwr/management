@@ -278,6 +278,19 @@ export const StorageService = {
 
   // Upload single media file (Image or Video) to Cloudinary
   async uploadArticleMedia(file) {
+    if (!file) throw new Error('No file provided');
+
+    // Security: Strict validation before sending to Cloudinary
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error('à¤«à¤¼à¤¾à¤‡à¤² à¤¬à¤¹à¥ à¤¤ à¤¬à¤¡à¤¼à¥€ à¤¹à¥ˆ! à¤…à¤§à¤¿à¤•à¤¤à¤® à¤¸à¤¾à¤‡à¤œà¤¼ 50MB à¤¹à¥ˆà¥¤ (File too large. Max 50MB)');
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('à¤…à¤®à¤¾à¤¨à¥ à¤¯ à¤«à¤¼à¤¾à¤‡à¤² à¤«à¥‰à¤°à¥ à¤®à¥‡à¤Ÿ! à¤•à¥‡à¤µà¤² JPG, PNG, WEBP, GIF, MP4, WEBM à¤”à¤° MOV à¤®à¤¾à¤¨à¥ à¤¯ à¤¹à¥ˆà¤‚à¥¤');
+    }
+
     const isVideo = file.type && file.type.startsWith('video/');
     
     // Cloudinary Unsigned Upload Configuration
