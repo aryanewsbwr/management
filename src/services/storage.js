@@ -259,35 +259,39 @@ export const StorageService = {
     return true;
   },
 
-  // Upload single media file (Image or Video) to Supabase Storage
+  // Upload single media file (Image or Video) to Cloudinary
   async uploadArticleMedia(file) {
-    if (!isSupabaseConfigured || !supabase) {
-      throw new Error('Supabase Storage not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-    }
-
     const isVideo = file.type && file.type.startsWith('video/');
-    const defaultExt = isVideo ? 'mp4' : (file.type === 'image/webp' ? 'webp' : 'jpg');
-    const fileExt = (file.name && file.name.includes('.')) ? file.name.split('.').pop() : defaultExt;
-    const folder = isVideo ? 'videos' : 'news';
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const filePath = `${folder}/${fileName}`;
+    
+    // Cloudinary Unsigned Upload Configuration
+    const cloudName = 'vxlbrcgx';
+    const uploadPreset = 'aryan_news';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    
+    const resourceType = isVideo ? 'video' : 'image';
+    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
 
-    // Aggressive CDN & browser caching (1 year immutable) to prevent Supabase bandwidth drain
-    const { error: uploadError } = await supabase.storage
-      .from('news-images')
-      .upload(filePath, file, {
-        cacheControl: '31536000, public, immutable',
-        upsert: true,
-        contentType: file.type || (isVideo ? 'video/mp4' : (fileExt === 'webp' ? 'image/webp' : 'image/jpeg'))
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
       });
 
-    if (uploadError) {
-      console.error('[StorageService] Supabase media upload failed:', uploadError.message);
-      throw uploadError;
-    }
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('[StorageService] Cloudinary upload failed:', errText);
+        throw new Error('Cloudinary upload failed: ' + errText);
+      }
 
-    const { data } = supabase.storage.from('news-images').getPublicUrl(filePath);
-    return data.publicUrl;
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error('[StorageService] Network error during Cloudinary upload:', error);
+      throw error;
+    }
   },
 
   // Alias for backward compatibility
