@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import BreakingTicker from './components/BreakingTicker';
+import McxTicker from './components/McxTicker';
 import WebStories from './components/WebStories';
 import HeroMixedSection from './components/HeroMixedSection';
 import CategorySection from './components/CategorySection';
@@ -40,6 +41,7 @@ export default function App() {
   // 1. Core States
   const [articles, setArticles] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
+  const [mcxData, setMcxData] = useState({ enabled: false, items: [] });
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(getInitialCategory);
   const [isApiNewsEnabled, setIsApiNewsEnabled] = useState(StorageService.getApiNewsEnabledSync);
@@ -488,6 +490,7 @@ export default function App() {
         onRefreshLiveNews={() => loadLiveFeeds(true)}
         liveCount={articles.filter(a => a.isLiveFeed).length}
       />
+        {mcxData.enabled && <McxTicker items={mcxData.items} />}
 
       {/* Floating Live Update Notification Toast */}
       {liveUpdateToast && (

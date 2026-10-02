@@ -62,7 +62,50 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   // Mandi & Breaking States
   const [breakingNews, setBreakingNews] = useState([]);
+  const [mcxEnabled, setMcxEnabled] = useState(false);
+  const [mcxItems, setMcxItems] = useState([]);
+  const [newMcxSymbol, setNewMcxSymbol] = useState('');
+  const [newMcxDate, setNewMcxDate] = useState('');
+  const [newMcxPrice, setNewMcxPrice] = useState('');
+  const [newMcxChange, setNewMcxChange] = useState('');
+
   const [newTicker, setNewTicker] = useState('');
+
+  
+  // Add MCX Item
+  const handleAddMcx = async (e) => {
+    e.preventDefault();
+    if (!newMcxSymbol || !newMcxPrice) return;
+    const newItem = {
+      symbol: newMcxSymbol.toUpperCase(),
+      date: newMcxDate.toUpperCase(),
+      price: newMcxPrice,
+      change: newMcxChange
+    };
+    const updated = [newItem, ...mcxItems];
+    try {
+      await StorageService.saveMcxData(mcxEnabled, updated);
+      setMcxItems(updated);
+      setNewMcxSymbol(''); setNewMcxDate(''); setNewMcxPrice(''); setNewMcxChange('');
+    } catch(err) { alert(err.message); }
+  };
+
+  const handleDeleteMcx = async (idx) => {
+    if (!window.confirm('Delete this MCX item?')) return;
+    const updated = mcxItems.filter((_, i) => i !== idx);
+    try {
+      await StorageService.saveMcxData(mcxEnabled, updated);
+      setMcxItems(updated);
+    } catch(err) { alert(err.message); }
+  };
+
+  const handleToggleMcxStatus = async () => {
+    const nextState = !mcxEnabled;
+    try {
+      await StorageService.saveMcxData(nextState, mcxItems);
+      setMcxEnabled(nextState);
+    } catch(err) { alert(err.message); }
+  };
 
   // Check existing Supabase auth session
   useEffect(() => {
@@ -96,10 +139,16 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       const [customArticles, bn, apiNewsStatus] = await Promise.all([
         StorageService.fetchCustomArticles(),
         StorageService.fetchBreakingNews(),
+        StorageService.fetchMcxData(),
         StorageService.fetchApiNewsEnabled()
       ]);
       setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
       setBreakingNews(bn || []);
+      if (typeof results[3] === 'object' && results[3] !== null) {
+        setMcxEnabled(results[3].enabled || false);
+        setMcxItems(results[3].items || []);
+      }
+
       setIsApiNewsEnabled(apiNewsStatus);
     } catch (e) {
       console.error('[AdminPanel] Error loading data:', e);
@@ -739,6 +788,17 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
             }`}
           >
             <span>⚡ ब्रेकिंग न्यूज़ टिकर</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('mcx')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition ${
+              activeTab === 'mcx'
+                ? 'bg-red-600 text-white shadow-md shadow-red-500/30'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>📈 MCX (Gold/Silver)</span>
           </button>
 
           <button
@@ -1419,6 +1479,78 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
             </div>
           </div>
         )}
+
+        {/* ==================================================== */}
+        {/* 5. MCX MANAGER */}
+        {/* ==================================================== */}
+        {activeTab === 'mcx' && (
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-100 dark:border-gray-800 gap-4">
+              <div>
+                <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
+                  📈 MCX / Bullion Market (सोना-चांदी भाव)
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Manage MCX rates here. Turn on the switch to display the animated ticker on the website.
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 pr-4 rounded-full border border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleToggleMcxStatus}
+                  className={`w-12 h-6 rounded-full transition-colors relative shadow-inner ${mcxEnabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                >
+                  <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${mcxEnabled ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                </button>
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                  {mcxEnabled ? 'Ticker is Live' : 'Ticker is Hidden'}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddMcx} className="flex flex-wrap gap-2 mb-6 bg-gray-50 dark:bg-gray-850 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
+              <input
+                type="text" required value={newMcxSymbol} onChange={e=>setNewMcxSymbol(e.target.value)}
+                placeholder="Symbol (e.g. GOLD)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm font-bold uppercase"
+              />
+              <input
+                type="text" value={newMcxDate} onChange={e=>setNewMcxDate(e.target.value)}
+                placeholder="Date (04DEC2026)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm uppercase"
+              />
+              <input
+                type="text" required value={newMcxPrice} onChange={e=>setNewMcxPrice(e.target.value)}
+                placeholder="Price (150250.00)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm font-mono font-bold text-red-600 dark:text-red-400"
+              />
+              <input
+                type="text" value={newMcxChange} onChange={e=>setNewMcxChange(e.target.value)}
+                placeholder="Change (-0.09%)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm font-mono text-gray-600"
+              />
+              <button type="submit" className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-6 py-2 rounded-xl shrink-0">
+                + Add
+              </button>
+            </form>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {mcxItems.map((item, idx) => (
+                <div key={idx} className="relative group bg-[#0f172a] border border-[#1e293b] rounded-xl p-3 shadow-sm hover:border-gray-500 transition">
+                  <button onClick={() => handleDeleteMcx(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition shadow">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-bold text-gray-300 tracking-wider">{item.symbol}</span>
+                    <span className="text-[9px] text-gray-500">{item.date}</span>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <span className="text-sm font-bold text-red-500 font-mono">{item.price}</span>
+                    <span className="text-[10px] text-red-400 font-mono">{item.change}</span>
+                  </div>
+                </div>
+              ))}
+              {mcxItems.length === 0 && <p className="col-span-full text-center py-4 text-xs text-gray-400">No MCX data added yet.</p>}
+            </div>
+          </div>
+        )}
+
 
         {/* ==================================================== */}
         {/* 4. ANALYTICS PAGE */}

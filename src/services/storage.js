@@ -374,6 +374,46 @@ export const StorageService = {
     return isEnabled;
   },
 
+  
+  async fetchMcxData() {
+    let result = { enabled: false, items: [] };
+    if (!isSupabaseConfigured || !supabase) return result;
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('title_hi, content_hi')
+        .eq('id', 'setting-mcx-data')
+        .maybeSingle();
+      if (!error && data) {
+        result.enabled = data.title_hi === 'enabled';
+        if (data.content_hi) {
+          try { result.items = JSON.parse(data.content_hi); } catch(e){}
+        }
+      }
+    } catch (err) {}
+    return result;
+  },
+
+  async saveMcxData(enabled, items) {
+    if (!isSupabaseConfigured || !supabase) throw new Error('Supabase credentials not configured.');
+    const record = {
+      id: 'setting-mcx-data',
+      title_hi: enabled ? 'enabled' : 'disabled',
+      title_en: enabled ? 'enabled' : 'disabled',
+      summary_hi: 'System Setting for MCX Ticker',
+      summary_en: 'System Setting for MCX Ticker',
+      content_hi: JSON.stringify(items || []),
+      content_en: 'MCX Data JSON',
+      category: '_system',
+      image: null,
+      published_at: new Date().toISOString(),
+      author: 'system',
+      original_url: null,
+      views: 0
+    };
+    const { error } = await supabase.from('articles').upsert(record);
+    if (error) throw error;
+  },
   async setApiNewsEnabled(enabled) {
     localStorage.setItem('arya_api_news_enabled', enabled ? 'true' : 'false');
 
