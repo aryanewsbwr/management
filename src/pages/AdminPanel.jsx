@@ -81,7 +81,12 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   const [adDuration, setAdDuration] = useState('7d');
   const [adCustomDays, setAdCustomDays] = useState('3');
-  const [adPlacement, setAdPlacement] = useState('all');
+  
+  // Multiple Placements States (Multi-select)
+  const [adPlacementBanner, setAdPlacementBanner] = useState(true);
+  const [adPlacementFeed, setAdPlacementFeed] = useState(true);
+  const [adPlacementArticle, setAdPlacementArticle] = useState(true);
+
   const [isAdSubmitting, setIsAdSubmitting] = useState(false);
   const [isAdMediaUploading, setIsAdMediaUploading] = useState(false);
 
@@ -142,6 +147,16 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       return;
     }
 
+    const placements = [];
+    if (adPlacementBanner) placements.push('banner');
+    if (adPlacementFeed) placements.push('feed');
+    if (adPlacementArticle) placements.push('article');
+
+    if (placements.length === 0) {
+      alert('कृपया कम से कम एक विज्ञापन स्थान (Placement) चुनें।');
+      return;
+    }
+
     setIsAdSubmitting(true);
     try {
       const newAd = {
@@ -152,9 +167,10 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         actions: actions,
         actionType: actions[0].type,
         actionTarget: actions[0].target,
+        placements: placements,
+        placement: placements.length === 3 ? 'all' : placements.join(','),
         duration: adDuration,
         customDays: adCustomDays,
-        placement: adPlacement,
         isHidden: false
       };
       await StorageService.saveAdvertisement(newAd);
@@ -173,6 +189,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       setAdMapsUrl('');
       setAdEnableWebsite(false);
       setAdWebsiteUrl('');
+      setAdPlacementBanner(true);
+      setAdPlacementFeed(true);
+      setAdPlacementArticle(true);
       alert('विज्ञापन सफलतापूर्वक प्रकाशित कर दिया गया है!');
     } catch (err) {
       alert(err.message || 'Error saving ad');
@@ -1845,37 +1864,60 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
               </div>
 
               <form onSubmit={handleSaveAd} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Business Name */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
-                      कंपनी / व्यापार का नाम (Business Name) *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={adBusinessName}
-                      onChange={e => setAdBusinessName(e.target.value)}
-                      placeholder="उदा: श्री गणेश ज्वेलर्स (ब्यावर)"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
-                    />
-                  </div>
+                {/* Business Name */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                    कंपनी / व्यापार का नाम (Business Name) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={adBusinessName}
+                    onChange={e => setAdBusinessName(e.target.value)}
+                    placeholder="उदा: श्री गणेश ज्वेलर्स (ब्यावर)"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
+                  />
+                </div>
 
-                  {/* Placement Selector */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
-                      विज्ञापन स्थान (Placement) *
+                {/* Placement Multi-Select Checkboxes */}
+                <div className="bg-gray-50 dark:bg-gray-850 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
+                  <label className="block text-xs font-bold text-gray-900 dark:text-white mb-1 font-hindi">
+                    📍 विज्ञापन स्थान चुनें (Placement - बहुविकल्पीय) *
+                  </label>
+                  <p className="text-[11px] text-gray-500 mb-3">
+                    आप एक साथ कई स्थान चुन सकते हैं जहां यह विज्ञापन दिखेगा:
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200 font-hindi hover:border-red-500 transition">
+                      <input
+                        type="checkbox"
+                        checked={adPlacementBanner}
+                        onChange={e => setAdPlacementBanner(e.target.checked)}
+                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
+                      />
+                      <span>🔝 मुख्य समाचार ब्लॉक के ठीक नीचे (Main News Banner)</span>
                     </label>
-                    <select
-                      value={adPlacement}
-                      onChange={e => setAdPlacement(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
-                    >
-                      <option value="all">🌟 सभी स्थान (मुख्य बैनर + फीड + खबर के अंदर)</option>
-                      <option value="banner">🔝 मुख्य बैनर (Top Header Banner)</option>
-                      <option value="feed">📰 इन-फीड (खबरों के बीच)</option>
-                      <option value="article">📖 खबर के अंदर (Inside News Article)</option>
-                    </select>
+
+                    <label className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200 font-hindi hover:border-red-500 transition">
+                      <input
+                        type="checkbox"
+                        checked={adPlacementFeed}
+                        onChange={e => setAdPlacementFeed(e.target.checked)}
+                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
+                      />
+                      <span>📰 खबरों के बीच (In-Feed)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200 font-hindi hover:border-red-500 transition">
+                      <input
+                        type="checkbox"
+                        checked={adPlacementArticle}
+                        onChange={e => setAdPlacementArticle(e.target.checked)}
+                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500"
+                      />
+                      <span>📖 खबर के अंदर (Inside News Article)</span>
+                    </label>
                   </div>
                 </div>
 
@@ -2136,7 +2178,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                             </span>
                           )}
                           <span className="text-[10px] text-gray-400 font-mono">
-                            स्थान: {ad.placement === 'banner' ? 'मुख्य बैनर' : ad.placement === 'feed' ? 'इन-फीड' : ad.placement === 'article' ? 'खबर के अंदर' : 'सभी जगह'}
+                            स्थान: {(ad.placements && ad.placements.length > 0 ? ad.placements : (ad.placement ? (ad.placement === 'all' ? ['banner', 'feed', 'article'] : ad.placement.split(',')) : ['banner', 'feed', 'article'])).map(p => 
+                              p === 'banner' ? 'मुख्य बैनर' : p === 'feed' ? 'इन-फीड' : p === 'article' ? 'खबर के अंदर' : p
+                            ).join(', ')}
                           </span>
                         </div>
 

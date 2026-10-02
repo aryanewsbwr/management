@@ -539,6 +539,10 @@ export const StorageService = {
           ? meta.actions
           : (meta.actionType && meta.actionTarget ? [{ type: meta.actionType, target: meta.actionTarget }] : []);
 
+        const placements = Array.isArray(meta.placements) && meta.placements.length > 0
+          ? meta.placements
+          : (meta.placement ? (meta.placement === 'all' ? ['banner', 'feed', 'article'] : [meta.placement]) : ['banner', 'feed', 'article']);
+
         return {
           id: item.id,
           businessName: item.title_hi,
@@ -549,6 +553,7 @@ export const StorageService = {
           actions: actions,
           actionType: actions[0]?.type || meta.actionType || 'whatsapp',
           actionTarget: actions[0]?.target || meta.actionTarget || '',
+          placements: placements,
           placement: meta.placement || 'all', // 'banner' | 'feed' | 'article' | 'all'
           duration: item.author || 'permanent',
           expiresAt: expiresAt,
@@ -593,6 +598,10 @@ export const StorageService = {
       ? ad.actions
       : (ad.actionType && ad.actionTarget ? [{ type: ad.actionType, target: ad.actionTarget }] : []);
 
+    const placements = Array.isArray(ad.placements) && ad.placements.length > 0
+      ? ad.placements
+      : (ad.placement ? (ad.placement === 'all' ? ['banner', 'feed', 'article'] : [ad.placement]) : ['banner', 'feed', 'article']);
+
     const isHidden = ad.isHidden === true;
 
     const meta = {
@@ -601,7 +610,8 @@ export const StorageService = {
       actions: actions,
       actionType: actions[0]?.type || ad.actionType || 'whatsapp',
       actionTarget: actions[0]?.target || ad.actionTarget || '',
-      placement: ad.placement || 'all',
+      placements: placements,
+      placement: placements.join(','),
       expiresAt: expiresAt,
       clicks: ad.clicks || 0,
       isHidden: isHidden

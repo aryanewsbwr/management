@@ -655,7 +655,7 @@ export default function App() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredArticles.map((art, idx) => {
-                  const feedAd = ads.find(a => a.placement === 'feed' || a.placement === 'all');
+                  const feedAd = ads.find(a => a.placements?.includes('feed') || a.placement === 'feed' || a.placement === 'all');
                   const showAdHere = idx === 2 && feedAd;
 
                   return (
@@ -740,9 +740,9 @@ export default function App() {
               onSelectCategory={handleSelectCategory}
             />
 
-            {/* 2. ADVERTISEMENT BANNER (Dynamic Active Ad or Default Tilpatti/Booking Banner) */}
+            {/* 2. ADVERTISEMENT BANNER (Just below Main News Block / Hero Mix) */}
             <AdvertisementCard 
-              ad={ads.find(a => a.placement === 'banner' || a.placement === 'all')} 
+              ad={ads.find(a => a.placements?.includes('banner') || a.placement === 'banner' || a.placement === 'all')} 
               layout="banner" 
             />
 
@@ -879,7 +879,7 @@ export default function App() {
         onToggleBookmark={handleToggleBookmark}
         relatedArticles={articles.filter(a => a.id !== activeArticle?.id && (a.category === activeArticle?.category || a.category === 'beawar'))}
         onSelectRelated={handleOpenArticle}
-        ad={ads.find(a => a.placement === 'article' || a.placement === 'all')}
+        ad={ads.find(a => a.placements?.includes('article') || a.placement === 'article' || a.placement === 'all')}
       />
 
       {/* 2. 60-Word Inshorts Quick Read Modal */}
