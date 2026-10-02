@@ -747,6 +747,19 @@ export default function App() {
               layout="banner" 
             />
 
+            {/* 3. 📍 ब्यावर विशेष एवं अन्य प्रमुख खबरें (More News Section) */}
+            <CategorySection
+              categoryId="beawar"
+              articles={articles}
+              lang={lang}
+              onOpenArticle={handleOpenArticle}
+              onPlayTTS={handlePlayTTS}
+              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+              bookmarks={bookmarks}
+              onToggleBookmark={handleToggleBookmark}
+              onViewMoreCategory={handleSelectCategory}
+            />
+
             {/* OTHER SECTIONS (Visible when API news is enabled) */}
             {isApiNewsEnabled && (
               <>
