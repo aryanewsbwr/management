@@ -43,7 +43,7 @@ export default function App() {
   // 1. Core States
   const [articles, setArticles] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
-  const [bullionData, setBullionData] = useState({ rates: [], lastUpdatedAt: null });
+  const [bullionData, setBullionData] = useState({ rates: [], lastUpdatedAt: null, enabled: true });
   const [ads, setAds] = useState([]);
   const [legalModal, setLegalModal] = useState({ isOpen: false, page: 'about' });
   const [bookmarks, setBookmarks] = useState([]);
@@ -81,7 +81,11 @@ export default function App() {
 
       setIsApiNewsEnabled(apiEnabled);
       if (bullionRes && bullionRes.rates) {
-        setBullionData(bullionRes);
+        setBullionData({
+          rates: bullionRes.rates,
+          lastUpdatedAt: bullionRes.lastUpdatedAt,
+          enabled: bullionRes.enabled !== false
+        });
       }
       if (loadedAds && Array.isArray(loadedAds)) {
         setAds(loadedAds.filter(a => a.isActive));
@@ -513,7 +517,13 @@ export default function App() {
       )}
 
       {/* 1. BEAWAR SARRAFA BHAV (LOCAL BULLION RATES TICKER) */}
-      <BullionTicker rates={bullionData.rates} lastUpdatedAt={bullionData.lastUpdatedAt} />
+      {bullionData.enabled && (
+        <BullionTicker 
+          rates={bullionData.rates} 
+          lastUpdatedAt={bullionData.lastUpdatedAt} 
+          enabled={bullionData.enabled} 
+        />
+      )}
 
       {/* 2. BREAKING NEWS LIVE FLASH TICKER */}
       <BreakingTicker

@@ -409,7 +409,7 @@ export const StorageService = {
   },
 
   // ==========================================
-  // 3.4 BEAWAR SARRAFA BHAV (Bullion Rates)
+  // 3.4 BEAWAR SARRAFA BHAV (Bullion Rates & Kill Switch)
   // ==========================================
   async fetchBullionRates() {
     const DEFAULT_RATES = [
@@ -420,27 +420,68 @@ export const StorageService = {
       { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '9,300' }
     ];
 
+    let isEnabled = localStorage.getItem('arya_bullion_enabled') !== 'false';
+
     if (!isSupabaseConfigured || !supabase) {
-      return { rates: DEFAULT_RATES, lastUpdatedAt: null };
+      return { rates: DEFAULT_RATES, lastUpdatedAt: null, enabled: isEnabled };
     }
 
     try {
+      // 1. Check Bullion Kill Switch Status
+      const { data: statusData } = await supabase
+        .from('articles')
+        .select('title_hi')
+        .eq('id', 'setting-bullion-status')
+        .maybeSingle();
+
+      if (statusData) {
+        isEnabled = statusData.title_hi !== 'disabled';
+        localStorage.setItem('arya_bullion_enabled', isEnabled ? 'true' : 'false');
+      }
+
+      // 2. Fetch Rates
       const { data, error } = await supabase
         .from('bullion_rates')
         .select('*')
         .order('id');
 
       if (!error && data && data.length > 0) {
-        // Find latest updated_at
         const timestamps = data.map(d => new Date(d.updated_at).getTime()).filter(t => !isNaN(t));
         const latestTime = timestamps.length > 0 ? new Date(Math.max(...timestamps)).toISOString() : null;
-        return { rates: data, lastUpdatedAt: latestTime };
+        return { rates: data, lastUpdatedAt: latestTime, enabled: isEnabled };
       }
     } catch (err) {
       console.warn('[StorageService] fetchBullionRates notice:', err.message);
     }
 
-    return { rates: DEFAULT_RATES, lastUpdatedAt: null };
+    return { rates: DEFAULT_RATES, lastUpdatedAt: null, enabled: isEnabled };
+  },
+
+  async setBullionEnabled(enabled) {
+    localStorage.setItem('arya_bullion_enabled', enabled ? 'true' : 'false');
+    if (!isSupabaseConfigured || !supabase) return enabled;
+
+    try {
+      const record = {
+        id: 'setting-bullion-status',
+        title_hi: enabled ? 'enabled' : 'disabled',
+        title_en: enabled ? 'enabled' : 'disabled',
+        summary_hi: 'System Setting for Beawar Bullion Ticker Kill Switch',
+        summary_en: 'System Setting for Beawar Bullion Ticker Kill Switch',
+        content_hi: enabled ? 'Bullion Ticker is Active' : 'Bullion Ticker is Disabled/Hidden',
+        content_en: enabled ? 'Bullion Ticker is Active' : 'Bullion Ticker is Disabled/Hidden',
+        category: '_system',
+        image: null,
+        published_at: new Date().toISOString(),
+        author: 'System Admin',
+        views: 0,
+        updated_at: new Date().toISOString()
+      };
+      await supabase.from('articles').upsert(record);
+    } catch (e) {
+      console.warn('[StorageService] setBullionEnabled error:', e.message);
+    }
+    return enabled;
   },
 
   async saveBullionRates(ratesArray) {

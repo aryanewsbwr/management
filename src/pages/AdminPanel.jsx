@@ -84,7 +84,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '9,300' }
   ]);
   const [bullionLastUpdated, setBullionLastUpdated] = useState(null);
+  const [bullionEnabled, setBullionEnabled] = useState(true);
   const [isBullionSaving, setIsBullionSaving] = useState(false);
+  const [isTogglingBullion, setIsTogglingBullion] = useState(false);
 
   const [newTicker, setNewTicker] = useState('');
 
@@ -227,6 +229,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       if (mcxRes && mcxRes.rates) {
         setBullionRates(mcxRes.rates);
         setBullionLastUpdated(mcxRes.lastUpdatedAt);
+        if (typeof mcxRes.enabled === 'boolean') {
+          setBullionEnabled(mcxRes.enabled);
+        }
       }
 
       setIsApiNewsEnabled(apiNewsStatus);
@@ -297,6 +302,25 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       alert(`किल-स्विच अपडेट करने में त्रुटि: ${err.message}`);
     } finally {
       setIsTogglingKillSwitch(false);
+    }
+  };
+
+  // Toggle Beawar Sarrafa Bhav Kill Switch (Persisted in Supabase & Local Cache)
+  const handleToggleBullionKillSwitch = async () => {
+    const nextStatus = !bullionEnabled;
+    setIsTogglingBullion(true);
+    try {
+      await StorageService.setBullionEnabled(nextStatus);
+      setBullionEnabled(nextStatus);
+      if (onNewsUpdated) onNewsUpdated();
+      alert(nextStatus
+        ? '✅ ब्यावर सर्राफा भाव टिकर चालू कर दिया गया है। वेबसाइट पर पाठकों को यह दिखेगा।'
+        : '⛔ ब्यावर सर्राफा भाव टिकर बंद (Hide) कर दिया गया है। वेबसाइट पर यह पैनल अब पूरी तरह छिप गया है।'
+      );
+    } catch (err) {
+      alert(`सर्राफा टिकर स्थिति बदलने में त्रुटि: ${err.message}`);
+    } finally {
+      setIsTogglingBullion(false);
     }
   };
 
@@ -1578,8 +1602,62 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         {/* 5. BEAWAR SARRAFA BHAV (BULLION RATES MANAGER) */}
         {/* ==================================================== */}
         {activeTab === 'bullion' && (
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-100 dark:border-gray-800 gap-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800 space-y-6">
+            
+            {/* Bullion Kill Switch Control Card */}
+            <div className={`p-4 sm:p-5 rounded-2xl border-2 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+              bullionEnabled
+                ? 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800/60'
+                : 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800/60'
+            }`}>
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-white font-bold shadow ${
+                  bullionEnabled ? 'bg-amber-600' : 'bg-red-600 animate-pulse'
+                }`}>
+                  {bullionEnabled ? <TrendingUp className="w-5 h-5 text-white" /> : <PowerOff className="w-5 h-5 text-white" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-sm sm:text-base font-black font-hindi text-gray-900 dark:text-white">
+                      सर्राफा भाव टिकर स्थिति (Bullion Ticker Kill Switch)
+                    </h4>
+                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
+                      bullionEnabled
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
+                    }`}>
+                      {bullionEnabled ? '● चालू (Live Visible)' : '■ बंद / छिपा हुआ (Hidden)'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 font-hindi mt-0.5">
+                    {bullionEnabled 
+                      ? 'वेबसाइट के शीर्ष पर ब्यावर सर्राफा भाव टिकर सभी पाठकों को लाइव दिख रहा है।' 
+                      : 'सर्राफा भाव टिकर वेबसाइट से बंद कर दिया गया है (पाठकों को नहीं दिखेगा)।'
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={isTogglingBullion}
+                onClick={handleToggleBullionKillSwitch}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold font-hindi transition shadow-sm flex items-center gap-2 shrink-0 active:scale-95 ${
+                  bullionEnabled
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+              >
+                {isTogglingBullion ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <PowerOff className="w-4 h-4" />
+                )}
+                <span>{bullionEnabled ? 'सर्राफा पैनल बंद करें (Turn OFF)' : 'सर्राफा पैनल चालू करें (Turn ON)'}</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-100 dark:border-gray-800 gap-4">
               <div>
                 <div className="flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider mb-1">
                   <span>🪙 ब्यावर स्थानीय बाजार</span>
