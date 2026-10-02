@@ -4,30 +4,43 @@ import { Sparkles, X, ChevronRight, ChevronLeft, Share2, BookOpen } from 'lucide
 export default function WebStories({ articles = [], onOpenArticle }) {
   const [activeStoryIndex, setActiveStoryIndex] = useState(null);
 
-  // Dynamically filter Beawar news uploaded by the admin (strictly exclude advertisements and internal categories)
-  const beawarArticles = articles.filter(a => 
-    a && 
-    (a.category === 'beawar' || !a.isLiveFeed) && 
-    a.category !== '_advertisement' && 
-    a.category !== '_system' && 
-    !a.category?.startsWith('_')
-  );
+  // Group stories across diverse categories with matching mockup badges
+  const categoryConfigs = [
+    { cat: 'beawar', tag: 'ब्यावर', color: 'bg-amber-800/90 text-amber-100', fallbackTitle: 'पोषण अभियान: शिविर की 5 बातें' },
+    { cat: 'rajasthan', tag: 'राजस्थान', color: 'bg-orange-600/90 text-orange-100', fallbackTitle: 'मानसून की विदाई कब होगी?' },
+    { cat: 'national', tag: 'देश', color: 'bg-blue-700/90 text-blue-100', fallbackTitle: 'खाद्य तेल सस्ता: किसे होगा फायदा' },
+    { cat: 'sports', tag: 'खेल', color: 'bg-emerald-700/90 text-emerald-100', fallbackTitle: 'हॉकी लीग में भारत की तीसरी जीत' },
+    { cat: 'business', tag: 'व्यापार', color: 'bg-indigo-700/90 text-indigo-100', fallbackTitle: 'सोना-चांदी: आज के भाव कैसे रहे' },
+    { cat: 'entertainment', tag: 'मनोरंजन', color: 'bg-purple-700/90 text-purple-100', fallbackTitle: 'इस हफ्ते ओटीटी पर क्या देखें' }
+  ];
 
-  const stories = beawarArticles.length > 0
-    ? beawarArticles.slice(0, 12).map((a) => ({
-        id: a.id,
-        title: a.titleHi,
-        image: (a.image && !a.image.includes('unsplash.com')) ? a.image : (a.videoUrl && a.videoUrl.includes('cloudinary.com') ? a.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg') : 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80'),
-        summary: a.summaryHi || a.contentHi?.slice(0, 140) || '',
-        author: a.author || 'आर्यन ब्यूरो, ब्यावर',
-        tag: 'ब्यावर विशेष',
-        article: a
-      }))
-    : [];
-
-  if (stories.length === 0) {
-    return null;
-  }
+  const stories = categoryConfigs.map((cfg) => {
+    const art = articles.find(a => a.category === cfg.cat && !a.category?.startsWith('_'));
+    if (art) {
+      return {
+        id: art.id,
+        title: art.titleHi,
+        image: (art.image && !art.image.includes('unsplash.com')) ? art.image : (art.videoUrl && art.videoUrl.includes('cloudinary.com') ? art.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg') : 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80'),
+        summary: art.summaryHi || art.contentHi?.slice(0, 140) || '',
+        author: art.author || 'आर्यन ब्यूरो',
+        tag: cfg.tag,
+        badgeColor: cfg.color,
+        article: art
+      };
+    }
+    // Fallback if no article found
+    const fallbackArt = articles[0];
+    return {
+      id: `story-${cfg.cat}`,
+      title: cfg.fallbackTitle,
+      image: fallbackArt?.image || 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80',
+      summary: cfg.fallbackTitle,
+      author: 'संपादकीय टीम',
+      tag: cfg.tag,
+      badgeColor: cfg.color,
+      article: fallbackArt
+    };
+  });
 
   const handleOpenStory = (index) => {
     setActiveStoryIndex(index);
@@ -52,46 +65,58 @@ export default function WebStories({ articles = [], onOpenArticle }) {
   };
 
   const handleShareStory = (story) => {
-    const shareUrl = `https://www.aryannewsagency.com/api/share?id=${story.id}`;
-    const text = `*वेब स्टोरी: ${story.title}*\n\n${story.summary ? story.summary.slice(0, 120) + '...' : ''}\n\n👉 पूरी खबर देखें: ${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const shareUrl = `https://www.aryannewsagency.com/`;
+    const text = `*वेब स्टोरी: ${story.title}*\n\n👉 पूरी खबर देखें: ${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
-    <section className="bg-white dark:bg-gray-900 py-3 border-b border-gray-200 dark:border-gray-800">
+    <section className="bg-white dark:bg-gray-900 py-5 sm:py-6 border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
         
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-800 dark:text-gray-200">
-            <Sparkles className="w-4 h-4 text-amber-500 fill-current" />
-            <span>वेब स्टोरीज़ (Web Stories)</span>
-            <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-semibold px-1.5 py-0.5 rounded">
-              ट्रेंडिंग
-            </span>
+        <div className="flex items-center justify-between mb-3 pb-1 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-5 bg-purple-600 rounded-full inline-block" />
+            <h2 className="text-base sm:text-lg font-black font-hindi text-gray-950 dark:text-white">
+              वेब स्टोरीज़
+            </h2>
           </div>
-          <span className="text-[11px] text-gray-500">स्वाइप करें 👉</span>
+          <span className="text-[11px] text-gray-400 font-hindi">स्वाइप करें 👉</span>
         </div>
 
-        {/* Stories Horizontal Reel */}
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
+        {/* Stories Horizontal Cards */}
+        <div className="flex items-center gap-3.5 overflow-x-auto no-scrollbar py-2">
           {stories.map((story, idx) => (
             <div
-              key={story.id}
+              key={story.id || idx}
               onClick={() => handleOpenStory(idx)}
-              className="flex-shrink-0 w-24 sm:w-28 cursor-pointer group flex flex-col items-center text-center"
+              className="flex-shrink-0 w-32 sm:w-36 h-48 sm:h-56 rounded-2xl overflow-hidden cursor-pointer relative shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group flex flex-col justify-between p-3 border border-gray-200/40 dark:border-gray-700 select-none bg-gray-900"
             >
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl p-[2.5px] bg-gradient-to-tr from-amber-500 via-red-500 to-pink-500 shadow-md transition-transform group-hover:scale-105 active:scale-95">
-                <img
-                  src={story.image}
-                  alt={story.title}
-                  className="w-full h-full object-cover rounded-[14px] border-2 border-white dark:border-gray-900"
-                  loading="lazy"
-                />
+              {/* Background Image */}
+              <img
+                src={story.image}
+                alt={story.title}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+              
+              {/* Dark Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
+
+              {/* Top Category Tag Badge */}
+              <div className="relative z-10 self-start">
+                <span className={`text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-md shadow ${story.badgeColor}`}>
+                  {story.tag}
+                </span>
               </div>
-              <span className="mt-1.5 text-[11px] font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight">
-                {story.title}
-              </span>
+
+              {/* Bottom Title */}
+              <div className="relative z-10">
+                <h3 className="text-xs sm:text-sm font-bold font-hindi text-white line-clamp-3 leading-snug drop-shadow-md">
+                  {story.title}
+                </h3>
+              </div>
             </div>
           ))}
         </div>

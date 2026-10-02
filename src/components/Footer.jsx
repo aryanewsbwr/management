@@ -1,162 +1,91 @@
 import React from 'react';
-import { 
-  MapPin, Phone, Mail, Globe, Share2, ShieldCheck, 
-  ExternalLink, Heart, Send 
-} from 'lucide-react';
-import { AGENCY_INFO, CATEGORIES } from '../data/categories';
+import { AGENCY_INFO } from '../data/categories';
 
 export default function Footer({ onSelectCategory, onOpenSubmitNews, onOpenLegal, lang = 'hi' }) {
   return (
-    <footer className="bg-gray-950 text-gray-300 pt-10 pb-20 lg:pb-10 border-t border-gray-800 transition-colors">
+    <footer className="bg-[#18181b] text-gray-300 pt-10 pb-20 lg:pb-12 border-t border-gray-800 transition-colors font-hindi">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         
-        {/* TOP BRANDING & CONTACT GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-gray-800">
+        {/* 3-COLUMN MOCKUP GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-gray-800">
           
-          {/* Col 1: Identity */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center shadow-lg shrink-0 overflow-hidden border border-gray-700">
-                <img src="/logo.png" alt="Aryan News Agency Logo" className="w-10 h-10 object-contain" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-white font-hindi">
-                  {AGENCY_INFO.nameHi}
-                </h3>
-                <span className="text-xs text-red-400 font-semibold">
-                  {AGENCY_INFO.nameEn}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs text-gray-400 leading-relaxed font-hindi">
-              ब्यावर व संपूर्ण राजस्थान का प्रमुख डिजिटल समाचार मंच। निष्पक्ष, सटीक और सबसे तेज स्थानीय व राष्ट्रीय समाचार कवरेज।
+          {/* Col 1: Identity & Address */}
+          <div className="space-y-3">
+            <h3 className="text-xl sm:text-2xl font-black text-white font-hindi">
+              आर्यन न्यूज़ एजेंसी
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
+              नेताजी सुभाष मार्ग, पुराने बस स्टैंड के पास, ब्यावर – 305901 (राजस्थान)
             </p>
+          </div>
 
-            <div className="pt-1">
-              <a
-                href={`https://wa.me/${AGENCY_INFO.whatsapp}?text=${encodeURIComponent('नमस्ते आर्यन न्यूज़ एजेंसी, मुझे विज्ञापन देना है।')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>विज्ञापन / प्रेस रिलीज संपर्क</span>
+          {/* Col 2: Contact & Editor */}
+          <div className="space-y-1.5">
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-2">
+              संपर्क
+            </h4>
+            <p className="text-xs sm:text-sm text-gray-300 font-semibold">
+              संपादक: हिमांशु अग्रवाल
+            </p>
+            <p className="text-xs text-gray-400">
+              <a href="mailto:info@aryannewsagency.com" className="hover:text-red-400 transition font-mono">
+                info@aryannewsagency.com
               </a>
-            </div>
-          </div>
-
-          {/* Col 2: Categories */}
-          <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-600 pl-2">
-              समाचार श्रेणियां
-            </h4>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => onSelectCategory(c.id)}
-                  className="text-left text-gray-400 hover:text-red-400 transition py-1"
-                >
-                  • {lang === 'hi' ? c.nameHi : c.nameEn}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Col 3: Contact & Address in Beawar */}
-          <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-600 pl-2">
-              कार्यालय संपर्क
-            </h4>
-            <ul className="space-y-3 text-xs text-gray-400">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <span>{AGENCY_INFO.address}</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                <a href={`tel:${AGENCY_INFO.phonePrimary}`} className="hover:text-white transition">
-                  {AGENCY_INFO.phonePrimary} / {AGENCY_INFO.phoneLandline}
-                </a>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-blue-400 shrink-0" />
-                <a href={`mailto:${AGENCY_INFO.email}`} className="hover:text-white transition">
-                  {AGENCY_INFO.email}
-                </a>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Globe className="w-4 h-4 text-amber-400 shrink-0" />
-                <a href="https://www.aryannewsagency.com/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">
-                  {AGENCY_INFO.domain}
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Google Maps & Verification */}
-          <div>
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-600 pl-2">
-              गूगल मैप्स व स्थान
-            </h4>
-            <div className="bg-gray-900 p-3 rounded-xl border border-gray-800 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-200">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>गूगल प्रमाणित व्यापार प्रोफ़ाइल</span>
-              </div>
-              <p className="text-[11px] text-gray-400">
-                आर्यन न्यूज़ एजेंसी, नेताजी सुभाष मार्ग, ब्यावर (राज.)
-              </p>
-              <a
-                href="https://share.google/Ym10Z0EfA9LH3UnfV"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 pt-1"
-              >
-                <span>गूगल मैप्स पर देखें</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+            </p>
+            <p className="text-xs text-gray-400 font-mono">
+              <a href="tel:+919887500875" className="hover:text-emerald-400 transition">
+                +91 9887500875
               </a>
-            </div>
+            </p>
+          </div>
 
-            <div className="mt-3">
-              <button
-                onClick={onOpenSubmitNews}
-                className="w-full text-center text-xs font-bold text-white bg-red-700/80 hover:bg-red-600 py-2 rounded-xl transition"
+          {/* Col 3: Legal & Attribution */}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm font-semibold text-gray-300">
+              <button 
+                onClick={() => onOpenLegal && onOpenLegal('about')} 
+                className="hover:text-red-400 transition"
               >
-                नागरिक पत्रकारिता: अपनी खबर भेजें
+                हमारे बारे में
+              </button>
+              <span className="text-gray-600">|</span>
+              <button 
+                onClick={() => onOpenLegal && onOpenLegal('grievance')} 
+                className="hover:text-red-400 transition"
+              >
+                शिकायत निवारण
               </button>
             </div>
+
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-300">
+              <button 
+                onClick={() => onOpenLegal && onOpenLegal('terms')} 
+                className="hover:text-red-400 transition"
+              >
+                नियम व शर्तें
+              </button>
+              <span className="text-gray-500">·</span>
+              <button 
+                onClick={() => onOpenLegal && onOpenLegal('privacy')} 
+                className="hover:text-red-400 transition"
+              >
+                गोपनीयता नीति
+              </button>
+            </div>
+
+            <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed pt-1">
+              अन्य प्रकाशकों की खबरों के शीर्षक और संक्षिप्त सार मूल स्रोत के लिंक के साथ दिखाए जाते हैं। सभी अधिकार मूल प्रकाशकों के हैं।
+            </p>
           </div>
 
         </div>
 
-        {/* CREDIT LINE & ATTRIBUTION */}
-        <div className="mt-8 p-3.5 rounded-2xl bg-gray-900/60 border border-gray-800/80 text-[11px] text-gray-400 leading-relaxed font-hindi flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <p>
-            ℹ️ <strong>समाचार आभार:</strong> समस्त बाहरी समाचार सामग्री उनके संबंधित मूल प्रकाशकों के सौजन्य से प्रदर्शित की गई है। स्थानीय ब्यावर समाचार आर्यन न्यूज़ एजेंसी ब्यूरो द्वारा संकलित किए जाते हैं।
-          </p>
-          <a href={`mailto:${AGENCY_INFO.email}`} className="text-red-400 hover:underline font-mono text-xs whitespace-nowrap">
-            {AGENCY_INFO.email}
-          </a>
-        </div>
-
-        {/* BOTTOM LEGAL BAR */}
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <p className="text-center sm:text-left">
-            © {new Date().getFullYear()} <strong className="text-gray-300">Aryan News Agency (आर्यन न्यूज़ एजेंसी)</strong>. सर्वाधिकार सुरक्षित।
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px]">
-            <button onClick={() => onOpenLegal?.('about')} className="hover:text-red-400 transition">हमारे बारे में</button>
-            <span>•</span>
-            <button onClick={() => onOpenLegal?.('grievance')} className="hover:text-red-400 transition font-bold text-amber-400/90">शिकायत निवारण (Grievance)</button>
-            <span>•</span>
-            <button onClick={() => onOpenLegal?.('terms')} className="hover:text-red-400 transition">नियम व शर्तें</button>
-            <span>•</span>
-            <button onClick={() => onOpenLegal?.('privacy')} className="hover:text-red-400 transition">गोपनीयता नीति</button>
-            <span>•</span>
-            <span className="text-gray-600">ब्यावर (राज.)</span>
+        {/* Bottom copyright line */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
+          <p>© {new Date().getFullYear()} Aryan News Agency (आर्यन न्यूज़ एजेंसी, ब्यावर). सर्वाधिकार सुरक्षित।</p>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-gray-400 text-[11px]">डिजिटल समाचार संस्करण • 1940 से आपके साथ</span>
           </div>
         </div>
 

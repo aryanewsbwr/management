@@ -4,6 +4,7 @@ import BreakingTicker from './components/BreakingTicker';
 import BullionTicker from './components/BullionTicker';
 import WebStories from './components/WebStories';
 import HeroMixedSection from './components/HeroMixedSection';
+import EditorialMagazineGrid from './components/EditorialMagazineGrid';
 import CategorySection from './components/CategorySection';
 import ArticleCard from './components/ArticleCard';
 import ArticleModal from './components/ArticleModal';
@@ -726,10 +727,10 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* DEFAULT HOMEPAGE: "FIRST MIX CATEGORY THEN DIFFERENT CATEGORY" */
+          /* DEFAULT HOMEPAGE: EXACT 3-COLUMN EDITORIAL MAGAZINE LAYOUT */
           <>
-            {/* 1. FIRST MIX CATEGORY (Hero Spotlight + Trending Mixed Grid) */}
-            <HeroMixedSection
+            {/* 1. EDITORIAL MAGAZINE GRID (ब्यावर विशेष, आज की बड़ी खबर + देश-विदेश, राजस्थान + खेल) */}
+            <EditorialMagazineGrid
               articles={articles}
               lang={lang}
               onOpenArticle={handleOpenArticle}
@@ -740,13 +741,17 @@ export default function App() {
               onSelectCategory={handleSelectCategory}
             />
 
-            {/* 2. ADVERTISEMENT BANNER (Just below Main News Block / Hero Mix) */}
+            {/* 2. ADVERTISEMENT BANNER (Below Editorial Mix) */}
             <AdvertisementCard 
               ad={ads.find(a => a.placements?.includes('banner') || a.placement === 'banner' || a.placement === 'all')} 
               layout="banner" 
             />
 
-            {/* 3. THEN DIFFERENT CATEGORIES (Modular Segregated Grids) */}
+            {/* 3. WEB STORIES (Interactive Category Stories) */}
+            <WebStories 
+              articles={articles} 
+              onOpenArticle={handleOpenArticle} 
+            />
             
             {/* 📍 ब्यावर विशेष (Beawar Local News) */}
             <CategorySection

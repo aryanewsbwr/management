@@ -28,18 +28,16 @@ export default function BreakingTicker({ items = [], onSelectHeadline }) {
     <div className="bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/50">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2">
         
-        {/* Pulsing Badge */}
-        <div className="flex items-center gap-1.5 shrink-0 bg-red-600 text-white font-black text-[11px] sm:text-xs uppercase px-2.5 py-1 rounded shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-          <Zap className="w-3.5 h-3.5 fill-current text-amber-300" />
-          <span>ताज़ा अपडेट</span>
+        {/* Ticker Red Badge */}
+        <div className="flex items-center gap-1 shrink-0 bg-[#b91c1c] text-white font-black text-xs px-2.5 py-0.5 rounded shadow-xs">
+          <span>ताज़ा</span>
         </div>
 
         {/* Headline Display */}
         <div className="flex-1 overflow-hidden">
           <div 
             onClick={() => onSelectHeadline && onSelectHeadline(currentItem)}
-            className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-red-600 dark:hover:text-red-400 cursor-pointer truncate transition"
+            className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-red-600 dark:hover:text-red-400 cursor-pointer truncate transition font-hindi"
           >
             {currentItem}
           </div>
