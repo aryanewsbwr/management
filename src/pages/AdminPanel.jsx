@@ -68,8 +68,17 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [adAbout, setAdAbout] = useState('');
   const [adMediaUrl, setAdMediaUrl] = useState('');
   const [adMediaType, setAdMediaType] = useState('image');
-  const [adActionType, setAdActionType] = useState('whatsapp');
-  const [adActionTarget, setAdActionTarget] = useState('9887500875');
+  
+  // Multiple Action Buttons States (Collapsible / Optional)
+  const [adEnableWhatsApp, setAdEnableWhatsApp] = useState(false);
+  const [adWhatsAppNumber, setAdWhatsAppNumber] = useState('');
+  const [adEnableCall, setAdEnableCall] = useState(false);
+  const [adCallNumber, setAdCallNumber] = useState('');
+  const [adEnableMaps, setAdEnableMaps] = useState(false);
+  const [adMapsUrl, setAdMapsUrl] = useState('');
+  const [adEnableWebsite, setAdEnableWebsite] = useState(false);
+  const [adWebsiteUrl, setAdWebsiteUrl] = useState('');
+
   const [adDuration, setAdDuration] = useState('7d');
   const [adCustomDays, setAdCustomDays] = useState('3');
   const [adPlacement, setAdPlacement] = useState('all');
@@ -90,9 +99,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   const [newTicker, setNewTicker] = useState('');
 
-  
-  // Add MCX Item
-  
   // ADVERTISEMENT HANDLERS
   const handleAdMediaUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -116,6 +122,26 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       alert('कृपया व्यापार / कंपनी का नाम भरें।');
       return;
     }
+
+    const actions = [];
+    if (adEnableWhatsApp && adWhatsAppNumber.trim()) {
+      actions.push({ type: 'whatsapp', target: adWhatsAppNumber.trim() });
+    }
+    if (adEnableCall && adCallNumber.trim()) {
+      actions.push({ type: 'call', target: adCallNumber.trim() });
+    }
+    if (adEnableMaps && adMapsUrl.trim()) {
+      actions.push({ type: 'maps', target: adMapsUrl.trim() });
+    }
+    if (adEnableWebsite && adWebsiteUrl.trim()) {
+      actions.push({ type: 'website', target: adWebsiteUrl.trim() });
+    }
+
+    if (actions.length === 0) {
+      alert('कृपया कम से कम एक कॉल-टू-एक्शन बटन (Action Button) चालू करें और उसका नंबर/लिंक भरें।');
+      return;
+    }
+
     setIsAdSubmitting(true);
     try {
       const newAd = {
@@ -123,8 +149,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         about: adAbout.trim(),
         mediaUrl: adMediaUrl || null,
         mediaType: adMediaType,
-        actionType: adActionType,
-        actionTarget: adActionTarget.trim() || '9887500875',
+        actions: actions,
+        actionType: actions[0].type,
+        actionTarget: actions[0].target,
         duration: adDuration,
         customDays: adCustomDays,
         placement: adPlacement,
@@ -133,11 +160,19 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       await StorageService.saveAdvertisement(newAd);
       const updated = await StorageService.fetchAdvertisements();
       setAdsList(updated);
-      // Reset form
+      if (onNewsUpdated) onNewsUpdated();
+      // Reset form cleanly
       setAdBusinessName('');
       setAdAbout('');
       setAdMediaUrl('');
-      setAdActionTarget('9887500875');
+      setAdEnableWhatsApp(false);
+      setAdWhatsAppNumber('');
+      setAdEnableCall(false);
+      setAdCallNumber('');
+      setAdEnableMaps(false);
+      setAdMapsUrl('');
+      setAdEnableWebsite(false);
+      setAdWebsiteUrl('');
       alert('विज्ञापन सफलतापूर्वक प्रकाशित कर दिया गया है!');
     } catch (err) {
       alert(err.message || 'Error saving ad');
@@ -152,8 +187,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       await StorageService.saveAdvertisement(updatedAd);
       const updated = await StorageService.fetchAdvertisements();
       setAdsList(updated);
+      if (onNewsUpdated) onNewsUpdated();
     } catch (err) {
-      alert(err.message);
+      alert(`विजिबिलिटी बदलने में त्रुटि: ${err.message}`);
     }
   };
 
@@ -1825,20 +1861,20 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                     />
                   </div>
 
-                  {/* Action Button Type */}
+                  {/* Placement Selector */}
                   <div>
                     <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
-                      कॉल-टू-एक्शन बटन (Action Button) *
+                      विज्ञापन स्थान (Placement) *
                     </label>
                     <select
-                      value={adActionType}
-                      onChange={e => setAdActionType(e.target.value)}
+                      value={adPlacement}
+                      onChange={e => setAdPlacement(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
                     >
-                      <option value="whatsapp">💬 व्हाट्सएप चैट (WhatsApp Direct)</option>
-                      <option value="call">📞 सीधा फोन कॉल (Direct Phone Call)</option>
-                      <option value="maps">📍 गूगल मैप्स लोकेशन (Google Maps Location)</option>
-                      <option value="website">🌐 वेबसाइट लिंक (Website URL)</option>
+                      <option value="all">🌟 सभी स्थान (मुख्य बैनर + फीड + खबर के अंदर)</option>
+                      <option value="banner">🔝 मुख्य बैनर (Top Header Banner)</option>
+                      <option value="feed">📰 इन-फीड (खबरों के बीच)</option>
+                      <option value="article">📖 खबर के अंदर (Inside News Article)</option>
                     </select>
                   </div>
                 </div>
@@ -1857,24 +1893,109 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  {/* Action Target Destination */}
+                {/* MULTIPLE CALL TO ACTION BUTTONS SELECTOR */}
+                <div className="bg-gray-50 dark:bg-gray-850 p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
-                      {adActionType === 'call' ? 'फोन नंबर (उदा: 9887500875)' : 
-                       adActionType === 'whatsapp' ? 'व्हाट्सएप नंबर (10 अंक)' : 
-                       adActionType === 'maps' ? 'गूगल मैप्स लिंक या पता' : 'वेबसाइट URL'} *
+                    <label className="block text-xs font-bold text-gray-900 dark:text-white mb-1 font-hindi">
+                      🎯 कॉल-टू-एक्शन बटन चुनें (Action Buttons - बहुविकल्पीय) *
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={adActionTarget}
-                      onChange={e => setAdActionTarget(e.target.value)}
-                      placeholder={adActionType === 'call' || adActionType === 'whatsapp' ? '9887500875' : 'https://...'}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-mono"
-                    />
+                    <p className="text-[11px] text-gray-500">
+                      जो बटन आप विज्ञापन पर दिखाना चाहते हैं, उस पर टिक करें और उसका नंबर या लिंक भरें:
+                    </p>
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 1. WhatsApp Button */}
+                    <div className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200 font-hindi">
+                        <input
+                          type="checkbox"
+                          checked={adEnableWhatsApp}
+                          onChange={e => setAdEnableWhatsApp(e.target.checked)}
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>💬 व्हाट्सएप चैट (WhatsApp Direct)</span>
+                      </label>
+                      {adEnableWhatsApp && (
+                        <input
+                          type="text"
+                          value={adWhatsAppNumber}
+                          onChange={e => setAdWhatsAppNumber(e.target.value)}
+                          placeholder="व्हाट्सएप नंबर (10 अंक, उदा: 9887500875)"
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-gray-900 dark:text-white font-mono"
+                        />
+                      )}
+                    </div>
+
+                    {/* 2. Direct Call Button */}
+                    <div className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200 font-hindi">
+                        <input
+                          type="checkbox"
+                          checked={adEnableCall}
+                          onChange={e => setAdEnableCall(e.target.checked)}
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>📞 सीधा फोन कॉल (Direct Phone Call)</span>
+                      </label>
+                      {adEnableCall && (
+                        <input
+                          type="text"
+                          value={adCallNumber}
+                          onChange={e => setAdCallNumber(e.target.value)}
+                          placeholder="कॉलिंग नंबर (उदा: 9887500875)"
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-gray-900 dark:text-white font-mono"
+                        />
+                      )}
+                    </div>
+
+                    {/* 3. Google Maps Location */}
+                    <div className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200 font-hindi">
+                        <input
+                          type="checkbox"
+                          checked={adEnableMaps}
+                          onChange={e => setAdEnableMaps(e.target.checked)}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>📍 गूगल मैप्स लोकेशन (Google Maps Location)</span>
+                      </label>
+                      {adEnableMaps && (
+                        <input
+                          type="text"
+                          value={adMapsUrl}
+                          onChange={e => setAdMapsUrl(e.target.value)}
+                          placeholder="मैप्स लिंक या दुकान का पता (उदा: https://maps.app...)"
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-gray-900 dark:text-white font-mono"
+                        />
+                      )}
+                    </div>
+
+                    {/* 4. Website URL */}
+                    <div className="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200 font-hindi">
+                        <input
+                          type="checkbox"
+                          checked={adEnableWebsite}
+                          onChange={e => setAdEnableWebsite(e.target.checked)}
+                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>🌐 वेबसाइट लिंक (Website Link)</span>
+                      </label>
+                      {adEnableWebsite && (
+                        <input
+                          type="text"
+                          value={adWebsiteUrl}
+                          onChange={e => setAdWebsiteUrl(e.target.value)}
+                          placeholder="वेबसाइट URL (उदा: https://example.com)"
+                          className="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-gray-900 dark:text-white font-mono"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Duration / Timer */}
                   <div>
                     <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
@@ -1885,17 +2006,17 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                       onChange={e => setAdDuration(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
                     >
+                      <option value="7d">📅 1 सप्ताह (1 Week - Recommended)</option>
+                      <option value="30d">📅 1 महीना (1 Month)</option>
                       <option value="24h">⏱️ 24 घंटे (24 Hours)</option>
                       <option value="48h">⏱️ 48 घंटे (48 Hours)</option>
-                      <option value="7d">📅 1 सप्ताह (1 Week)</option>
-                      <option value="30d">📅 1 महीना (1 Month)</option>
-                      <option value="custom">⚙️ कस्टम दिन (Custom Days)</option>
                       <option value="permanent">♾️ जब तक मैं बंद न करूँ (Until I Close)</option>
+                      <option value="custom">⚙️ कस्टम दिन (Custom Days)</option>
                     </select>
                   </div>
 
-                  {/* Custom Days Input if selected */}
-                  {adDuration === 'custom' && (
+                  {/* Custom Days Input only if selected */}
+                  {adDuration === 'custom' ? (
                     <div>
                       <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
                         कितने दिनों के लिए? (Days) *
@@ -1906,27 +2027,10 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                         max={365}
                         value={adCustomDays}
                         onChange={e => setAdCustomDays(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-mono"
                       />
                     </div>
-                  )}
-
-                  {/* Placement Selector */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
-                      विज्ञापन स्थान (Placement) *
-                    </label>
-                    <select
-                      value={adPlacement}
-                      onChange={e => setAdPlacement(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
-                    >
-                      <option value="all">🌟 सभी स्थान (मुख्य बैनर + फीड + खबर के अंदर)</option>
-                      <option value="banner">🔝 मुख्य बैनर (Top Header Banner)</option>
-                      <option value="feed">📰 इन-फीड (खबरों के बीच)</option>
-                      <option value="article">📖 खबर के अंदर (Inside News Article)</option>
-                    </select>
-                  </div>
+                  ) : null}
                 </div>
 
                 {/* Media Upload (Photo / Video to Cloudinary) */}
@@ -2045,10 +2149,17 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                           </p>
                         )}
 
-                        <div className="flex flex-wrap items-center gap-4 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-                          <span>🎯 एक्शन: <strong>{ad.actionType}</strong> ({ad.actionTarget})</span>
-                          <span>👁️ <strong>{ad.views}</strong> बार देखा</span>
-                          <span>🖱️ <strong>{ad.clicks}</strong> बार क्लिक</span>
+                        <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span>🎯 बटन:</span>
+                            {(ad.actions && ad.actions.length > 0 ? ad.actions : (ad.actionType ? [{ type: ad.actionType, target: ad.actionTarget }] : [])).map((act, i) => (
+                              <span key={i} className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded font-mono text-[10px] border border-gray-200 dark:border-gray-700">
+                                {act.type}: {act.target}
+                              </span>
+                            ))}
+                          </div>
+                          <span>👁️ <strong>{ad.views || 0}</strong> बार देखा</span>
+                          <span>🖱️ <strong>{ad.clicks || 0}</strong> बार क्लिक</span>
                           {ad.expiresAt && ad.expiresAt !== 'permanent' && (
                             <span className="text-amber-600 dark:text-amber-400 font-bold">
                               ⏳ एक्सपायरी: {new Date(ad.expiresAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}

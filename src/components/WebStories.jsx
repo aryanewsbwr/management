@@ -4,8 +4,14 @@ import { Sparkles, X, ChevronRight, ChevronLeft, Share2, BookOpen } from 'lucide
 export default function WebStories({ articles = [], onOpenArticle }) {
   const [activeStoryIndex, setActiveStoryIndex] = useState(null);
 
-  // Dynamically filter Beawar news uploaded by the admin
-  const beawarArticles = articles.filter(a => a.category === 'beawar' || !a.isLiveFeed);
+  // Dynamically filter Beawar news uploaded by the admin (strictly exclude advertisements and internal categories)
+  const beawarArticles = articles.filter(a => 
+    a && 
+    (a.category === 'beawar' || !a.isLiveFeed) && 
+    a.category !== '_advertisement' && 
+    a.category !== '_system' && 
+    !a.category?.startsWith('_')
+  );
 
   const stories = beawarArticles.length > 0
     ? beawarArticles.slice(0, 12).map((a) => ({

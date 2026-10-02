@@ -90,7 +90,6 @@ export const StorageService = {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .neq('category', '_system')
         .order('published_at', { ascending: false });
 
       if (error) {
@@ -100,7 +99,15 @@ export const StorageService = {
 
       if (!data) return [];
 
-      return data.map(item => {
+      // Exclude system settings, advertisements, and internal objects from news articles
+      const filteredData = data.filter(item => 
+        item.category && 
+        !item.category.startsWith('_') && 
+        item.category !== '_system' && 
+        item.category !== '_advertisement'
+      );
+
+      return filteredData.map(item => {
         const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption, isHidden } = extractMediaMeta(item.content_hi, item);
         const { content: cleanContentEn } = extractMediaMeta(item.content_en || item.content_hi, item);
 
@@ -144,7 +151,7 @@ export const StorageService = {
         .eq('id', id)
         .maybeSingle();
 
-      if (error || !data || data.category === '_system') return null;
+      if (error || !data || data.category === '_system' || data.category === '_advertisement' || data.category?.startsWith('_')) return null;
 
       const { content: cleanContentHi, gallery, videoUrl, mediaType, mediaCaption, isHidden } = extractMediaMeta(data.content_hi, data);
       const { content: cleanContentEn } = extractMediaMeta(data.content_en || data.content_hi, data);
@@ -526,7 +533,11 @@ export const StorageService = {
 
         const expiresAt = meta.expiresAt || item.read_time || null;
         const isExpired = expiresAt && expiresAt !== 'permanent' && new Date(expiresAt) < new Date();
-        const isHidden = Boolean(item.is_trending) || meta.isHidden === true;
+        const isHidden = item.is_trending === true || meta.isHidden === true;
+
+        const actions = Array.isArray(meta.actions) && meta.actions.length > 0
+          ? meta.actions
+          : (meta.actionType && meta.actionTarget ? [{ type: meta.actionType, target: meta.actionTarget }] : []);
 
         return {
           id: item.id,
@@ -535,8 +546,9 @@ export const StorageService = {
           mediaUrl: item.image || meta.videoUrl || null,
           mediaType: meta.mediaType || (meta.videoUrl ? 'video' : 'image'),
           videoUrl: meta.videoUrl || null,
-          actionType: meta.actionType || 'whatsapp', // 'call' | 'whatsapp' | 'maps' | 'website'
-          actionTarget: meta.actionTarget || '9887500875',
+          actions: actions,
+          actionType: actions[0]?.type || meta.actionType || 'whatsapp',
+          actionTarget: actions[0]?.target || meta.actionTarget || '',
           placement: meta.placement || 'all', // 'banner' | 'feed' | 'article' | 'all'
           duration: item.author || 'permanent',
           expiresAt: expiresAt,
@@ -577,15 +589,22 @@ export const StorageService = {
 
     const isVideo = ad.mediaType === 'video' || (ad.mediaUrl && /\.(mp4|webm|mov|mkv)$/i.test(ad.mediaUrl));
 
+    const actions = Array.isArray(ad.actions) && ad.actions.length > 0
+      ? ad.actions
+      : (ad.actionType && ad.actionTarget ? [{ type: ad.actionType, target: ad.actionTarget }] : []);
+
+    const isHidden = ad.isHidden === true;
+
     const meta = {
       videoUrl: isVideo ? ad.mediaUrl : null,
       mediaType: isVideo ? 'video' : 'image',
-      actionType: ad.actionType || 'whatsapp',
-      actionTarget: ad.actionTarget || '9887500875',
+      actions: actions,
+      actionType: actions[0]?.type || ad.actionType || 'whatsapp',
+      actionTarget: actions[0]?.target || ad.actionTarget || '',
       placement: ad.placement || 'all',
       expiresAt: expiresAt,
       clicks: ad.clicks || 0,
-      isHidden: ad.isHidden === true
+      isHidden: isHidden
     };
 
     const record = {
@@ -593,7 +612,7 @@ export const StorageService = {
       title_hi: ad.businessName,
       title_en: ad.businessName,
       summary_hi: ad.about || '',
-      summary_en: `${ad.actionType}:${ad.actionTarget}`,
+      summary_en: actions.map(a => `${a.type}:${a.target}`).join(' | '),
       content_hi: JSON.stringify(meta),
       content_en: JSON.stringify(meta),
       category: '_advertisement',
@@ -601,7 +620,7 @@ export const StorageService = {
       published_at: ad.createdAt || new Date().toISOString(),
       author: ad.duration || 'permanent',
       read_time: expiresAt,
-      is_trending: ad.isHidden === true,
+      is_trending: isHidden,
       views: ad.views || 0,
       updated_at: new Date().toISOString()
     };

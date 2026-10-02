@@ -1,59 +1,33 @@
 import React from 'react';
-import { PhoneCall, MessageCircle, MapPin, Globe, ExternalLink, Sparkles, Megaphone } from 'lucide-react';
-import { AGENCY_INFO } from '../data/categories';
+import { PhoneCall, MessageCircle, MapPin, Globe } from 'lucide-react';
 import { StorageService } from '../services/storage';
 
 export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
-  // If no custom ad provided, show the default Agency Booking Banner for 'banner' layout
-  if (!ad) {
-    if (layout !== 'banner') return null;
-
-    return (
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 my-4">
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 rounded-2xl p-3 sm:p-4 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <span className="text-3xl">🪔</span>
-            <div>
-              <span className="bg-black/25 text-white font-bold text-[10px] px-2 py-0.5 rounded uppercase tracking-wider">
-                विज्ञापन
-              </span>
-              <h4 className="text-sm sm:text-base font-black font-hindi mt-0.5">
-                ब्यावर की विश्वप्रसिद्ध कूटवां तिलपत्ती एवं गजक - सीधे निर्माता से प्राप्त करें
-              </h4>
-              <p className="text-xs text-amber-100">
-                {AGENCY_INFO.nameHi} विज्ञापन सेवा • प्रचार हेतु संपर्क: {AGENCY_INFO.phonePrimary}
-              </p>
-            </div>
-          </div>
-
-          <a
-            href={`https://wa.me/${AGENCY_INFO.whatsapp}?text=${encodeURIComponent('नमस्ते आर्यन न्यूज़ एजेंसी, मुझे विज्ञापन देना है।')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-white text-gray-900 hover:bg-amber-50 font-black text-xs px-4 py-2 rounded-xl shadow transition active:scale-95 shrink-0"
-          >
-            विज्ञापन बुक करें
-          </a>
-        </div>
-      </div>
-    );
+  // If no custom ad provided, or if ad is hidden/expired, render nothing (no default dummy banner)
+  if (!ad || ad.isHidden || ad.isExpired) {
+    return null;
   }
 
-  const handleAction = (e) => {
+  // Parse all action buttons
+  const actions = Array.isArray(ad.actions) && ad.actions.length > 0
+    ? ad.actions
+    : (ad.actionType && ad.actionTarget ? [{ type: ad.actionType, target: ad.actionTarget }] : []);
+
+  const handleAction = (e, act) => {
     e.stopPropagation();
     // Track click analytics in background
     if (ad.id) {
       StorageService.incrementAdClick(ad.id);
     }
 
-    const target = ad.actionTarget || '';
-    if (ad.actionType === 'call') {
+    const target = act.target || '';
+    if (act.type === 'call') {
       window.location.href = `tel:${target.replace(/[^0-9+]/g, '')}`;
-    } else if (ad.actionType === 'whatsapp') {
+    } else if (act.type === 'whatsapp') {
       const cleanPhone = target.replace(/[^0-9]/g, '');
       const msg = encodeURIComponent(`नमस्ते ${ad.businessName}, मैंने आर्यन न्यूज़ एजेंसी पर आपका विज्ञापन देखा और इस संबंध में जानकारी चाहिए।`);
       window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
-    } else if (ad.actionType === 'maps') {
+    } else if (act.type === 'maps') {
       const url = target.startsWith('http') ? target : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`;
       window.open(url, '_blank');
     } else {
@@ -63,57 +37,72 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
     }
   };
 
-  const getActionButton = () => {
-    switch (ad.actionType) {
-      case 'call':
-        return (
-          <button
-            onClick={handleAction}
-            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md transition active:scale-95 shrink-0"
-          >
-            <PhoneCall className="w-3.5 h-3.5" />
-            <span>कॉल करें</span>
-          </button>
-        );
-      case 'maps':
-        return (
-          <button
-            onClick={handleAction}
-            className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md transition active:scale-95 shrink-0"
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>लोकेशन देखें</span>
-          </button>
-        );
-      case 'website':
-        return (
-          <button
-            onClick={handleAction}
-            className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md transition active:scale-95 shrink-0"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>वेबसाइट देखें</span>
-          </button>
-        );
-      case 'whatsapp':
-      default:
-        return (
-          <button
-            onClick={handleAction}
-            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md transition active:scale-95 shrink-0"
-          >
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span>व्हाट्सएप करें</span>
-          </button>
-        );
-    }
+  const renderActionButtons = (size = 'normal') => {
+    if (actions.length === 0) return null;
+
+    const btnPadding = size === 'small' ? 'px-2.5 py-1.5 text-[11px]' : 'px-3.5 py-2 text-xs';
+
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {actions.map((act, idx) => {
+          if (!act.target) return null;
+
+          if (act.type === 'call') {
+            return (
+              <button
+                key={idx}
+                onClick={(e) => handleAction(e, act)}
+                className={`inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition active:scale-95 shrink-0 ${btnPadding}`}
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>कॉल करें</span>
+              </button>
+            );
+          } else if (act.type === 'whatsapp') {
+            return (
+              <button
+                key={idx}
+                onClick={(e) => handleAction(e, act)}
+                className={`inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-md transition active:scale-95 shrink-0 ${btnPadding}`}
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>व्हाट्सएप</span>
+              </button>
+            );
+          } else if (act.type === 'maps') {
+            return (
+              <button
+                key={idx}
+                onClick={(e) => handleAction(e, act)}
+                className={`inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition active:scale-95 shrink-0 ${btnPadding}`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>लोकेशन देखें</span>
+              </button>
+            );
+          } else if (act.type === 'website') {
+            return (
+              <button
+                key={idx}
+                onClick={(e) => handleAction(e, act)}
+                className={`inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition active:scale-95 shrink-0 ${btnPadding}`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>वेबसाइट देखें</span>
+              </button>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
   };
 
   // 1. TOP WIDE BANNER LAYOUT
   if (layout === 'banner') {
     return (
       <div className="max-w-7xl mx-auto px-3 sm:px-6 my-4">
-        <div className="bg-gradient-to-r from-red-900 via-gray-900 to-black rounded-2xl p-3 sm:p-4 text-white shadow-lg border border-red-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-red-950 via-gray-900 to-black rounded-2xl p-3 sm:p-4 text-white shadow-lg border border-red-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 w-full sm:w-auto">
             {ad.mediaUrl ? (
               ad.mediaType === 'video' ? (
@@ -154,7 +143,7 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
           </div>
 
           <div className="w-full sm:w-auto flex justify-end">
-            {getActionButton()}
+            {renderActionButtons('normal')}
           </div>
         </div>
       </div>
@@ -204,11 +193,11 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
           )}
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2">
           <span className="text-[10px] text-gray-400 font-semibold">
             स्थानीय व्यावसायिक प्रचार
           </span>
-          {getActionButton()}
+          {renderActionButtons('small')}
         </div>
       </div>
     );
@@ -246,8 +235,8 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
           )}
         </div>
 
-        <div className="shrink-0">
-          {getActionButton()}
+        <div className="shrink-0 w-full sm:w-auto flex justify-center sm:justify-end">
+          {renderActionButtons('normal')}
         </div>
       </div>
     </div>
