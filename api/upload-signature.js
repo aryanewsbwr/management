@@ -53,7 +53,7 @@ export default async function handler(req, res) {
 
   // 2. Cloudinary Credentials from Vercel Environment Variables
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'vxlbrcgx';
-  const apiKey = process.env.CLOUDINARY_API_KEY || '825721111663784';
+  const apiKey = process.env.CLOUDINARY_API_KEY || '411192479279181';
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
   if (!apiSecret) {
