@@ -81,6 +81,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   const [adDuration, setAdDuration] = useState('7d');
   const [adCustomDays, setAdCustomDays] = useState('3');
+  const [adDisplayStyle, setAdDisplayStyle] = useState('poster');
   
   // Multiple Placements States (Multi-select)
   const [adPlacementBanner, setAdPlacementBanner] = useState(true);
@@ -164,6 +165,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         about: adAbout.trim(),
         mediaUrl: adMediaUrl || null,
         mediaType: adMediaType,
+        displayStyle: adDisplayStyle,
         actions: actions,
         actionType: actions[0].type,
         actionTarget: actions[0].target,
@@ -181,6 +183,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       setAdBusinessName('');
       setAdAbout('');
       setAdMediaUrl('');
+      setAdDisplayStyle('poster');
       setAdEnableWhatsApp(false);
       setAdWhatsAppNumber('');
       setAdEnableCall(false);
@@ -1877,6 +1880,64 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                     placeholder="उदा: श्री गणेश ज्वेलर्स (ब्यावर)"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
                   />
+                </div>
+
+                {/* Display Style Choice (A4 Poster / Flyer vs Compact Card) */}
+                <div className="bg-gray-50 dark:bg-gray-850 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
+                  <label className="block text-xs font-bold text-gray-900 dark:text-white mb-1 font-hindi">
+                    🎨 विज्ञापन डिस्प्ले स्टाइल (Display Format) *
+                  </label>
+                  <p className="text-[11px] text-gray-500 mb-3">
+                    A4 साइज़ पैम्फलेट, लीफलेट व पोस्टर्स बिना कटे पूरे दिखाने के लिए फुल पोस्टर मोड चुनें:
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className={`flex items-start gap-2.5 p-3.5 rounded-xl border cursor-pointer transition ${
+                      adDisplayStyle === 'poster'
+                        ? 'bg-red-50/70 dark:bg-red-950/30 border-red-500 text-red-950 dark:text-red-200'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="adDisplayStyle"
+                        value="poster"
+                        checked={adDisplayStyle === 'poster'}
+                        onChange={() => setAdDisplayStyle('poster')}
+                        className="w-4 h-4 text-red-600 focus:ring-red-500 mt-0.5"
+                      />
+                      <div>
+                        <span className="text-xs font-bold font-hindi block">
+                          📄 फुल A4 पोस्टर / पैम्फलेट (Full Poster / Flyer) - अनुशंसित
+                        </span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 block">
+                          पूरा विज्ञापन बिना कटे ओरिजिनल अनुपात में दिखेगा।
+                        </span>
+                      </div>
+                    </label>
+
+                    <label className={`flex items-start gap-2.5 p-3.5 rounded-xl border cursor-pointer transition ${
+                      adDisplayStyle === 'compact'
+                        ? 'bg-red-50/70 dark:bg-red-950/30 border-red-500 text-red-950 dark:text-red-200'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="adDisplayStyle"
+                        value="compact"
+                        checked={adDisplayStyle === 'compact'}
+                        onChange={() => setAdDisplayStyle('compact')}
+                        className="w-4 h-4 text-red-600 focus:ring-red-500 mt-0.5"
+                      />
+                      <div>
+                        <span className="text-xs font-bold font-hindi block">
+                          📰 कॉम्पैक्ट कार्ड (Compact Card)
+                        </span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 block">
+                          टेक्स्ट विवरण और छोटे थंबनेल के साथ।
+                        </span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Placement Multi-Select Checkboxes */}

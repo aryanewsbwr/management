@@ -555,6 +555,7 @@ export const StorageService = {
           actionTarget: actions[0]?.target || meta.actionTarget || '',
           placements: placements,
           placement: meta.placement || 'all', // 'banner' | 'feed' | 'article' | 'all'
+          displayStyle: meta.displayStyle || 'poster', // 'poster' (Full A4/Flyer) | 'compact' (Standard Card)
           duration: item.author || 'permanent',
           expiresAt: expiresAt,
           isExpired: isExpired,
@@ -612,6 +613,7 @@ export const StorageService = {
       actionTarget: actions[0]?.target || ad.actionTarget || '',
       placements: placements,
       placement: placements.join(','),
+      displayStyle: ad.displayStyle || 'poster',
       expiresAt: expiresAt,
       clicks: ad.clicks || 0,
       isHidden: isHidden

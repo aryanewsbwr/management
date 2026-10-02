@@ -98,71 +98,93 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
     );
   };
 
-  // 1. TOP WIDE BANNER LAYOUT
+  // 1. TOP / BELOW MAIN NEWS BANNER LAYOUT
   if (layout === 'banner') {
+    const isPoster = ad.displayStyle === 'poster' || (!ad.displayStyle && Boolean(ad.mediaUrl));
+
     return (
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 my-4">
-        <div className="bg-gradient-to-r from-red-950 via-gray-900 to-black rounded-2xl p-3 sm:p-4 text-white shadow-lg border border-red-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5 w-full sm:w-auto">
-            {ad.mediaUrl ? (
-              ad.mediaType === 'video' ? (
-                <video
-                  src={ad.mediaUrl}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-white/20"
-                />
-              ) : (
-                <img
-                  src={ad.mediaUrl}
-                  alt={ad.businessName}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-white/20"
-                />
-              )
-            ) : (
-              <div className="w-14 h-14 rounded-xl bg-red-600/30 border border-red-500/50 flex items-center justify-center text-2xl shrink-0">
-                📢
-              </div>
-            )}
-            
-            <div className="flex-1 min-w-0">
-              <span className="bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded tracking-widest uppercase">
-                विज्ञापन
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 my-6">
+        <div className="bg-gradient-to-r from-red-950 via-gray-900 to-black rounded-3xl p-4 sm:p-6 text-white shadow-xl border border-red-500/30 overflow-hidden">
+          
+          {/* Top Label */}
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="bg-red-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded uppercase tracking-widest shadow">
+                विशेष विज्ञापन
               </span>
-              <h4 className="text-sm sm:text-base font-black font-hindi mt-1 text-white truncate">
+              <span className="text-xs font-bold text-gray-300 font-hindi">
                 {ad.businessName}
-              </h4>
-              {ad.about && (
-                <p className="text-xs text-gray-300 line-clamp-2 mt-0.5 font-hindi">
-                  {ad.about}
-                </p>
-              )}
+              </span>
             </div>
+            <span className="text-[10px] text-gray-400">
+              आर्यन न्यूज़ विज्ञापन पार्टनर
+            </span>
           </div>
 
-          <div className="w-full sm:w-auto flex justify-end">
-            {renderActionButtons('normal')}
+          {/* Ad Content */}
+          <div className={`flex flex-col ${isPoster ? 'items-center' : 'sm:flex-row sm:items-center'} justify-between gap-5`}>
+            
+            {/* Media (Full A4 Poster / Flyer / Video or Banner) */}
+            {ad.mediaUrl && (
+              <div className={`w-full ${isPoster ? 'max-w-2xl' : 'sm:w-64 shrink-0'} flex justify-center bg-black/40 rounded-2xl p-2 border border-white/10 overflow-hidden`}>
+                {ad.mediaType === 'video' ? (
+                  <video
+                    src={ad.mediaUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="max-h-[500px] w-auto max-w-full rounded-xl object-contain shadow-lg"
+                  />
+                ) : (
+                  <img
+                    src={ad.mediaUrl}
+                    alt={ad.businessName}
+                    className="max-h-[550px] w-auto max-w-full rounded-xl object-contain shadow-lg hover:scale-[1.01] transition duration-300"
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Details & Actions */}
+            <div className="flex-1 w-full flex flex-col justify-between gap-4">
+              <div>
+                <h3 className="text-lg sm:text-xl font-black font-hindi text-white">
+                  {ad.businessName}
+                </h3>
+                {ad.about && (
+                  <p className="text-xs sm:text-sm text-gray-200 font-hindi mt-2 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/10">
+                    {ad.about}
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-wrap items-center justify-start gap-2">
+                {renderActionButtons('normal')}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
     );
   }
 
-  // 2. IN-FEED CARD LAYOUT (Looks native to news cards)
+  // 2. IN-FEED CARD LAYOUT (Inside News Grid)
   if (layout === 'feed') {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-5 border-2 border-red-500/30 shadow-md flex flex-col justify-between relative overflow-hidden group">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-5 border-2 border-red-500/30 shadow-lg flex flex-col justify-between relative overflow-hidden group">
         <div className="absolute top-3 right-3 z-10">
-          <span className="bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded tracking-widest uppercase shadow">
+          <span className="bg-red-600 text-white font-black text-[9px] px-2.5 py-0.5 rounded tracking-widest uppercase shadow">
             विज्ञापन
           </span>
         </div>
 
         <div>
+          {/* Full Poster / Flyer support without cropping */}
           {ad.mediaUrl && (
-            <div className="w-full h-44 mb-3.5 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <div className="w-full mb-3.5 rounded-2xl overflow-hidden bg-slate-900/5 dark:bg-black/40 border border-gray-100 dark:border-gray-800 p-1 flex items-center justify-center">
               {ad.mediaType === 'video' ? (
                 <video
                   src={ad.mediaUrl}
@@ -170,34 +192,37 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                   loop
                   muted
                   playsInline
-                  className="w-full h-full object-cover"
+                  className="max-h-[500px] w-auto max-w-full rounded-xl object-contain"
                 />
               ) : (
                 <img
                   src={ad.mediaUrl}
                   alt={ad.businessName}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  className="max-h-[500px] w-auto max-w-full rounded-xl object-contain group-hover:scale-[1.01] transition duration-300"
                 />
               )}
             </div>
           )}
 
-          <h3 className="text-base font-black font-hindi text-gray-900 dark:text-white line-clamp-2">
+          <h3 className="text-base sm:text-lg font-black font-hindi text-gray-900 dark:text-white">
             {ad.businessName}
           </h3>
 
           {ad.about && (
-            <p className="text-xs text-gray-600 dark:text-gray-300 font-hindi mt-2 line-clamp-3 leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-hindi mt-2 line-clamp-4 leading-relaxed">
               {ad.about}
             </p>
           )}
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[10px] text-gray-400 font-semibold">
-            स्थानीय व्यावसायिक प्रचार
-          </span>
-          {renderActionButtons('small')}
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-3">
+          <div className="flex items-center justify-between text-[11px] text-gray-400 font-semibold">
+            <span>स्थानीय व्यावसायिक प्रचार</span>
+            <span>ब्यावर</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {renderActionButtons('normal')}
+          </div>
         </div>
       </div>
     );
@@ -205,37 +230,50 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
 
   // 3. INSIDE ARTICLE LAYOUT
   return (
-    <div className="my-6 p-4 rounded-2xl bg-amber-50 dark:bg-gray-850 border border-amber-200 dark:border-gray-700 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
-        <span className="bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded uppercase tracking-wider">
-          विज्ञापन
+    <div className="my-8 p-4 sm:p-6 rounded-3xl bg-amber-50/70 dark:bg-gray-850 border-2 border-amber-300 dark:border-gray-700 shadow-md">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-200 dark:border-gray-700">
+        <span className="bg-red-600 text-white font-black text-[9px] px-2.5 py-0.5 rounded uppercase tracking-wider">
+          विशेष विज्ञापन
         </span>
-        <span className="text-[10px] text-gray-400">आर्यन न्यूज़ विज्ञापन नेटवर्क</span>
+        <span className="text-[11px] text-gray-500 dark:text-gray-400 font-hindi">
+          आर्यन न्यूज़ स्थानीय विज्ञापन सेवा
+        </span>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="flex flex-col items-center gap-4">
         {ad.mediaUrl && (
-          <div className="w-full sm:w-28 h-24 rounded-xl overflow-hidden shrink-0 bg-gray-200">
+          <div className="w-full flex justify-center bg-black/5 dark:bg-black/30 p-2 rounded-2xl border border-amber-200/50 dark:border-gray-700">
             {ad.mediaType === 'video' ? (
-              <video src={ad.mediaUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+              <video
+                src={ad.mediaUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="max-h-[500px] w-auto max-w-full rounded-xl object-contain shadow"
+              />
             ) : (
-              <img src={ad.mediaUrl} alt={ad.businessName} className="w-full h-full object-cover" />
+              <img
+                src={ad.mediaUrl}
+                alt={ad.businessName}
+                className="max-h-[550px] w-auto max-w-full rounded-xl object-contain shadow"
+              />
             )}
           </div>
         )}
 
-        <div className="flex-1 text-center sm:text-left">
-          <h4 className="text-sm sm:text-base font-black font-hindi text-gray-900 dark:text-white">
+        <div className="w-full text-center">
+          <h4 className="text-base sm:text-lg font-black font-hindi text-gray-900 dark:text-white">
             {ad.businessName}
           </h4>
           {ad.about && (
-            <p className="text-xs text-gray-600 dark:text-gray-300 font-hindi mt-1">
+            <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-hindi mt-1.5 max-w-xl mx-auto leading-relaxed">
               {ad.about}
             </p>
           )}
         </div>
 
-        <div className="shrink-0 w-full sm:w-auto flex justify-center sm:justify-end">
+        <div className="pt-2 w-full flex justify-center">
           {renderActionButtons('normal')}
         </div>
       </div>
