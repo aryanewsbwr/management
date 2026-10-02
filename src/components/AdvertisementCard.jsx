@@ -101,13 +101,13 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
   // 1. TOP / BELOW MAIN NEWS BANNER LAYOUT (Modern Split Magazine Card)
   if (layout === 'banner') {
     return (
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 my-6">
-        <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-6 border-2 border-red-500/20 dark:border-red-500/30 shadow-xl relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 my-6 sm:my-8">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-6 lg:p-7 border-2 border-red-500/20 dark:border-red-500/30 shadow-xl relative overflow-hidden">
           
           {/* Top Bar */}
           <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-2">
-              <span className="bg-red-600 text-white font-black text-[10px] px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <span className="bg-red-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm flex items-center gap-1">
                 <span>📢</span>
                 <span>विशेष प्रायोजित विज्ञापन</span>
               </span>
@@ -115,18 +115,18 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                 ब्यावर स्थानीय व्यापार
               </span>
             </div>
-            <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">
+            <span className="text-[10px] sm:text-xs font-medium text-gray-400 dark:text-gray-500">
               आर्यन न्यूज़ विज्ञापन नेटवर्क
             </span>
           </div>
 
           {/* Body: Split Grid on Desktop / Clean Stacked on Mobile */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
             
             {/* Poster / Flyer Showcase */}
             {ad.mediaUrl && (
-              <div className="md:col-span-5 flex justify-center">
-                <div className="w-full max-w-[340px] bg-slate-50 dark:bg-black/40 rounded-2xl p-2 border border-gray-200/80 dark:border-gray-800 shadow-inner flex items-center justify-center overflow-hidden">
+              <div className="md:col-span-5 lg:col-span-4 flex justify-center">
+                <div className="w-full max-w-[360px] bg-slate-50 dark:bg-black/40 rounded-2xl p-2 border border-gray-200/80 dark:border-gray-800 shadow-inner flex items-center justify-center overflow-hidden">
                   {ad.mediaType === 'video' ? (
                     <video
                       src={ad.mediaUrl}
@@ -134,13 +134,13 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                       loop
                       muted
                       playsInline
-                      className="max-h-[420px] w-auto max-w-full rounded-xl object-contain shadow"
+                      className="max-h-[440px] w-auto max-w-full rounded-xl object-contain shadow"
                     />
                   ) : (
                     <img
                       src={ad.mediaUrl}
                       alt={ad.businessName}
-                      className="max-h-[420px] w-auto max-w-full rounded-xl object-contain shadow hover:scale-[1.02] transition duration-300"
+                      className="max-h-[440px] w-auto max-w-full rounded-xl object-contain shadow hover:scale-[1.02] transition duration-300"
                     />
                   )}
                 </div>
@@ -148,13 +148,13 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
             )}
 
             {/* Info & Action Column */}
-            <div className={`${ad.mediaUrl ? 'md:col-span-7' : 'md:col-span-12'} flex flex-col justify-between space-y-4`}>
+            <div className={`${ad.mediaUrl ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'} flex flex-col justify-between space-y-4`}>
               
               <div>
                 <div className="inline-block bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-[11px] font-bold px-2.5 py-0.5 rounded-full mb-1.5 border border-red-200 dark:border-red-900">
                   ✨ विशेष ऑफर एवं प्रतिष्ठान
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black font-hindi text-gray-900 dark:text-white leading-tight">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-black font-hindi text-gray-900 dark:text-white leading-tight">
                   {ad.businessName}
                 </h3>
 
