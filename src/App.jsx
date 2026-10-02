@@ -12,6 +12,7 @@ import QuickReadModal from './components/QuickReadModal';
 import SubmitNewsModal from './components/SubmitNewsModal';
 import BookmarksModal from './components/BookmarksModal';
 import LegalModal from './components/LegalModal';
+import CookieConsent from './components/CookieConsent';
 import MobileBottomNav from './components/MobileBottomNav';
 import Footer from './components/Footer';
 import AdminPanel from './pages/AdminPanel';
@@ -41,12 +42,12 @@ export default function App() {
     return 'all';
   };
 
-  // Helper to determine initial legal modal from URL (/about, /grievance, /terms, /privacy)
+  // Helper to determine initial legal modal from URL (/about, /grievance, /terms, /privacy, /cookies, /editorial)
   const getInitialLegalModal = () => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
-      for (const page of ['about', 'grievance', 'terms', 'privacy']) {
+      for (const page of ['about', 'grievance', 'terms', 'privacy', 'cookies', 'editorial']) {
         if (path.includes(page) || hash.includes(page)) {
           return { isOpen: true, page };
         }
@@ -912,11 +913,16 @@ export default function App() {
         onToggleBookmark={handleToggleBookmark}
       />
 
-      {/* 5. Legal & Policies Modal (/about, /grievance, /terms, /privacy) */}
+      {/* 5. Legal & Policies Modal (/about, /grievance, /terms, /privacy, /cookies, /editorial) */}
       <LegalModal
         isOpen={legalModal.isOpen}
         onClose={() => setLegalModal(prev => ({ ...prev, isOpen: false }))}
         page={legalModal.page}
+      />
+
+      {/* 6. Cookie & Privacy Consent Banner */}
+      <CookieConsent
+        onOpenCookiePolicy={() => setLegalModal({ isOpen: true, page: 'cookies' })}
       />
 
     </div>

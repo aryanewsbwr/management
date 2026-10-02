@@ -76,8 +76,8 @@ export default function Footer({ onSelectCategory, onOpenSubmitNews, onOpenLegal
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                <a href={`tel:${AGENCY_INFO.phonePrimary}`} className="hover:text-white transition">
-                  {AGENCY_INFO.phonePrimary} / {AGENCY_INFO.phoneLandline}
+                <a href={`tel:${AGENCY_INFO.phonePrimary}`} className="hover:text-white transition font-sans">
+                  {AGENCY_INFO.phonePrimary}
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
@@ -158,6 +158,8 @@ export default function Footer({ onSelectCategory, onOpenSubmitNews, onOpenLegal
             <button onClick={() => onOpenLegal && onOpenLegal('terms')} className="hover:text-gray-300 transition">नियम व शर्तें</button>
             <span>•</span>
             <button onClick={() => onOpenLegal && onOpenLegal('privacy')} className="hover:text-gray-300 transition">गोपनीयता नीति</button>
+            <span>•</span>
+            <button onClick={() => onOpenLegal && onOpenLegal('cookies')} className="hover:text-gray-300 transition">कुकी नीति</button>
             <span>•</span>
             <span className="text-gray-600">ब्यावर (राज.)</span>
           </div>

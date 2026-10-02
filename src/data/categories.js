@@ -16,7 +16,6 @@ export const AGENCY_INFO = {
   taglineEn: 'Latest News of Beawar',
   address: 'नेताजी सुभाष मार्ग, पारस कॉलोनी, पुराने बस स्टैंड के पास, ब्यावर - 305901 (राजस्थान)',
   phonePrimary: '+91 98875-00875',
-  phoneLandline: '01462-258949',
   whatsapp: '919887500875',
   email: 'info@aryannewsagency.com',
   domain: 'www.aryannewsagency.com',
