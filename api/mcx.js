@@ -1,51 +1,39 @@
 // api/mcx.js
 // 100% Real-Time Live Commodity & Bullion Market API for India (MCX & Spot)
-const https = require('https');
 
 let cache = {
   timestamp: 0,
   data: null
 };
 
-function fetchSymbol(symbol) {
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'query1.finance.yahoo.com',
-      path: '/v8/finance/chart/' + encodeURIComponent(symbol) + '?interval=1d&range=1d',
+async function fetchSymbol(symbol) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+    const res = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'application/json'
       }
+    });
+
+    if (!res.ok) return null;
+    const json = await res.json();
+    const meta = json?.chart?.result?.[0]?.meta;
+    if (!meta) return null;
+
+    const price = meta.regularMarketPrice;
+    const prev = meta.previousClose || meta.chartPreviousClose || price;
+    const chg = prev ? ((price - prev) / prev * 100).toFixed(2) : '0.00';
+
+    return {
+      symbol,
+      price,
+      prev,
+      change: (Number(chg) >= 0 ? '+' : '') + chg + '%'
     };
-
-    const req = https.get(options, (res) => {
-      let d = '';
-      res.on('data', chunk => d += chunk);
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(d);
-          const meta = json.chart.result[0].meta;
-          const price = meta.regularMarketPrice;
-          const prev = meta.previousClose || meta.chartPreviousClose || price;
-          const chg = prev ? ((price - prev) / prev * 100).toFixed(2) : '0.00';
-          resolve({
-            symbol,
-            price,
-            prev,
-            change: (chg >= 0 ? '+' : '') + chg + '%'
-          });
-        } catch (e) {
-          resolve(null);
-        }
-      });
-    });
-
-    req.on('error', () => resolve(null));
-    req.setTimeout(4000, () => {
-      req.destroy();
-      resolve(null);
-    });
-  });
+  } catch (e) {
+    return null;
+  }
 }
 
 export default async function handler(req, res) {
@@ -61,7 +49,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Cache for 60 seconds to guarantee blazing speed and zero rate-limiting
+  // Cache for 60 seconds to guarantee speed and avoid rate limits
   const now = Date.now();
   if (cache.data && (now - cache.timestamp < 60000)) {
     return res.status(200).json({
@@ -73,19 +61,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Fetch USD to INR rate and core commodity contracts simultaneously
-    const [inrRes, goldRes, silverRes, copperRes, crudeRes, ngRes, platRes, zincRes] = await Promise.all([
+    // 1. Fetch live quotes in parallel
+    const [inrRes, goldRes, silverRes, copperRes, crudeRes, ngRes, platRes] = await Promise.all([
       fetchSymbol('INR=X'),
       fetchSymbol('GC=F'), // Gold
       fetchSymbol('SI=F'), // Silver
       fetchSymbol('HG=F'), // Copper
       fetchSymbol('CL=F'), // Crude Oil
       fetchSymbol('NG=F'), // Natural Gas
-      fetchSymbol('PL=F'), // Platinum
-      fetchSymbol('ZNC=F') // Zinc
+      fetchSymbol('PL=F')  // Platinum
     ]);
 
-    const usdInr = inrRes && inrRes.price ? inrRes.price : 88.5;
+    const usdInr = inrRes?.price || 88.5;
 
     // Conversions to Indian Standard Units
     // Gold: Troy Oz to 10g in INR (incl. Indian standard import parity factor)

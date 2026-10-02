@@ -1,34 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
-const FALLBACK_CATEGORIES = {
-  futures: [
-    { symbol: 'GOLD', date: '04DEC2026', price: '76450.00', change: '+0.15%' },
-    { symbol: 'SILVER', date: '30NOV2026', price: '91200.00', change: '-0.09%' },
-    { symbol: 'COPPER', date: '30OCT2026', price: '854.20', change: '-0.05%' },
-    { symbol: 'ZINC', date: '30OCT2026', price: '280.45', change: '+1.20%' },
-    { symbol: 'CRUDEOIL', date: '19NOV2026', price: '6450.00', change: '-1.50%' },
-    { symbol: 'NATURALGAS', date: '25OCT2026', price: '240.10', change: '+0.80%' },
-    { symbol: 'LEAD', date: '30OCT2026', price: '192.05', change: '-0.10%' },
-    { symbol: 'ALUMINIUM', date: '30OCT2026', price: '245.60', change: '+0.25%' },
-  ],
-  spot: [
-    { symbol: 'GOLD 24K (10g)', date: 'SPOT', price: '78250.00', change: '+0.20%' },
-    { symbol: 'GOLD 22K (10g)', date: 'SPOT', price: '71750.00', change: '+0.18%' },
-    { symbol: 'GOLD 18K (10g)', date: 'SPOT', price: '58700.00', change: '+0.15%' },
-    { symbol: 'SILVER 999 (1kg)', date: 'SPOT', price: '93500.00', change: '-0.12%' },
-    { symbol: 'SILVER (100g)', date: 'SPOT', price: '9350.00', change: '-0.12%' },
-    { symbol: 'PLATINUM (10g)', date: 'SPOT', price: '29800.00', change: '+0.05%' },
-  ],
-  index: [
-    { symbol: 'MCX BULLDEX', date: 'FUT', price: '18420.50', change: '+0.10%' },
-    { symbol: 'MCX METLDEX', date: 'FUT', price: '22890.00', change: '-0.25%' },
-    { symbol: 'MCX ENRGDEX', date: 'FUT', price: '5610.00', change: '+0.45%' },
-  ]
-};
-
 export default function McxTicker({ enabled = false }) {
-  const [categoriesData, setCategoriesData] = useState(FALLBACK_CATEGORIES);
+  const [categoriesData, setCategoriesData] = useState(null);
   const [activeTab, setActiveTab] = useState('futures'); // 'futures' | 'spot' | 'index'
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!enabled) return;
@@ -36,18 +11,14 @@ export default function McxTicker({ enabled = false }) {
     const fetchMcx = async () => {
       try {
         const res = await fetch('/api/mcx');
-        if (!res.ok) throw new Error('API request failed');
+        if (!res.ok) throw new Error('Live API error');
         const json = await res.json();
         if (json.success && json.data) {
-          // If structure is object with categories
-          if (json.data.futures) {
-            setCategoriesData(json.data);
-          } else if (Array.isArray(json.data)) {
-            setCategoriesData(prev => ({ ...prev, futures: json.data }));
-          }
+          setCategoriesData(json.data);
+          setIsLoading(false);
         }
       } catch (err) {
-        console.warn('Using fallback MCX data:', err);
+        console.warn('[McxTicker] Live API notice:', err.message);
       }
     };
 
@@ -58,8 +29,25 @@ export default function McxTicker({ enabled = false }) {
 
   if (!enabled) return null;
 
-  const currentItems = categoriesData[activeTab] || categoriesData.futures || [];
-  if (currentItems.length === 0) return null;
+  const currentItems = categoriesData?.[activeTab] || [];
+
+  if (isLoading || currentItems.length === 0) {
+    return (
+      <div className="w-full bg-[#040f25] border-b border-[#1e293b] py-2.5 overflow-hidden select-none">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Connecting Live Market Feed...</span>
+          </div>
+          <div className="flex gap-2">
+            <div className="h-6 w-24 bg-[#081229] animate-pulse rounded-lg border border-[#1e293b]" />
+            <div className="h-6 w-24 bg-[#081229] animate-pulse rounded-lg border border-[#1e293b]" />
+            <div className="h-6 w-24 bg-[#081229] animate-pulse rounded-lg border border-[#1e293b]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-[#040f25] border-b border-[#1e293b] py-2 overflow-hidden relative select-none">
@@ -129,7 +117,7 @@ export default function McxTicker({ enabled = false }) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className={`text-xs font-bold font-mono ${colorClass}`}>
-                      {item.price}
+                      ₹{item.price}
                     </span>
                     <span className={`text-[10px] font-bold font-mono ${colorClass}`}>
                       {item.change}
