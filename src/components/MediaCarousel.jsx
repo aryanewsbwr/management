@@ -15,7 +15,8 @@ export default function MediaCarousel({
   showControls = false, // true in Modal, false in Cards
   className = '',
   objectPosition = 'object-left',
-  onOpen = null
+  onOpen = null,
+  mediaCaption = ''
 }) {
   // Normalize images to an array of non-empty strings
   const imageList = Array.isArray(images) 
@@ -90,12 +91,12 @@ export default function MediaCarousel({
             className="w-full h-auto max-h-[460px] object-contain mx-auto bg-black"
           />
           <div className="p-2.5 bg-gray-900 text-white text-xs flex items-center justify-between font-hindi border-t border-gray-800">
-            <span className="flex items-center gap-1.5 text-red-400 font-bold">
-              <Video className="w-4 h-4" />
-              <span>वीडियो रिपोर्ट • आर्यन डिजिटल नेटवर्क (ब्यावर)</span>
+            <span className="flex items-center gap-1.5 text-red-400 font-bold truncate">
+              <Video className="w-4 h-4 shrink-0" />
+              <span className="truncate">{mediaCaption || 'वीडियो रिपोर्ट'}</span>
             </span>
-            <span className="text-[11px] text-gray-400">
-              प्ले / पॉज व फुलस्क्रीन सपोर्ट
+            <span className="text-[11px] text-gray-400 shrink-0 hidden sm:inline">
+              प्ले / पॉज व फुलस्क्रीन
             </span>
           </div>
         </div>

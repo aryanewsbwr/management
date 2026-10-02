@@ -220,6 +220,7 @@ export default function ArticleModal({
                 aspectRatio="w-full aspect-[16/10] sm:aspect-[16/9] min-h-[260px] sm:min-h-[380px] max-h-[500px]"
                 autoPlayInterval={3500}
                 showControls={true}
+                mediaCaption={article.mediaCaption}
               />
               <div className="p-2.5 text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/80 font-hindi border-t border-gray-100 dark:border-gray-800 flex items-center justify-between px-4">
                 <span>{article.mediaCaption || 'फोटो / वीडियो: आर्यन न्यूज़ एजेंसी डिजिटल नेटवर्क (ब्यावर)'}</span>
