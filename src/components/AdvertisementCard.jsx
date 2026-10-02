@@ -159,7 +159,7 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                 </h3>
 
                 {ad.about && (
-                  <div className="mt-3 p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 dark:bg-gray-800/70 border border-amber-200/70 dark:border-gray-700 text-xs sm:text-sm font-hindi text-gray-800 dark:text-gray-200 leading-relaxed">
+                  <div className="mt-3 p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 dark:bg-gray-800/70 border border-amber-200/70 dark:border-gray-700 text-xs sm:text-sm font-hindi text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-line">
                     {ad.about}
                   </div>
                 )}
@@ -225,9 +225,9 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
           </h3>
 
           {ad.about && (
-            <p className="text-xs text-gray-600 dark:text-gray-300 font-hindi mt-2 line-clamp-3 leading-relaxed bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+            <div className="text-xs text-gray-600 dark:text-gray-300 font-hindi mt-2 leading-relaxed bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800 whitespace-pre-line">
               {ad.about}
-            </p>
+            </div>
           )}
         </div>
 
@@ -279,9 +279,9 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
             {ad.businessName}
           </h4>
           {ad.about && (
-            <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-hindi mt-1.5 max-w-lg mx-auto leading-relaxed">
+            <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-hindi mt-1.5 max-w-lg mx-auto leading-relaxed whitespace-pre-line text-left bg-amber-100/50 dark:bg-gray-800/60 p-3 rounded-xl border border-amber-200 dark:border-gray-700">
               {ad.about}
-            </p>
+            </div>
           )}
         </div>
 
