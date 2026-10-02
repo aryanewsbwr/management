@@ -283,26 +283,25 @@ export default function App() {
     };
   }, []);
 
-  // Fallback Check URL for article deep-link when articles populate
+  // Check URL for article deep-link whenever articles populate or route changes
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const articleId = getArticleIdFromUrl();
-    if (articleId && !hasCheckedUrlArticleRef.current) {
-      hasCheckedUrlArticleRef.current = true;
+    if (articleId && !activeArticle) {
       const match = articles.find(a => a.id === articleId);
       if (match) {
-        handleOpenArticle(match);
+        setActiveArticle(match);
+        setIsArticleLoading(false);
       } else {
-        setIsArticleLoading(true);
         StorageService.fetchArticleById(articleId).then(art => {
           if (art) {
-            handleOpenArticle(art);
+            setActiveArticle(art);
           }
           setIsArticleLoading(false);
         }).catch(() => setIsArticleLoading(false));
       }
     }
-  }, [articles]);
+  }, [articles, activeArticle]);
 
   const navigateToAdmin = () => {
     window.history.pushState({}, '', '/admin-panel');

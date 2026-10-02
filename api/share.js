@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   // Extract articleId from query (id, article, or fallback parse from url)
   let articleId = req.query.id || req.query.article;
   if (!articleId && req.url) {
-    const match = req.url.match(/[?&](?:article|id)=([^&#]+)/);
+    const match = req.url.match(/(?:\/news\/|[?&](?:article|id)=)([^&#/?]+)/i);
     if (match) {
       articleId = decodeURIComponent(match[1]);
     }
