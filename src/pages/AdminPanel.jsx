@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart2, 
+import { BarChart2, Megaphone, Clock, MessageCircle, 
   Lock, User, Key, Eye, EyeOff, ShieldCheck, CheckCircle2, 
   AlertCircle, Upload, Image as ImageIcon, Trash2, ExternalLink, 
   LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save,
@@ -62,6 +62,20 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   // Mandi & Breaking States
   const [breakingNews, setBreakingNews] = useState([]);
+  // Advertisements Management States
+  const [adsList, setAdsList] = useState([]);
+  const [adBusinessName, setAdBusinessName] = useState('');
+  const [adAbout, setAdAbout] = useState('');
+  const [adMediaUrl, setAdMediaUrl] = useState('');
+  const [adMediaType, setAdMediaType] = useState('image');
+  const [adActionType, setAdActionType] = useState('whatsapp');
+  const [adActionTarget, setAdActionTarget] = useState('9887500875');
+  const [adDuration, setAdDuration] = useState('7d');
+  const [adCustomDays, setAdCustomDays] = useState('3');
+  const [adPlacement, setAdPlacement] = useState('all');
+  const [isAdSubmitting, setIsAdSubmitting] = useState(false);
+  const [isAdMediaUploading, setIsAdMediaUploading] = useState(false);
+
   const [mcxEnabled, setMcxEnabled] = useState(false);
   const [mcxItems, setMcxItems] = useState([]);
   const [newMcxSymbol, setNewMcxSymbol] = useState('');
@@ -73,6 +87,81 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   
   // Add MCX Item
+  
+  // ADVERTISEMENT HANDLERS
+  const handleAdMediaUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsAdMediaUploading(true);
+    try {
+      const isVideo = file.type.startsWith('video/');
+      setAdMediaType(isVideo ? 'video' : 'image');
+      const uploadedUrl = await StorageService.uploadArticleMedia(file);
+      setAdMediaUrl(uploadedUrl);
+    } catch (err) {
+      alert(err.message || 'Media upload failed');
+    } finally {
+      setIsAdMediaUploading(false);
+    }
+  };
+
+  const handleSaveAd = async (e) => {
+    e.preventDefault();
+    if (!adBusinessName.trim()) {
+      alert('कृपया व्यापार / कंपनी का नाम भरें।');
+      return;
+    }
+    setIsAdSubmitting(true);
+    try {
+      const newAd = {
+        businessName: adBusinessName.trim(),
+        about: adAbout.trim(),
+        mediaUrl: adMediaUrl || null,
+        mediaType: adMediaType,
+        actionType: adActionType,
+        actionTarget: adActionTarget.trim() || '9887500875',
+        duration: adDuration,
+        customDays: adCustomDays,
+        placement: adPlacement,
+        isHidden: false
+      };
+      await StorageService.saveAdvertisement(newAd);
+      const updated = await StorageService.fetchAdvertisements();
+      setAdsList(updated);
+      // Reset form
+      setAdBusinessName('');
+      setAdAbout('');
+      setAdMediaUrl('');
+      setAdActionTarget('9887500875');
+      alert('विज्ञापन सफलतापूर्वक प्रकाशित कर दिया गया है!');
+    } catch (err) {
+      alert(err.message || 'Error saving ad');
+    } finally {
+      setIsAdSubmitting(false);
+    }
+  };
+
+  const handleToggleAdVisibility = async (ad) => {
+    try {
+      const updatedAd = { ...ad, isHidden: !ad.isHidden };
+      await StorageService.saveAdvertisement(updatedAd);
+      const updated = await StorageService.fetchAdvertisements();
+      setAdsList(updated);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteAd = async (id) => {
+    if (!window.confirm('क्या आप सचमुच इस विज्ञापन को हटाना चाहते हैं?')) return;
+    try {
+      await StorageService.deleteAdvertisement(id);
+      setAdsList(prev => prev.filter(a => a.id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const handleAddMcx = async (e) => {
     e.preventDefault();
     if (!newMcxSymbol || !newMcxPrice) return;
@@ -136,12 +225,14 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   const loadData = async () => {
     try {
-      const [customArticles, bn, mcxRes, apiNewsStatus] = await Promise.all([
+      const [customArticles, bn, mcxRes, apiNewsStatus, ads] = await Promise.all([
         StorageService.fetchCustomArticles(),
         StorageService.fetchBreakingNews(),
         StorageService.fetchMcxData(),
-        StorageService.fetchApiNewsEnabled()
+        StorageService.fetchApiNewsEnabled(),
+        StorageService.fetchAdvertisements()
       ]);
+      setAdsList(ads || []);
       setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
       setBreakingNews(bn || []);
       if (mcxRes && typeof mcxRes === 'object') {
@@ -811,6 +902,18 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           >
             <BarChart2 className="w-4 h-4" />
             <span>📊 एनालिटिक्स (Analytics)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ads')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition ${
+              activeTab === 'ads'
+                ? 'bg-red-600 text-white shadow-md shadow-red-500/30'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Megaphone className="w-4 h-4 text-amber-300" />
+            <span>📢 विज्ञापन प्रबंधक ({adsList.filter(a => a.isActive).length} सक्रिय)</span>
           </button>
 
         </div>
@@ -1624,6 +1727,312 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           );
         })()}
 
+
+      
+        {/* ==================================================== */}
+        {/* 5. ADVERTISEMENT MANAGER */}
+        {/* ==================================================== */}
+        {activeTab === 'ads' && (
+          <div className="space-y-8">
+            {/* Create New Ad Form */}
+            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800">
+              <div className="border-b border-gray-100 dark:border-gray-800 pb-4 mb-6">
+                <div className="flex items-center gap-2 text-red-600 font-bold text-xs uppercase tracking-wider mb-1">
+                  <Megaphone className="w-4 h-4" />
+                  <span>लोकल एडवरटाइजिंग इंजन</span>
+                </div>
+                <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
+                  📢 नया विज्ञापन जोड़ें (Create Advertisement)
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  ब्यावर व स्थानीय व्यापारियों के विज्ञापन यहाँ से सीधे वेबसाइट पर शेड्यूल और पब्लिश करें।
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveAd} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Business Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                      कंपनी / व्यापार का नाम (Business Name) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={adBusinessName}
+                      onChange={e => setAdBusinessName(e.target.value)}
+                      placeholder="उदा: श्री गणेश ज्वेलर्स (ब्यावर)"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
+                    />
+                  </div>
+
+                  {/* Action Button Type */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                      कॉल-टू-एक्शन बटन (Action Button) *
+                    </label>
+                    <select
+                      value={adActionType}
+                      onChange={e => setAdActionType(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
+                    >
+                      <option value="whatsapp">💬 व्हाट्सएप चैट (WhatsApp Direct)</option>
+                      <option value="call">📞 सीधा फोन कॉल (Direct Phone Call)</option>
+                      <option value="maps">📍 गूगल मैप्स लोकेशन (Google Maps Location)</option>
+                      <option value="website">🌐 वेबसाइट लिंक (Website URL)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* About / Offer */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                    विज्ञापन विवरण / स्पेशल ऑफर (About / Offer Tagline)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={adAbout}
+                    onChange={e => setAdAbout(e.target.value)}
+                    placeholder="उदा: 916 हॉलमार्क सोने के आभूषणों के विशेष संग्रह पर मेकिंग चार्ज में 50% की विशेष छूट! आज ही पधारें।"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* Action Target Destination */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                      {adActionType === 'call' ? 'फोन नंबर (उदा: 9887500875)' : 
+                       adActionType === 'whatsapp' ? 'व्हाट्सएप नंबर (10 अंक)' : 
+                       adActionType === 'maps' ? 'गूगल मैप्स लिंक या पता' : 'वेबसाइट URL'} *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={adActionTarget}
+                      onChange={e => setAdActionTarget(e.target.value)}
+                      placeholder={adActionType === 'call' || adActionType === 'whatsapp' ? '9887500875' : 'https://...'}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-mono"
+                    />
+                  </div>
+
+                  {/* Duration / Timer */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                      अवधि / टाइमर (Duration Timer) *
+                    </label>
+                    <select
+                      value={adDuration}
+                      onChange={e => setAdDuration(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
+                    >
+                      <option value="24h">⏱️ 24 घंटे (24 Hours)</option>
+                      <option value="48h">⏱️ 48 घंटे (48 Hours)</option>
+                      <option value="7d">📅 1 सप्ताह (1 Week)</option>
+                      <option value="30d">📅 1 महीना (1 Month)</option>
+                      <option value="custom">⚙️ कस्टम दिन (Custom Days)</option>
+                      <option value="permanent">♾️ जब तक मैं बंद न करूँ (Until I Close)</option>
+                    </select>
+                  </div>
+
+                  {/* Custom Days Input if selected */}
+                  {adDuration === 'custom' && (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                        कितने दिनों के लिए? (Days) *
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={adCustomDays}
+                        onChange={e => setAdCustomDays(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  )}
+
+                  {/* Placement Selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-hindi">
+                      विज्ञापन स्थान (Placement) *
+                    </label>
+                    <select
+                      value={adPlacement}
+                      onChange={e => setAdPlacement(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm text-gray-900 dark:text-white font-hindi"
+                    >
+                      <option value="all">🌟 सभी स्थान (मुख्य बैनर + फीड + खबर के अंदर)</option>
+                      <option value="banner">🔝 मुख्य बैनर (Top Header Banner)</option>
+                      <option value="feed">📰 इन-फीड (खबरों के बीच)</option>
+                      <option value="article">📖 खबर के अंदर (Inside News Article)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Media Upload (Photo / Video to Cloudinary) */}
+                <div className="bg-gray-50 dark:bg-gray-850 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-2 font-hindi">
+                    🖼️ विज्ञापन फोटो अथवा वीडियो अपलोड करें (Cloudinary Cloud Storage - Max 50MB)
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+                      onChange={handleAdMediaUpload}
+                      disabled={isAdMediaUploading}
+                      className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-red-600 file:text-white hover:file:bg-red-700 file:cursor-pointer cursor-pointer"
+                    />
+                    {isAdMediaUploading && (
+                      <span className="text-xs font-bold text-amber-600 animate-pulse">
+                        ⏳ मीडिया क्लाउडिनरी पर अपलोड हो रही है...
+                      </span>
+                    )}
+                    {adMediaUrl && (
+                      <span className="text-xs font-bold text-emerald-600">
+                        ✅ मीडिया सफलतापूर्वक अपलोड हो चुकी है!
+                      </span>
+                    )}
+                  </div>
+                  {adMediaUrl && (
+                    <div className="mt-3 w-32 h-20 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 bg-black">
+                      {adMediaType === 'video' ? (
+                        <video src={adMediaUrl} className="w-full h-full object-cover" muted />
+                      ) : (
+                        <img src={adMediaUrl} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isAdSubmitting || isAdMediaUploading}
+                    className="w-full sm:w-auto px-8 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black text-sm rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Megaphone className="w-4 h-4" />
+                    <span>{isAdSubmitting ? 'विज्ञापन प्रकाशित हो रहा है...' : '🚀 विज्ञापन लाइव प्रकाशित करें'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Manage Running Advertisements List */}
+            <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800">
+              <div className="border-b border-gray-100 dark:border-gray-800 pb-4 mb-6">
+                <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
+                  📋 सभी विज्ञापनों की सूची ({adsList.length})
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  यहाँ आप सभी सक्रिय, छिपे हुए और समय समाप्त विज्ञापनों का प्रदर्शन व स्थिति नियंत्रित कर सकते हैं।
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {adsList.map(ad => (
+                  <div
+                    key={ad.id}
+                    className={`p-4 sm:p-5 rounded-2xl border transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                      ad.isExpired
+                        ? 'bg-gray-50 dark:bg-gray-850/40 border-gray-200 dark:border-gray-800 opacity-60'
+                        : ad.isHidden
+                        ? 'bg-amber-50/40 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900/40'
+                        : 'bg-white dark:bg-gray-850 border-gray-200 dark:border-gray-700 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      {ad.mediaUrl ? (
+                        ad.mediaType === 'video' ? (
+                          <video src={ad.mediaUrl} className="w-20 h-16 rounded-xl object-cover shrink-0 border" muted />
+                        ) : (
+                          <img src={ad.mediaUrl} alt="" className="w-20 h-16 rounded-xl object-cover shrink-0 border" />
+                        )
+                      ) : (
+                        <div className="w-20 h-16 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl shrink-0">
+                          📢
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded uppercase">
+                            विज्ञापन
+                          </span>
+                          {ad.isExpired ? (
+                            <span className="bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                              ⚠️ समय समाप्त (Expired)
+                            </span>
+                          ) : ad.isHidden ? (
+                            <span className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                              🔒 छिपा हुआ (Hidden)
+                            </span>
+                          ) : (
+                            <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                              🟢 लाइव सक्रिय (Active)
+                            </span>
+                          )}
+                          <span className="text-[10px] text-gray-400 font-mono">
+                            स्थान: {ad.placement === 'banner' ? 'मुख्य बैनर' : ad.placement === 'feed' ? 'इन-फीड' : ad.placement === 'article' ? 'खबर के अंदर' : 'सभी जगह'}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm font-bold font-hindi text-gray-900 dark:text-white truncate">
+                          {ad.businessName}
+                        </h4>
+                        {ad.about && (
+                          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5 font-hindi">
+                            {ad.about}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-4 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                          <span>🎯 एक्शन: <strong>{ad.actionType}</strong> ({ad.actionTarget})</span>
+                          <span>👁️ <strong>{ad.views}</strong> बार देखा</span>
+                          <span>🖱️ <strong>{ad.clicks}</strong> बार क्लिक</span>
+                          {ad.expiresAt && ad.expiresAt !== 'permanent' && (
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">
+                              ⏳ एक्सपायरी: {new Date(ad.expiresAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Controls */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-0 border-gray-100 dark:border-gray-800">
+                      <button
+                        onClick={() => handleToggleAdVisibility(ad)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                          ad.isHidden
+                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
+                        }`}
+                      >
+                        {ad.isHidden ? '👁️ शो करें (Show)' : '🔒 हाइड करें (Hide)'}
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteAd(ad.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/60 rounded-xl transition"
+                        title="हटाएं (Delete)"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {adsList.length === 0 && (
+                  <div className="text-center py-12 text-gray-400">
+                    <Megaphone className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm font-hindi">अभी कोई विज्ञापन नहीं जोड़ा गया है।</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
       </main>
 

@@ -13,6 +13,7 @@ import BookmarksModal from './components/BookmarksModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import Footer from './components/Footer';
 import AdminPanel from './pages/AdminPanel';
+import AdvertisementCard from './components/AdvertisementCard';
 
 import { StorageService } from './services/storage';
 import { fetchAllLiveCategories } from './services/newsApi';
@@ -42,6 +43,7 @@ export default function App() {
   const [articles, setArticles] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
   const [mcxData, setMcxData] = useState({ enabled: false, items: [] });
+  const [ads, setAds] = useState([]);
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(getInitialCategory);
   const [isApiNewsEnabled, setIsApiNewsEnabled] = useState(StorageService.getApiNewsEnabledSync);
@@ -67,16 +69,20 @@ export default function App() {
   // 4. Load Database Data (Custom Articles, Breaking News, Site Settings)
   const loadDatabaseData = async () => {
     try {
-      const [customArticles, bn, apiEnabled, mcx] = await Promise.all([
+      const [customArticles, bn, apiEnabled, mcx, loadedAds] = await Promise.all([
         StorageService.fetchCustomArticles().then(list => list.filter(a => !a.isHidden)),
         StorageService.fetchBreakingNews(),
         StorageService.fetchApiNewsEnabled(),
-        StorageService.fetchMcxData()
+        StorageService.fetchMcxData(),
+        StorageService.fetchAdvertisements()
       ]);
 
       setIsApiNewsEnabled(apiEnabled);
       if (mcx && typeof mcx === 'object') {
         setMcxData(mcx);
+      }
+      if (loadedAds && Array.isArray(loadedAds)) {
+        setAds(loadedAds.filter(a => a.isActive));
       }
 
       if (customArticles && customArticles.length > 0) {
@@ -604,12 +610,12 @@ export default function App() {
 
                   <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                     <a
-                      href="https://wa.me/919829058949?text=%E0%A4%A8%E0%A4%AE%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A5%87%2C%20%E0%A4%AE%E0%A5%81%E0%A4%9D%E0%A5%87%20%E0%A4%AC%E0%A5%8D%E0%A4%AF%E0%A4%BE%E0%A4%B5%E0%A4%B0%20%E0%A4%95%E0%A5%80%20%E0%A4%96%E0%A4%AC%E0%A4%B0%20%E0%A4%AD%E0%A5%87%E0%A4%9C%E0%A4%A8%E0%A5%80%20%E0%A4%B9%E0%A5%88%E0%A5%A4"
+                      href={`https://wa.me/${AGENCY_INFO.whatsapp}?text=${encodeURIComponent('नमस्ते, मुझे ब्यावर की खबर भेजनी है।')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition active:scale-95"
                     >
-                      <span>📲 ब्यावर की खबर व्हाट्सएप पर भेजें (+91 98290-58949)</span>
+                      <span>📲 ब्यावर की खबर व्हाट्सएप पर भेजें ({AGENCY_INFO.phonePrimary})</span>
                     </a>
                   </div>
                 </div>
@@ -622,19 +628,28 @@ export default function App() {
               )
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {filteredArticles.map(art => (
-                  <ArticleCard
-                    key={art.id}
-                    article={art}
-                    lang={lang}
-                    layout="standard"
-                    onOpenArticle={handleOpenArticle}
-                    onPlayTTS={handlePlayTTS}
-                    isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === art.id}
-                    isBookmarked={bookmarks.includes(art.id)}
-                    onToggleBookmark={handleToggleBookmark}
-                  />
-                ))}
+                {filteredArticles.map((art, idx) => {
+                  const feedAd = ads.find(a => a.placement === 'feed' || a.placement === 'all');
+                  const showAdHere = idx === 2 && feedAd;
+
+                  return (
+                    <React.Fragment key={art.id}>
+                      <ArticleCard
+                        article={art}
+                        lang={lang}
+                        layout="standard"
+                        onOpenArticle={handleOpenArticle}
+                        onPlayTTS={handlePlayTTS}
+                        isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === art.id}
+                        isBookmarked={bookmarks.includes(art.id)}
+                        onToggleBookmark={handleToggleBookmark}
+                      />
+                      {showAdHere && (
+                        <AdvertisementCard ad={feedAd} layout="feed" />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -699,34 +714,11 @@ export default function App() {
               onSelectCategory={handleSelectCategory}
             />
 
-            {/* 2. SPONSORED BANNER (Beawar Tilpatti & Local Business Advertisement) */}
-            <div className="max-w-7xl mx-auto px-3 sm:px-6 my-4">
-              <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 rounded-2xl p-3 sm:p-4 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-center gap-3 text-center sm:text-left">
-                  <span className="text-3xl">🪔</span>
-                  <div>
-                    <span className="bg-white/20 text-white font-bold text-[10px] px-2 py-0.5 rounded uppercase tracking-wider">
-                      प्रायोजित विज्ञापन
-                    </span>
-                    <h4 className="text-sm sm:text-base font-black font-hindi mt-0.5">
-                      ब्यावर की विश्वप्रसिद्ध कूटवां तिलपत्ती एवं गजक - सीधे निर्माता से प्राप्त करें
-                    </h4>
-                    <p className="text-xs text-amber-100">
-                      आर्यन न्यूज़ एजेंसी विज्ञापन सेवा • प्रचार हेतु संपर्क: +91 98290-58949
-                    </p>
-                  </div>
-                </div>
-
-                <a
-                  href={`https://wa.me/${AGENCY_INFO.whatsapp}?text=${encodeURIComponent('नमस्ते, मुझे आर्यन न्यूज़ पोर्टल पर विज्ञापन देना है।')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white text-gray-900 hover:bg-amber-50 font-black text-xs px-4 py-2 rounded-xl shadow transition active:scale-95 shrink-0"
-                >
-                  विज्ञापन बुक करें
-                </a>
-              </div>
-            </div>
+            {/* 2. ADVERTISEMENT BANNER (Dynamic Active Ad or Default Tilpatti/Booking Banner) */}
+            <AdvertisementCard 
+              ad={ads.find(a => a.placement === 'banner' || a.placement === 'all')} 
+              layout="banner" 
+            />
 
             {/* 3. THEN DIFFERENT CATEGORIES (Modular Segregated Grids) */}
             
@@ -860,6 +852,7 @@ export default function App() {
         onToggleBookmark={handleToggleBookmark}
         relatedArticles={articles.filter(a => a.id !== activeArticle?.id && (a.category === activeArticle?.category || a.category === 'beawar'))}
         onSelectRelated={handleOpenArticle}
+        ad={ads.find(a => a.placement === 'article' || a.placement === 'all')}
       />
 
       {/* 2. 60-Word Inshorts Quick Read Modal */}

@@ -419,6 +419,143 @@ export const StorageService = {
     const { error } = await supabase.from('articles').upsert(record);
     if (error) throw error;
   },
+
+  // ==========================================
+  // 3.5 ADVERTISEMENT ENGINE (Supabase & Cloudinary)
+  // ==========================================
+  async fetchAdvertisements() {
+    if (!isSupabaseConfigured || !supabase) return [];
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('category', '_advertisement')
+        .order('published_at', { ascending: false });
+
+      if (error || !data) return [];
+
+      return data.map(item => {
+        let meta = {};
+        try {
+          if (item.content_hi && item.content_hi.startsWith('{')) {
+            meta = JSON.parse(item.content_hi);
+          }
+        } catch (e) {}
+
+        const expiresAt = meta.expiresAt || item.read_time || null;
+        const isExpired = expiresAt && expiresAt !== 'permanent' && new Date(expiresAt) < new Date();
+        const isHidden = Boolean(item.is_trending) || meta.isHidden === true;
+
+        return {
+          id: item.id,
+          businessName: item.title_hi,
+          about: item.summary_hi,
+          mediaUrl: item.image || meta.videoUrl || null,
+          mediaType: meta.mediaType || (meta.videoUrl ? 'video' : 'image'),
+          videoUrl: meta.videoUrl || null,
+          actionType: meta.actionType || 'whatsapp', // 'call' | 'whatsapp' | 'maps' | 'website'
+          actionTarget: meta.actionTarget || '9887500875',
+          placement: meta.placement || 'all', // 'banner' | 'feed' | 'article' | 'all'
+          duration: item.author || 'permanent',
+          expiresAt: expiresAt,
+          isExpired: isExpired,
+          isHidden: isHidden,
+          isActive: !isHidden && !isExpired,
+          views: item.views || 0,
+          clicks: meta.clicks || 0,
+          createdAt: item.published_at
+        };
+      });
+    } catch (err) {
+      console.warn('[StorageService] fetchAdvertisements notice:', err.message);
+      return [];
+    }
+  },
+
+  async saveAdvertisement(ad) {
+    if (!isSupabaseConfigured || !supabase) throw new Error('Supabase credentials not configured.');
+
+    // Calculate expiry timestamp
+    let expiresAt = 'permanent';
+    const now = new Date();
+    if (ad.duration === '24h') {
+      expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    } else if (ad.duration === '48h') {
+      expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
+    } else if (ad.duration === '7d') {
+      expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (ad.duration === '30d') {
+      expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (ad.duration === 'custom' && ad.customDays) {
+      const days = parseInt(ad.customDays, 10) || 1;
+      expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+    } else if (ad.expiresAt) {
+      expiresAt = ad.expiresAt;
+    }
+
+    const isVideo = ad.mediaType === 'video' || (ad.mediaUrl && /\.(mp4|webm|mov|mkv)$/i.test(ad.mediaUrl));
+
+    const meta = {
+      videoUrl: isVideo ? ad.mediaUrl : null,
+      mediaType: isVideo ? 'video' : 'image',
+      actionType: ad.actionType || 'whatsapp',
+      actionTarget: ad.actionTarget || '9887500875',
+      placement: ad.placement || 'all',
+      expiresAt: expiresAt,
+      clicks: ad.clicks || 0,
+      isHidden: ad.isHidden === true
+    };
+
+    const record = {
+      id: ad.id || `ad-${Date.now()}`,
+      title_hi: ad.businessName,
+      title_en: ad.businessName,
+      summary_hi: ad.about || '',
+      summary_en: `${ad.actionType}:${ad.actionTarget}`,
+      content_hi: JSON.stringify(meta),
+      content_en: JSON.stringify(meta),
+      category: '_advertisement',
+      image: isVideo ? null : ad.mediaUrl,
+      published_at: ad.createdAt || new Date().toISOString(),
+      author: ad.duration || 'permanent',
+      read_time: expiresAt,
+      is_trending: ad.isHidden === true,
+      views: ad.views || 0,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('articles').upsert(record);
+    if (error) throw error;
+    return record;
+  },
+
+  async incrementAdClick(adId) {
+    if (!isSupabaseConfigured || !supabase || !adId) return;
+    try {
+      const { data } = await supabase
+        .from('articles')
+        .select('content_hi')
+        .eq('id', adId)
+        .maybeSingle();
+
+      if (data && data.content_hi) {
+        let meta = {};
+        try { meta = JSON.parse(data.content_hi); } catch(e){}
+        meta.clicks = (meta.clicks || 0) + 1;
+        await supabase
+          .from('articles')
+          .update({ content_hi: JSON.stringify(meta) })
+          .eq('id', adId);
+      }
+    } catch (e) {}
+  },
+
+  async deleteAdvertisement(adId) {
+    if (!isSupabaseConfigured || !supabase || !adId) return;
+    const { error } = await supabase.from('articles').delete().eq('id', adId);
+    if (error) throw error;
+  },
+
   async setApiNewsEnabled(enabled) {
     localStorage.setItem('arya_api_news_enabled', enabled ? 'true' : 'false');
 

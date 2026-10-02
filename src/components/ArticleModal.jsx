@@ -6,6 +6,7 @@ import {
 import { CATEGORIES, AGENCY_INFO } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
 import MediaCarousel from './MediaCarousel';
+import AdvertisementCard from './AdvertisementCard';
 
 export default function ArticleModal({
   article,
@@ -18,7 +19,8 @@ export default function ArticleModal({
   isBookmarked = false,
   onToggleBookmark,
   relatedArticles = [],
-  onSelectRelated
+  onSelectRelated,
+  ad = null
 }) {
   const [fontSizeLevel, setFontSizeLevel] = useState(1); // 0: normal, 1: medium, 2: large
 
@@ -282,6 +284,9 @@ export default function ArticleModal({
               {content}
             </div>
           )}
+
+          {/* In-Article Advertisement Card */}
+          {ad && <AdvertisementCard ad={ad} layout="article" />}
 
           {/* Bottom Viral WhatsApp Share Bar */}
           <div className="mt-8 p-4 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">

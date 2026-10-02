@@ -76,11 +76,11 @@ export default function Navbar({
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-2 py-0.5 rounded text-[11px] transition shadow-sm"
-            title="व्हाट्सएप हेल्पलाइन: +91 98290-58949"
+            title={`व्हाट्सएप हेल्पलाइन: ${AGENCY_INFO.phonePrimary}`}
           >
             <PhoneCall className="w-3 h-3" />
             <span className="hidden md:inline">हेल्पलाइन:</span>
-            <span className="hidden sm:inline">+91 98290-58949</span>
+            <span className="hidden sm:inline">{AGENCY_INFO.phonePrimary}</span>
             <span className="sm:hidden font-bold">संपर्क</span>
           </a>
 
