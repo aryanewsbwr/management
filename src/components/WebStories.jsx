@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Sparkles, X, ChevronRight, ChevronLeft, Share2, BookOpen } from 'lucide-react';
+import { Sparkles, X, ChevronRight, ChevronLeft, Share2, BookOpen, Play, Video } from 'lucide-react';
+import { getArticleThumbnail } from '../utils/mediaHelper';
 
 export default function WebStories({ articles = [], onOpenArticle }) {
   const [activeStoryIndex, setActiveStoryIndex] = useState(null);
@@ -14,18 +15,15 @@ export default function WebStories({ articles = [], onOpenArticle }) {
   const validArticles = localArticles.length > 0 ? localArticles : articles.filter(a => !a.category?.startsWith('_'));
   
   const stories = validArticles.slice(0, 10).map((art, idx) => {
-    let img = art.image;
-    if (!img && art.videoUrl && art.videoUrl.includes('cloudinary.com')) {
-      img = art.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg');
-    }
-    if (!img || img.includes('unsplash.com')) {
-      img = art.image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&auto=format&fit=crop&q=80';
-    }
+    const img = getArticleThumbnail(art);
+    const isVideo = Boolean(art.videoUrl || art.mediaType === 'video');
 
     return {
       id: art.id || `story-${idx}`,
       title: art.titleHi || art.title || '',
       image: img,
+      videoUrl: art.videoUrl || null,
+      isVideo: isVideo,
       summary: art.summaryHi || art.contentHi?.slice(0, 140) || '',
       author: art.author || 'ब्यावर रिपोर्टर',
       tag: 'ब्यावर',
@@ -98,10 +96,15 @@ export default function WebStories({ articles = [], onOpenArticle }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
 
               {/* Top Category Tag Badge */}
-              <div className="relative z-10 self-start">
+              <div className="relative z-10 self-start flex items-center gap-1.5">
                 <span className={`text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-md shadow ${story.badgeColor}`}>
                   {story.tag}
                 </span>
+                {story.isVideo && (
+                  <span className="p-1 rounded-md bg-black/70 backdrop-blur-sm text-white shadow">
+                    <Play className="w-2.5 h-2.5 fill-current" />
+                  </span>
+                )}
               </div>
 
               {/* Bottom Title */}

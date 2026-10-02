@@ -3,6 +3,7 @@ import {
   ChevronLeft, ChevronRight, Play, Pause, Video, 
   Image as ImageIcon, Volume2, VolumeX, Maximize2 
 } from 'lucide-react';
+import { getVideoThumbnailUrl } from '../utils/mediaHelper';
 
 export default function MediaCarousel({
   images = [],
@@ -64,9 +65,12 @@ export default function MediaCarousel({
     setIsPlaying((prev) => !prev);
   };
 
-  let effectivePoster = imageList[0];
-  if (!effectivePoster && videoUrl && videoUrl.includes('cloudinary.com')) {
-    effectivePoster = videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg');
+  let effectivePoster = imageList.find(img => img && !img.includes('unsplash.com'));
+  if (!effectivePoster && videoUrl) {
+    effectivePoster = getVideoThumbnailUrl(videoUrl);
+  }
+  if (!effectivePoster && imageList.length > 0) {
+    effectivePoster = imageList[0];
   }
 
   // 1. VIDEO RENDERING

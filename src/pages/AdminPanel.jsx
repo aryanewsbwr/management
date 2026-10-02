@@ -8,6 +8,7 @@ import { BarChart2, Megaphone, Clock, MessageCircle,
 import { AGENCY_INFO } from '../data/categories';
 import { StorageService } from '../services/storage';
 import { compressImage } from '../utils/imageCompressor';
+import { getArticleThumbnail } from '../utils/mediaHelper';
 
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 
@@ -1537,7 +1538,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <img
-                        src={(art.image && !art.image.includes('unsplash.com')) ? art.image : (art.videoUrl ? art.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg') : art.image)}
+                        src={getArticleThumbnail(art)}
                         alt=""
                         className="w-20 h-16 object-cover rounded-xl shrink-0 border"
                       />
