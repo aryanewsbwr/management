@@ -727,10 +727,10 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* DEFAULT HOMEPAGE: EXACT 3-COLUMN EDITORIAL MAGAZINE LAYOUT */
+          /* DEFAULT HOMEPAGE: HERO MIXED SECTION + BEAWAR NEWS */
           <>
-            {/* 1. EDITORIAL MAGAZINE GRID (ब्यावर विशेष, आज की बड़ी खबर + देश-विदेश, राजस्थान + खेल) */}
-            <EditorialMagazineGrid
+            {/* 1. HERO MIXED SECTION (Local Beawar Spotlight + Trending) */}
+            <HeroMixedSection
               articles={articles}
               lang={lang}
               onOpenArticle={handleOpenArticle}
@@ -741,7 +741,7 @@ export default function App() {
               onSelectCategory={handleSelectCategory}
             />
 
-            {/* 2. ADVERTISEMENT BANNER (Below Editorial Mix) */}
+            {/* 2. ADVERTISEMENT BANNER (Below Hero Mix) */}
             <AdvertisementCard 
               ad={ads.find(a => a.placements?.includes('banner') || a.placement === 'banner' || a.placement === 'all')} 
               layout="banner" 

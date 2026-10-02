@@ -19,32 +19,14 @@ export default function HeroMixedSection({
 }) {
   if (!articles || articles.length === 0) return null;
 
-  // Custom hero created by Uncle or top live breaking article
-  const customHero = articles.find(a => a.id.startsWith('custom-') && a.isHero);
-  const liveHero = articles.find(a => a.isLiveFeed && (a.category === 'rajasthan' || a.category === 'national'));
-  const heroArticle = customHero || liveHero || articles.find(a => a.isHero) || articles[0];
+  // Prioritize Beawar local news uploaded by the agency
+  const customHero = articles.find(a => (a.id.startsWith('custom-') || a.category === 'beawar') && a.isHero);
+  const beawarTop = articles.find(a => a.category === 'beawar' || a.id.startsWith('custom-'));
+  const heroArticle = customHero || beawarTop || articles[0];
   
-  // Pick 3 diverse mixed trending stories
+  // Pick 3 trending stories from Beawar / available articles
   const remaining = articles.filter(a => a.id !== heroArticle.id);
-  const pickFromCat = (cat) => remaining.find(a => a.category === cat);
-
-  const mixedTrending = [
-    pickFromCat('rajasthan'),
-    pickFromCat('national'),
-    pickFromCat('sports') || pickFromCat('beawar') || pickFromCat('business')
-  ].filter(Boolean);
-
-  // If less than 3, fill from remaining
-  if (mixedTrending.length < 3) {
-    const ids = new Set(mixedTrending.map(m => m.id));
-    for (const item of remaining) {
-      if (!ids.has(item.id)) {
-        mixedTrending.push(item);
-        ids.add(item.id);
-        if (mixedTrending.length >= 3) break;
-      }
-    }
-  }
+  const mixedTrending = remaining.slice(0, 3);
 
   const heroTitle = lang === 'hi' ? heroArticle.titleHi : (heroArticle.titleEn || heroArticle.titleHi);
   const heroSummary = lang === 'hi' ? heroArticle.summaryHi : (heroArticle.summaryEn || heroArticle.summaryHi);
