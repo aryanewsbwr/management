@@ -667,6 +667,18 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           }
         } else if (videoPosterPreview && videoPosterPreview.startsWith('http')) {
           finalPrimaryImage = videoPosterPreview;
+        } else if (galleryItems.length > 0) {
+          const item = galleryItems[0];
+          if (item.isExisting && item.dataUrl && item.dataUrl.startsWith('http')) {
+            finalPrimaryImage = item.dataUrl;
+          } else if (item.blob || item.file) {
+            setUploadStatusText('🖼️ वीडियो कवर फोटो अपलोड हो रही है...');
+            try {
+              finalPrimaryImage = await StorageService.uploadArticleMedia(item.blob || item.file);
+            } catch {
+              finalPrimaryImage = item.dataUrl || '';
+            }
+          }
         } else if (finalVideoUrl) {
           // Automatically extract high-quality video poster if not custom uploaded
           finalPrimaryImage = getArticleThumbnail({ videoUrl: finalVideoUrl });
