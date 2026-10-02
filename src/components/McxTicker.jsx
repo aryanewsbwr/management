@@ -43,14 +43,7 @@ export default function McxTicker({ enabled = false }) {
 
   return (
     <div className="w-full bg-[#040f25] border-b border-[#1e293b] py-2 overflow-hidden relative">
-      <div className="max-w-7xl mx-auto px-4 flex items-center">
-        {/* Static Header */}
-        <div className="flex gap-4 pr-6 border-r border-[#1e293b] shrink-0 mr-4">
-          <span className="text-white text-xs font-bold border-b-2 border-red-500 pb-1">MCX Live</span>
-          <span className="text-gray-400 text-xs hover:text-white transition cursor-pointer">Futures</span>
-          <span className="text-gray-400 text-xs hover:text-white transition cursor-pointer">Spot</span>
-        </div>
-
+      <div className="w-full px-2 flex items-center">
         {/* Scrolling Marquee */}
         <div className="flex-1 overflow-hidden relative">
           <div className="flex animate-marquee whitespace-nowrap items-center hover:pause-animation">
