@@ -87,10 +87,10 @@ export default function HeroMixedSection({
         {/* Hero Mixed Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-5 items-stretch">
           
-          {/* LEFT: Proportionate Hero Spotlight Article (7 Cols on desktop, bounded height) */}
+          {/* LEFT: Hero Spotlight Article (7 Cols on desktop, perfectly matching right panel height) */}
           <div 
             onClick={() => onOpenArticle(heroArticle)}
-            className="lg:col-span-7 group relative bg-gray-900 rounded-2xl overflow-hidden cursor-pointer shadow-lg h-[280px] sm:h-[360px] lg:h-[390px] flex flex-col justify-end"
+            className="lg:col-span-7 group relative bg-gray-900 rounded-2xl overflow-hidden cursor-pointer shadow-lg w-full h-full min-h-[300px] flex flex-col justify-end"
           >
             {/* Background: Category Placeholder if Live Feed, or Image if custom Beawar article */}
             {heroArticle.isLiveFeed ? (
