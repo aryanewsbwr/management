@@ -1303,7 +1303,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <img
-                        src={art.image}
+                        src={(art.image && !art.image.includes('unsplash.com')) ? art.image : (art.videoUrl ? art.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg') : art.image)}
                         alt=""
                         className="w-20 h-16 object-cover rounded-xl shrink-0 border"
                       />
