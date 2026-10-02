@@ -321,29 +321,29 @@ export const StorageService = {
 
         if (sigRes.ok) {
           signData = await sigRes.json();
+        } else {
+          const errData = await sigRes.json();
+          throw new Error(errData.error || 'सर्वर ने अपलोड की अनुमति नहीं दी (Server rejected upload)');
         }
+      } else {
+        throw new Error('आप एडमिन के रूप में लॉग-इन नहीं हैं।');
       }
     } catch (sigErr) {
-      console.warn('[StorageService] Signed signature request fallback notice:', sigErr.message);
+      console.error('[StorageService] Signature request failed:', sigErr.message);
+      throw new Error(`अपलोड सुरक्षा विफल: ${sigErr.message}`);
+    }
+
+    if (!signData || !signData.signature) {
+      throw new Error('अपलोड सुरक्षा विफल: सर्वर से हस्ताक्षर प्राप्त नहीं हुए। (Missing upload signature)');
     }
 
     const formData = new FormData();
     formData.append('file', file);
-
-    let endpoint = '';
-    if (signData && signData.signature) {
-      // Secure Signed Upload
-      formData.append('api_key', signData.apiKey);
-      formData.append('timestamp', signData.timestamp);
-      formData.append('signature', signData.signature);
-      formData.append('folder', signData.folder || 'arya_news');
-      endpoint = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${resourceType}/upload`;
-    } else {
-      // Fallback unsigned configuration if local dev or signing unavailable
-      const cloudName = 'vxlbrcgx';
-      formData.append('upload_preset', 'aryan_news');
-      endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-    }
+    formData.append('api_key', signData.apiKey);
+    formData.append('timestamp', signData.timestamp);
+    formData.append('signature', signData.signature);
+    formData.append('folder', signData.folder || 'arya_news');
+    const endpoint = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${resourceType}/upload`;
 
     try {
       const response = await fetch(endpoint, {
@@ -418,19 +418,14 @@ export const StorageService = {
   // ==========================================
   // 3.4 BEAWAR SARRAFA BHAV (Bullion Rates & Kill Switch)
   // ==========================================
+  // ==========================================
+  // 3.4 BEAWAR SARRAFA BHAV (Bullion Rates & Kill Switch)
+  // ==========================================
   async fetchBullionRates() {
-    const DEFAULT_RATES = [
-      { id: 'gold_24k', item: '24K सोना (Gold 24K)', unit: '10 ग्राम', price: '78,500' },
-      { id: 'gold_22k', item: '22K सोना (Gold 22K)', unit: '10 ग्राम', price: '72,000' },
-      { id: 'gold_18k', item: '18K सोना (Gold 18K)', unit: '10 ग्राम', price: '59,000' },
-      { id: 'silver_1kg', item: 'चांदी (Silver 999)', unit: '1 किलो', price: '93,000' },
-      { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '9,300' }
-    ];
-
     let isEnabled = localStorage.getItem('arya_bullion_enabled') !== 'false';
 
     if (!isSupabaseConfigured || !supabase) {
-      return { rates: DEFAULT_RATES, lastUpdatedAt: null, enabled: isEnabled };
+      return { rates: [], lastUpdatedAt: null, enabled: isEnabled };
     }
 
     try {
@@ -461,7 +456,7 @@ export const StorageService = {
       console.warn('[StorageService] fetchBullionRates notice:', err.message);
     }
 
-    return { rates: DEFAULT_RATES, lastUpdatedAt: null, enabled: isEnabled };
+    return { rates: [], lastUpdatedAt: null, enabled: isEnabled };
   },
 
   async setBullionEnabled(enabled) {

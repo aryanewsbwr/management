@@ -85,8 +85,7 @@ export default function MediaCarousel({
             src={videoUrl}
             poster={effectivePoster || undefined}
             controls
-            autoPlay
-            muted
+            preload="metadata"
             playsInline
             className="w-full h-auto max-h-[460px] object-contain mx-auto bg-black"
           />

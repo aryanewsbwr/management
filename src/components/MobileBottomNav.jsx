@@ -5,7 +5,8 @@ export default function MobileBottomNav({
   activeTab,
   onSelectTab,
   onOpenQuickRead,
-  onOpenMobileMenu
+  onOpenMobileMenu,
+  activeCategoryIds
 }) {
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 pb-safe shadow-2xl">
@@ -52,17 +53,19 @@ export default function MobileBottomNav({
         </button>
 
         {/* Rajasthan */}
-        <button
-          onClick={() => onSelectTab('rajasthan')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
-            activeTab === 'rajasthan'
-              ? 'text-red-600 dark:text-red-400 font-bold'
-              : 'text-gray-500 dark:text-gray-400 hover:text-gray-900'
-          }`}
-        >
-          <Landmark className="w-5 h-5" />
-          <span className="text-[10px] mt-0.5">राजस्थान</span>
-        </button>
+        {(!activeCategoryIds || activeCategoryIds.has('rajasthan')) && (
+          <button
+            onClick={() => onSelectTab('rajasthan')}
+            className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition ${
+              activeTab === 'rajasthan'
+                ? 'text-red-600 dark:text-red-400 font-bold'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900'
+            }`}
+          >
+            <Landmark className="w-5 h-5" />
+            <span className="text-[10px] mt-0.5">राजस्थान</span>
+          </button>
+        )}
 
         {/* Categories / Menu */}
         <button

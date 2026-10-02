@@ -28,27 +28,28 @@ export default async function handler(req, res) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
-  if (supabaseUrl && supabaseKey) {
-    try {
-      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${token}`
-        }
-      });
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: 'Server configuration error: Supabase environment variables are missing' });
+  }
 
-      if (!userRes.ok) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid administrative token' });
+  try {
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${token}`
       }
+    });
 
-      const userData = await userRes.json();
-      const adminEmail = 'ananews@aryannewsagency.com';
-      if (userData.email !== adminEmail && !userData.email?.includes('aryan')) {
-        return res.status(403).json({ error: 'Forbidden: Admin access only' });
-      }
-    } catch (err) {
-      return res.status(500).json({ error: 'Authentication verification error: ' + err.message });
+    if (!userRes.ok) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid administrative token' });
     }
+
+    const userData = await userRes.json();
+    if (userData.email !== 'ananews@aryannewsagency.com') {
+      return res.status(403).json({ error: 'Forbidden: Admin access only' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Authentication verification error: ' + err.message });
   }
 
   // 2. Cloudinary Credentials from Vercel Environment Variables

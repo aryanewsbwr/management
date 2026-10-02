@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import Navbar from './components/Navbar';
 import BreakingTicker from './components/BreakingTicker';
 import BullionTicker from './components/BullionTicker';
@@ -15,7 +15,8 @@ import LegalModal from './components/LegalModal';
 import CookieConsent from './components/CookieConsent';
 import MobileBottomNav from './components/MobileBottomNav';
 import Footer from './components/Footer';
-import AdminPanel from './pages/AdminPanel';
+
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 import AdvertisementCard from './components/AdvertisementCard';
 
 import { StorageService } from './services/storage';
@@ -488,18 +489,25 @@ export default function App() {
 
   const bookmarkedArticles = articles.filter(art => bookmarks.includes(art.id));
 
-  // If user navigated to /admin-panel, render dedicated Admin Panel
   if (currentRoute === 'admin') {
     return (
-      <AdminPanel
-        onNavigateHome={navigateToHome}
-        onNewsUpdated={() => {
-          loadDatabaseData();
-          loadLiveFeeds();
-        }}
-      />
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
+        <AdminPanel
+          onNavigateHome={navigateToHome}
+          onNewsUpdated={() => {
+            loadDatabaseData();
+            loadLiveFeeds();
+          }}
+        />
+      </Suspense>
     );
   }
+
+  const activeCategoryIds = new Set(articles.map(a => a.category));
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col font-sans transition-colors duration-200 w-full max-w-full overflow-x-hidden`}>
@@ -520,6 +528,7 @@ export default function App() {
         isLoadingLiveNews={isLoadingLiveNews}
         onRefreshLiveNews={() => loadLiveFeeds(true)}
         liveCount={articles.filter(a => a.isLiveFeed).length}
+        activeCategoryIds={activeCategoryIds}
       />
         
 
@@ -853,6 +862,7 @@ export default function App() {
         onOpenSubmitNews={() => setIsSubmitNewsOpen(true)}
         onOpenLegal={(page) => setLegalModal({ isOpen: true, page })}
         lang={lang}
+        activeCategoryIds={activeCategoryIds}
       />
 
       {/* MOBILE STICKY BOTTOM NAVIGATION (For 95% mobile usage) */}
@@ -861,6 +871,7 @@ export default function App() {
         onSelectTab={handleSelectCategory}
         onOpenQuickRead={() => setIsQuickReadOpen(true)}
         onOpenMobileMenu={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        activeCategoryIds={activeCategoryIds}
       />
 
       {/* MODALS */}

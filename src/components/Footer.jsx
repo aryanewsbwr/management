@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { AGENCY_INFO, CATEGORIES } from '../data/categories';
 
-export default function Footer({ onSelectCategory, onOpenSubmitNews, onOpenLegal, lang = 'hi' }) {
+export default function Footer({ onSelectCategory, onOpenSubmitNews, onOpenLegal, lang = 'hi', activeCategoryIds }) {
   return (
     <footer className="bg-gray-950 text-gray-300 pt-10 pb-20 lg:pb-10 border-t border-gray-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -52,7 +52,7 @@ export default function Footer({ onSelectCategory, onOpenSubmitNews, onOpenLegal
               समाचार श्रेणियां
             </h4>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              {CATEGORIES.map((c) => (
+              {CATEGORIES.filter(c => !activeCategoryIds || c.id === 'all' || c.id === 'beawar' || activeCategoryIds.has(c.id)).map((c) => (
                 <button
                   key={c.id}
                   onClick={() => onSelectCategory && onSelectCategory(c.id)}
@@ -134,10 +134,10 @@ export default function Footer({ onSelectCategory, onOpenSubmitNews, onOpenLegal
         {/* COPYRIGHT & FAIR DEALING DISCLAIMER */}
         <div className="mt-8 p-4 rounded-2xl bg-gray-900/80 border border-gray-800 text-[11px] text-gray-400 leading-relaxed font-hindi space-y-2">
           <p className="font-bold text-gray-300">
-            ⚖️ कॉपीराइट एवं स्रोत अस्वीकरण (Copyright & Fair Dealing Notice):
+            ⚖️ कॉपीराइट एवं स्रोत अस्वीकरण (Copyright Notice):
           </p>
           <p>
-            आर्यन न्यूज़ एजेंसी (aryannewsagency.com) पर प्रकाशित ब्यावर व स्थानीय समाचार हमारे संवाददाताओं द्वारा तैयार किए जाते हैं। राष्ट्रीय, अंतरराष्ट्रीय, प्रादेशिक व खेल समाचारों के शीर्षक, संक्षिप्त अंश एवं चित्र केवल जनहित व समसामयिक समीक्षा हेतु मूल प्रकाशकों के सार्वजनिक माध्यम से भारतीय कॉपीराइट अधिनियम, 1957 की धारा 52 के "उचित उपयोग" (Fair Dealing) प्रावधानों के अंतर्गत स्रोत के स्पष्ट आभार के साथ प्रदर्शित किए जाते हैं।
+            आर्यन न्यूज़ एजेंसी (aryannewsagency.com) पर प्रकाशित ब्यावर व स्थानीय समाचार हमारे संवाददाताओं द्वारा तैयार किए जाते हैं। अन्य प्रकाशकों की खबरों के केवल शीर्षक व संक्षिप्त अंश मूल स्रोत के लिंक के साथ दिखाए जाते हैं; सभी अधिकार मूल प्रकाशकों के हैं।
           </p>
           <p>
             समस्त बौद्धिक संपदा अधिकार एवं ट्रेडमार्क उनके संबंधित मूल प्रकाशकों के पास पूर्णतः सुरक्षित हैं। किसी भी सामग्री या कॉपीराइट से संबंधित जानकारी अथवा आपत्ति हेतु कृपया <a href="mailto:info@aryannewsagency.com" className="text-red-400 underline font-sans">info@aryannewsagency.com</a> पर संपर्क करें।

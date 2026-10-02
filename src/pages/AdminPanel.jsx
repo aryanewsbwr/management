@@ -96,11 +96,11 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [isAdMediaUploading, setIsAdMediaUploading] = useState(false);
 
   const [bullionRates, setBullionRates] = useState([
-    { id: 'gold_24k', item: '24K सोना (Gold 24K)', unit: '10 ग्राम', price: '78,500' },
-    { id: 'gold_22k', item: '22K सोना (Gold 22K)', unit: '10 ग्राम', price: '72,000' },
-    { id: 'gold_18k', item: '18K सोना (Gold 18K)', unit: '10 ग्राम', price: '59,000' },
-    { id: 'silver_1kg', item: 'चांदी (Silver 999)', unit: '1 किलो', price: '93,000' },
-    { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '9,300' }
+    { id: 'gold_24k', item: '24K सोना (Gold 24K)', unit: '10 ग्राम', price: '' },
+    { id: 'gold_22k', item: '22K सोना (Gold 22K)', unit: '10 ग्राम', price: '' },
+    { id: 'gold_18k', item: '18K सोना (Gold 18K)', unit: '10 ग्राम', price: '' },
+    { id: 'silver_1kg', item: 'चांदी (Silver 999)', unit: '1 किलो', price: '' },
+    { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '' }
   ]);
   const [bullionLastUpdated, setBullionLastUpdated] = useState(null);
   const [bullionEnabled, setBullionEnabled] = useState(true);
@@ -288,8 +288,10 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       setAdsList(ads || []);
       setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
       setBreakingNews(bn || []);
-      if (mcxRes && mcxRes.rates) {
+      if (mcxRes && mcxRes.rates && mcxRes.rates.length > 0) {
         setBullionRates(mcxRes.rates);
+      }
+      if (mcxRes) {
         setBullionLastUpdated(mcxRes.lastUpdatedAt);
         if (typeof mcxRes.enabled === 'boolean') {
           setBullionEnabled(mcxRes.enabled);
@@ -600,7 +602,8 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     if (!file) return;
     try {
       const { dataUrl, blob } = await compressImage(file);
-      setVideoPosterFile(blob);
+      const imgFile = new File([blob], file.name || 'cover.jpg', { type: blob.type || 'image/jpeg' });
+      setVideoPosterFile(imgFile);
       setVideoPosterPreview(dataUrl);
     } catch {
       setVideoPosterFile(file);
@@ -657,36 +660,56 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           }
         }
 
-        // 2. Upload Video Cover/Poster
+        // 2. Upload Video Cover/Poster & Any Attached Photos
+        const uploadedGallery = [];
+
+        // Upload any photos present in galleryItems
+        for (let i = 0; i < galleryItems.length; i++) {
+          const item = galleryItems[i];
+          if (item.isExisting && item.dataUrl && item.dataUrl.startsWith('http')) {
+            uploadedGallery.push(item.dataUrl);
+          } else if (item.blob || item.file) {
+            setUploadStatusText(`📷 संलग्न फोटो ${i + 1}/${galleryItems.length} अपलोड हो रही है...`);
+            try {
+              const fileObj = item.file || (item.blob instanceof File ? item.blob : new File([item.blob], `photo_${i}.jpg`, { type: item.blob.type || 'image/jpeg' }));
+              const uploadedUrl = await StorageService.uploadArticleMedia(fileObj);
+              uploadedGallery.push(uploadedUrl);
+            } catch (upErr) {
+              console.error('[Admin] Attached photo upload failed:', upErr);
+              throw new Error(`संलग्न फोटो अपलोड करने में विफलता: ${upErr.message}`);
+            }
+          }
+        }
+
+        // Upload specific video poster file if user picked one
         if (videoPosterFile) {
-          setUploadStatusText('🖼️ वीडियो कवर फोटो अपलोड हो रही है...');
+          setUploadStatusText('🖼️ वीडियो थंबनेल / कवर फोटो अपलोड हो रही है...');
           try {
-            finalPrimaryImage = await StorageService.uploadArticleMedia(videoPosterFile);
-          } catch {
-            finalPrimaryImage = videoPosterPreview || '';
+            const posterFileObj = videoPosterFile instanceof File 
+              ? videoPosterFile 
+              : new File([videoPosterFile], 'cover.jpg', { type: videoPosterFile.type || 'image/jpeg' });
+            finalPrimaryImage = await StorageService.uploadArticleMedia(posterFileObj);
+          } catch (posterErr) {
+            console.error('[Admin] Video poster upload failed:', posterErr);
+            throw new Error(`वीडियो कवर फोटो अपलोड करने में विफलता: ${posterErr.message}`);
           }
         } else if (videoPosterPreview && videoPosterPreview.startsWith('http')) {
           finalPrimaryImage = videoPosterPreview;
-        } else if (galleryItems.length > 0) {
-          const item = galleryItems[0];
-          if (item.isExisting && item.dataUrl && item.dataUrl.startsWith('http')) {
-            finalPrimaryImage = item.dataUrl;
-          } else if (item.blob || item.file) {
-            setUploadStatusText('🖼️ वीडियो कवर फोटो अपलोड हो रही है...');
-            try {
-              finalPrimaryImage = await StorageService.uploadArticleMedia(item.blob || item.file);
-            } catch {
-              finalPrimaryImage = item.dataUrl || '';
-            }
-          }
+        } else if (uploadedGallery.length > 0) {
+          finalPrimaryImage = uploadedGallery[0];
         } else if (finalVideoUrl) {
-          // Automatically extract high-quality video poster if not custom uploaded
+          // Automatically extract high-quality video poster from Cloudinary if not custom uploaded
           finalPrimaryImage = getArticleThumbnail({ videoUrl: finalVideoUrl });
         } else {
           finalPrimaryImage = '';
         }
 
-        finalGallery = finalPrimaryImage ? [finalPrimaryImage] : [];
+        // Build final gallery: Ensure finalPrimaryImage is at index 0 and unique
+        if (finalPrimaryImage && !uploadedGallery.includes(finalPrimaryImage)) {
+          finalGallery = [finalPrimaryImage, ...uploadedGallery];
+        } else {
+          finalGallery = uploadedGallery.length > 0 ? uploadedGallery : (finalPrimaryImage ? [finalPrimaryImage] : []);
+        }
 
       } else {
         // PHOTOS / GALLERY MODE
@@ -1907,10 +1930,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                       <span className="text-sm font-bold text-gray-500">₹</span>
                       <input
                         type="text"
-                        required
                         value={item.price}
                         onChange={(e) => handleBullionPriceChange(item.id, e.target.value)}
-                        placeholder="78,500"
+                        placeholder="Ex: 78500"
                         className="w-28 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm font-mono font-black text-amber-600 dark:text-amber-400 text-right"
                       />
                     </div>

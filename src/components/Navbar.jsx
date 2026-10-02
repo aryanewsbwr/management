@@ -19,7 +19,8 @@ export default function Navbar({
   onSearchChange,
   isLoadingLiveNews,
   onRefreshLiveNews,
-  liveCount
+  liveCount,
+  activeCategoryIds
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState('');
@@ -196,7 +197,7 @@ export default function Navbar({
       {/* 3. HORIZONTAL CATEGORIES BAR (Desktop & Mobile Swipeable) */}
       <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 overflow-x-auto no-scrollbar py-1 w-full max-w-full">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 flex items-center gap-1 sm:gap-2 whitespace-nowrap min-w-max">
-          {CATEGORIES.map((cat) => {
+          {CATEGORIES.filter(c => !activeCategoryIds || c.id === 'all' || c.id === 'beawar' || activeCategoryIds.has(c.id)).map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
               <button
@@ -228,7 +229,7 @@ export default function Navbar({
             सभी श्रेणियां (Categories)
           </div>
           <div className="grid grid-cols-2 gap-2 mb-3">
-            {CATEGORIES.map((cat) => (
+            {CATEGORIES.filter(c => !activeCategoryIds || c.id === 'all' || c.id === 'beawar' || activeCategoryIds.has(c.id)).map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => {
