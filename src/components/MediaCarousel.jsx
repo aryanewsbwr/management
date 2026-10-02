@@ -13,6 +13,7 @@ export default function MediaCarousel({
   autoPlayInterval = 3500,
   showControls = false, // true in Modal, false in Cards
   className = '',
+  objectPosition = 'object-left',
   onOpen = null
 }) {
   // Normalize images to an array of non-empty strings
@@ -107,7 +108,7 @@ export default function MediaCarousel({
           <img
             src={effectivePoster}
             alt={title}
-            className="w-full h-full object-cover group-hover/video:scale-105 transition-transform duration-500"
+            className={`w-full h-full object-cover ${objectPosition} group-hover/video:scale-105 transition-transform duration-500`}
             loading="lazy"
           />
         ) : (
@@ -116,7 +117,7 @@ export default function MediaCarousel({
             muted
             playsInline
             preload="metadata"
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover ${objectPosition}`}
           />
         )}
         
@@ -147,7 +148,7 @@ export default function MediaCarousel({
         <img
           src={defaultPlaceholder}
           alt={title}
-          className="w-full h-full object-cover"
+          className={`w-full h-full object-cover ${objectPosition}`}
           loading="lazy"
         />
       </div>
@@ -165,7 +166,10 @@ export default function MediaCarousel({
             e.currentTarget.onerror = null;
             e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
           }}
-          onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imageList[0]); } }} className={`w-full h-full object-cover transition-transform duration-500 `} loading="lazy" /> {fullscreenImg && ( <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setFullscreenImg(null); }}> <img src={fullscreenImg} alt="Zoomed preview" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" /> <button type="button" className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition"> <span className="font-bold px-3 py-1">? ??? ???? (Close)</span> </button> </div> )} </div> ); }
+          onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imageList[0]); } }}
+          className={`w-full h-full object-cover ${objectPosition} transition-transform duration-500`}
+          loading="lazy"
+        /> {fullscreenImg && ( <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setFullscreenImg(null); }}> <img src={fullscreenImg} alt="Zoomed preview" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" /> <button type="button" className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition"> <span className="font-bold px-3 py-1">? ??? ???? (Close)</span> </button> </div> )} </div> ); }
 
   // 3. MULTIPLE IMAGES AUTO-RUNNING CAROUSEL
   return (
@@ -198,7 +202,10 @@ export default function MediaCarousel({
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
               }}
-              onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imgUrl); } }} className={`w-full h-full object-cover ${showControls ? 'cursor-zoom-in' : ''}`} loading={idx === 0 ? 'eager' : 'lazy'} />
+              onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imgUrl); } }}
+              className={`w-full h-full object-cover ${objectPosition} ${showControls ? 'cursor-zoom-in' : ''}`}
+              loading={idx === 0 ? 'eager' : 'lazy'}
+            />
           </div>
         ))}
       </div>

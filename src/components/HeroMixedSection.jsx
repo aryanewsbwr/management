@@ -111,6 +111,7 @@ export default function HeroMixedSection({
                   aspectRatio="w-full h-full"
                   autoPlayInterval={4000}
                   showControls={false}
+                  objectPosition="object-left"
                 />
               </div>
             )}
