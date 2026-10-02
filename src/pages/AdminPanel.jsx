@@ -136,7 +136,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   const loadData = async () => {
     try {
-      const [customArticles, bn, apiNewsStatus] = await Promise.all([
+      const [customArticles, bn, mcxRes, apiNewsStatus] = await Promise.all([
         StorageService.fetchCustomArticles(),
         StorageService.fetchBreakingNews(),
         StorageService.fetchMcxData(),
@@ -144,9 +144,9 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       ]);
       setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
       setBreakingNews(bn || []);
-      if (typeof results[3] === 'object' && results[3] !== null) {
-        setMcxEnabled(results[3].enabled || false);
-        setMcxItems(results[3].items || []);
+      if (mcxRes && typeof mcxRes === 'object') {
+        setMcxEnabled(mcxRes.enabled || false);
+        setMcxItems(mcxRes.items || []);
       }
 
       setIsApiNewsEnabled(apiNewsStatus);

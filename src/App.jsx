@@ -67,13 +67,17 @@ export default function App() {
   // 4. Load Database Data (Custom Articles, Breaking News, Site Settings)
   const loadDatabaseData = async () => {
     try {
-      const [customArticles, bn, apiEnabled] = await Promise.all([
+      const [customArticles, bn, apiEnabled, mcx] = await Promise.all([
         StorageService.fetchCustomArticles().then(list => list.filter(a => !a.isHidden)),
         StorageService.fetchBreakingNews(),
-        StorageService.fetchApiNewsEnabled()
+        StorageService.fetchApiNewsEnabled(),
+        StorageService.fetchMcxData()
       ]);
 
       setIsApiNewsEnabled(apiEnabled);
+      if (mcx && typeof mcx === 'object') {
+        setMcxData(mcx);
+      }
 
       if (customArticles && customArticles.length > 0) {
         setArticles(prev => {
@@ -499,6 +503,9 @@ export default function App() {
           <span>🔴 ताज़ा लाइव समाचार सफलतापूर्वक अपडेट हो चुके हैं!</span>
         </div>
       )}
+
+      {/* MCX LIVE COMMODITY TICKER */}
+      {mcxData.enabled && <McxTicker enabled={mcxData.enabled} />}
 
       {/* 2. BREAKING NEWS LIVE FLASH TICKER */}
       <BreakingTicker

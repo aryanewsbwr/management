@@ -376,7 +376,10 @@ export const StorageService = {
 
   
   async fetchMcxData() {
-    let result = { enabled: false, items: [] };
+    let result = { 
+      enabled: localStorage.getItem('arya_mcx_enabled') !== 'false', 
+      items: [] 
+    };
     if (!isSupabaseConfigured || !supabase) return result;
     try {
       const { data, error } = await supabase
@@ -386,6 +389,7 @@ export const StorageService = {
         .maybeSingle();
       if (!error && data) {
         result.enabled = data.title_hi === 'enabled';
+        localStorage.setItem('arya_mcx_enabled', result.enabled ? 'true' : 'false');
         if (data.content_hi) {
           try { result.items = JSON.parse(data.content_hi); } catch(e){}
         }
@@ -395,6 +399,7 @@ export const StorageService = {
   },
 
   async saveMcxData(enabled, items) {
+    localStorage.setItem('arya_mcx_enabled', enabled ? 'true' : 'false');
     if (!isSupabaseConfigured || !supabase) throw new Error('Supabase credentials not configured.');
     const record = {
       id: 'setting-mcx-data',
@@ -408,8 +413,8 @@ export const StorageService = {
       image: null,
       published_at: new Date().toISOString(),
       author: 'system',
-      
-      views: 0
+      views: 0,
+      updated_at: new Date().toISOString()
     };
     const { error } = await supabase.from('articles').upsert(record);
     if (error) throw error;
