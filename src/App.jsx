@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import BreakingTicker from './components/BreakingTicker';
 import BullionTicker from './components/BullionTicker';
+import WebStories from './components/WebStories';
 import HeroMixedSection from './components/HeroMixedSection';
 import EditorialMagazineGrid from './components/EditorialMagazineGrid';
 import CategorySection from './components/CategorySection';
