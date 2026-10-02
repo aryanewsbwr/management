@@ -53,6 +53,7 @@ export default async function handler(req, res) {
   const description = rawDesc.replace(/\s+/g, ' ').slice(0, 180).trim() + (rawDesc.length > 180 ? '...' : '');
   
   let gallery = null;
+  let videoUrl = null;
   if (article?.content_hi) {
     const metaMatch = article.content_hi.match(/<!--MEDIA_META:([\s\S]*?)-->/);
     if (metaMatch) {
@@ -77,7 +78,11 @@ export default async function handler(req, res) {
   // Ensure Cloudinary URLs are optimized for fast WhatsApp and Social crawlers (1200x630 JPG)
   if (image && image.includes('cloudinary.com') && image.includes('/upload/')) {
     if (!image.includes('/w_') && !image.includes('/so_')) {
-      image = image.replace('/upload/', '/upload/so_1,w_1200,h_630,c_fill,q_auto,f_jpg/');
+      if (image.includes('/video/upload/')) {
+        image = image.replace('/video/upload/', '/video/upload/so_1,w_1200,h_630,c_fill,q_auto,f_jpg/');
+      } else if (image.includes('/image/upload/')) {
+        image = image.replace('/image/upload/', '/image/upload/w_1200,h_630,c_fill,q_auto,f_jpg/');
+      }
     }
   }
 
