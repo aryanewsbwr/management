@@ -3,7 +3,8 @@ import { BarChart2, Megaphone, Clock, MessageCircle,
   Lock, User, Key, Eye, EyeOff, ShieldCheck, CheckCircle2, 
   AlertCircle, Upload, Image as ImageIcon, Trash2, ExternalLink, 
   LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save,
-  Edit3, Radio, PowerOff, Video, Film, Play, X, Layers
+  Edit3, Radio, PowerOff, Video, Film, Play, X, Layers,
+  Scissors, RotateCcw, Camera
 } from 'lucide-react';
 import { AGENCY_INFO } from '../data/categories';
 import { StorageService } from '../services/storage';
@@ -50,6 +51,8 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [videoPosterPreview, setVideoPosterPreview] = useState('');
   const [videoTrimStart, setVideoTrimStart] = useState('');
   const [videoTrimEnd, setVideoTrimEnd] = useState('');
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
   const videoRef = React.useRef(null);
   const [videoSizeMb, setVideoSizeMb] = useState('');
 
@@ -540,11 +543,11 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     setVideoPosterPreview(dataUrl);
     try {
       const res = await fetch(dataUrl);
@@ -552,6 +555,43 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       const file = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
       setVideoPosterFile(file);
     } catch(e) { console.error('Capture error:', e); }
+  };
+
+  const handleSetTrimStart = () => {
+    if (!videoRef.current) return;
+    setVideoTrimStart(videoRef.current.currentTime.toFixed(1));
+  };
+
+  const handleSetTrimEnd = () => {
+    if (!videoRef.current) return;
+    setVideoTrimEnd(videoRef.current.currentTime.toFixed(1));
+  };
+
+  const handleResetTrim = () => {
+    setVideoTrimStart('');
+    setVideoTrimEnd('');
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  const handlePreviewTrim = () => {
+    if (!videoRef.current) return;
+    const start = parseFloat(videoTrimStart) || 0;
+    const end = parseFloat(videoTrimEnd) || (videoRef.current.duration || 1000);
+    videoRef.current.currentTime = start;
+    videoRef.current.play();
+
+    const checkInterval = setInterval(() => {
+      if (!videoRef.current || videoRef.current.paused) {
+        clearInterval(checkInterval);
+        return;
+      }
+      if (videoRef.current.currentTime >= end) {
+        videoRef.current.pause();
+        clearInterval(checkInterval);
+      }
+    }, 100);
   };
 
   // Video Poster / Cover Image Picker
@@ -605,6 +645,18 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           finalVideoUrl = videoPreviewUrl;
         }
 
+        // Apply trimming to Cloudinary video URL if set
+        if (finalVideoUrl && finalVideoUrl.includes('cloudinary.com') && (videoTrimStart || videoTrimEnd)) {
+          const start = parseFloat(videoTrimStart) || 0;
+          const end = parseFloat(videoTrimEnd) || 0;
+          let trimParams = [];
+          if (start > 0) trimParams.push(`so_${Math.round(start)}`);
+          if (end > start) trimParams.push(`eo_${Math.round(end)}`);
+          if (trimParams.length > 0 && finalVideoUrl.includes('/video/upload/') && !finalVideoUrl.includes('/so_')) {
+            finalVideoUrl = finalVideoUrl.replace('/video/upload/', `/video/upload/${trimParams.join(',')}/`);
+          }
+        }
+
         // 2. Upload Video Cover/Poster
         if (videoPosterFile) {
           setUploadStatusText('🖼️ वीडियो कवर फोटो अपलोड हो रही है...');
@@ -615,9 +667,14 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
           }
         } else if (videoPosterPreview && videoPosterPreview.startsWith('http')) {
           finalPrimaryImage = videoPosterPreview;
+        } else if (finalVideoUrl) {
+          // Automatically extract high-quality video poster if not custom uploaded
+          finalPrimaryImage = getArticleThumbnail({ videoUrl: finalVideoUrl });
         } else {
           finalPrimaryImage = '';
         }
+
+        finalGallery = finalPrimaryImage ? [finalPrimaryImage] : [];
 
       } else {
         // PHOTOS / GALLERY MODE
@@ -1306,45 +1363,123 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                       </span>
                     </div>
 
-                    {/* Video Preview Player */}
+                    {/* Video Preview Player & Trimming Suite */}
                     {videoPreviewUrl ? (
-                      <div className="space-y-3">
-                        <div className="relative rounded-2xl overflow-hidden bg-black shadow-md border border-gray-200 dark:border-gray-700">
+                      <div className="space-y-4 bg-gray-50 dark:bg-gray-800/60 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
+                        {/* Video Player */}
+                        <div className="relative rounded-xl overflow-hidden bg-black shadow-md border border-gray-800">
                           <video
-                            ref={videoRef} crossOrigin="anonymous" src={videoPreviewUrl}
+                            ref={videoRef}
+                            crossOrigin="anonymous"
+                            src={videoPreviewUrl}
                             controls
                             playsInline
-                            className="w-full max-h-56 object-contain mx-auto" />
-                          <button type="button" onClick={handleCaptureThumbnail} className="absolute bottom-10 right-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition z-10">Capture Frame as Thumbnail</button>
+                            onTimeUpdate={(e) => setVideoCurrentTime(e.target.currentTime)}
+                            onLoadedMetadata={(e) => setVideoDuration(e.target.duration)}
+                            className="w-full max-h-60 object-contain mx-auto"
+                          />
                           <button
                             type="button"
                             onClick={() => {
                               setVideoFile(null);
                               setVideoPreviewUrl('');
                               setVideoSizeMb('');
+                              setVideoTrimStart('');
+                              setVideoTrimEnd('');
                             }}
-                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full text-xs shadow hover:bg-red-700 transition"
+                            className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full text-xs shadow-lg transition"
                             title="वीडियो हटाएं"
                           >
                             ✕
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300 font-hindi px-1">
-                          <span className="flex items-center gap-1.5 font-bold text-emerald-600">
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>वीडियो तैयार है {videoSizeMb ? `(${videoSizeMb} MB)` : ''}</span>
-                          </span>
-                          <span className="text-[11px] text-gray-400">
-                            वेबसाइट पर पाठक इसे सीधे प्ले कर सकेंगे
+                        {/* Live Playback Timer & Status */}
+                        <div className="flex items-center justify-between text-xs font-mono text-gray-600 dark:text-gray-300 px-1">
+                          <div className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white font-hindi">
+                            <Clock className="w-3.5 h-3.5 text-red-600" />
+                            <span>वर्तमान समय: {videoCurrentTime.toFixed(1)}s / {videoDuration.toFixed(1)}s</span>
+                          </div>
+                          <span className="text-[11px] text-gray-500 font-hindi">
+                            आकार: {videoSizeMb ? `${videoSizeMb} MB` : 'तैयार'}
                           </span>
                         </div>
 
-                        {/* Optional Custom Cover Photo for Video */}
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
+                        {/* ✂️ VIDEO TRIMMER & FRAME CAPTURE TOOLBAR */}
+                        <div className="p-3.5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold font-hindi text-gray-900 dark:text-white flex items-center gap-1.5">
+                              <Scissors className="w-3.5 h-3.5 text-red-600" />
+                              <span>वीडियो ट्रिम टूल (Video Trimming & Capture)</span>
+                            </span>
+                            {(videoTrimStart || videoTrimEnd) && (
+                              <button
+                                type="button"
+                                onClick={handleResetTrim}
+                                className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1"
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                <span>रीसेट ट्रिम</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSetTrimStart}
+                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-800 dark:text-gray-200 hover:text-red-600 rounded-xl text-xs font-bold transition border border-gray-200 dark:border-gray-600 active:scale-95"
+                              title="वर्तमान वीडियो स्थिति को शुरू का समय बनाएं"
+                            >
+                              <Scissors className="w-3.5 h-3.5 text-red-600" />
+                              <span>शुरू: {videoTrimStart ? `${videoTrimStart}s` : 'सेट करें'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleSetTrimEnd}
+                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-800 dark:text-gray-200 hover:text-red-600 rounded-xl text-xs font-bold transition border border-gray-200 dark:border-gray-600 active:scale-95"
+                              title="वर्तमान वीडियो स्थिति को अंतिम समय बनाएं"
+                            >
+                              <Scissors className="w-3.5 h-3.5 text-red-600 rotate-180" />
+                              <span>अंत: {videoTrimEnd ? `${videoTrimEnd}s` : 'सेट करें'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handlePreviewTrim}
+                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold transition border border-blue-200 dark:border-blue-900 active:scale-95"
+                              title="ट्रिम किया हुआ भाग चलाकर देखें"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <span>ट्रिम चलाएं</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleCaptureThumbnail}
+                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
+                              title="वर्तमान फ्रेम को थंबनेल / कवर फोटो बनाएं"
+                            >
+                              <Camera className="w-3.5 h-3.5" />
+                              <span>फ्रेम थंबनेल बनाएं</span>
+                            </button>
+                          </div>
+
+                          {(videoTrimStart || videoTrimEnd) && (
+                            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between font-hindi">
+                              <span>✓ ट्रिम सक्रिय: {videoTrimStart || 0}s से {videoTrimEnd || `${videoDuration.toFixed(1)}s`} तक</span>
+                              <span>अवधि: {((parseFloat(videoTrimEnd || videoDuration) - parseFloat(videoTrimStart || 0))).toFixed(1)}s</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Thumbnail Cover Photo Preview */}
+                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
                           <label className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-lg text-xs font-bold cursor-pointer transition">
                             <ImageIcon className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
-                            <span>वीडियो का कवर/थंबनेल फोटो बदलें (वैकल्पिक)</span>
+                            <span>कस्टम कवर फोटो अपलोड करें (वैकल्पिक)</span>
                             <input
                               type="file"
                               accept="image/*"
@@ -1353,9 +1488,12 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                             />
                           </label>
                           {videoPosterPreview && (
-                            <span className="text-xs text-emerald-600 font-bold">
-                              ✓ कस्टम कवर फोटो चुनी गई
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <img src={videoPosterPreview} alt="" className="w-12 h-9 object-cover rounded-lg border shadow-sm" />
+                              <span className="text-xs text-emerald-600 font-bold">
+                                ✓ थंबनेल सेट है
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>

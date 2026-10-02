@@ -33,7 +33,8 @@ export default function HeroMixedSection({
 
   const handleHeroShare = (e) => {
     e.stopPropagation();
-    const shareText = `*${heroTitle}*\n\n${heroSummary}\n\n👉 पूरी रिपोर्ट: https://www.aryannewsagency.com/\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const shareUrl = `https://www.aryannewsagency.com/news/${heroArticle.id}`;
+    const shareText = `*${heroTitle}*\n\n${heroSummary ? heroSummary.slice(0, 140) + '...' : ''}\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
   };
 

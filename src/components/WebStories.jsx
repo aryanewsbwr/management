@@ -54,8 +54,9 @@ export default function WebStories({ articles = [], onOpenArticle }) {
     }
   };
   const handleShareStory = (story) => {
-    const shareUrl = `https://www.aryannewsagency.com/`;
-    const text = `*वेब स्टोरी: ${story.title}*\n\n👉 पूरी खबर देखें: ${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const articleId = story.article?.id || story.id;
+    const shareUrl = `https://www.aryannewsagency.com/news/${articleId}`;
+    const text = `*वेब स्टोरी: ${story.title}*\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 

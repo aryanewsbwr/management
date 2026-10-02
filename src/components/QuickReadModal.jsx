@@ -42,7 +42,9 @@ export default function QuickReadModal({
   };
 
   const handleShare = () => {
-    const text = `*शॉर्ट न्यूज़: ${title}*\n\n${summary}\n\n👉 विस्तार से पढ़ें: https://www.aryannewsagency.com/\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const articleId = currentArticle?.id;
+    const shareUrl = articleId ? `https://www.aryannewsagency.com/news/${articleId}` : `https://www.aryannewsagency.com/`;
+    const text = `*शॉर्ट न्यूज़: ${title}*\n\n${summary ? summary.slice(0, 140) + '...' : ''}\n\n👉 पूरी खबर विस्तार से पढ़ें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
