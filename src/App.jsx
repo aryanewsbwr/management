@@ -752,19 +752,6 @@ export default function App() {
               articles={articles} 
               onOpenArticle={handleOpenArticle} 
             />
-            
-            {/* 📍 ब्यावर विशेष (Beawar Local News) */}
-            <CategorySection
-              categoryId="beawar"
-              articles={articles}
-              lang={lang}
-              onOpenArticle={handleOpenArticle}
-              onPlayTTS={handlePlayTTS}
-              currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              onViewMoreCategory={handleSelectCategory}
-            />
 
             {/* OTHER SECTIONS (Visible when API news is enabled) */}
             {isApiNewsEnabled && (

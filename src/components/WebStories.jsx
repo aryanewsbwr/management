@@ -4,41 +4,33 @@ import { Sparkles, X, ChevronRight, ChevronLeft, Share2, BookOpen } from 'lucide
 export default function WebStories({ articles = [], onOpenArticle }) {
   const [activeStoryIndex, setActiveStoryIndex] = useState(null);
 
-  // Group stories across diverse categories with matching mockup badges
-  const categoryConfigs = [
-    { cat: 'beawar', tag: 'ब्यावर', color: 'bg-amber-800/90 text-amber-100', fallbackTitle: 'पोषण अभियान: शिविर की 5 बातें' },
-    { cat: 'rajasthan', tag: 'राजस्थान', color: 'bg-orange-600/90 text-orange-100', fallbackTitle: 'मानसून की विदाई कब होगी?' },
-    { cat: 'national', tag: 'देश', color: 'bg-blue-700/90 text-blue-100', fallbackTitle: 'खाद्य तेल सस्ता: किसे होगा फायदा' },
-    { cat: 'sports', tag: 'खेल', color: 'bg-emerald-700/90 text-emerald-100', fallbackTitle: 'हॉकी लीग में भारत की तीसरी जीत' },
-    { cat: 'business', tag: 'व्यापार', color: 'bg-indigo-700/90 text-indigo-100', fallbackTitle: 'सोना-चांदी: आज के भाव कैसे रहे' },
-    { cat: 'entertainment', tag: 'मनोरंजन', color: 'bg-purple-700/90 text-purple-100', fallbackTitle: 'इस हफ्ते ओटीटी पर क्या देखें' }
-  ];
+  // Filter for local Beawar news / custom uploaded stories
+  const localArticles = articles.filter(a => 
+    !a.category?.startsWith('_') && 
+    (a.category === 'beawar' || !a.isLiveFeed)
+  );
 
-  const stories = categoryConfigs.map((cfg) => {
-    const art = articles.find(a => a.category === cfg.cat && !a.category?.startsWith('_'));
-    if (art) {
-      return {
-        id: art.id,
-        title: art.titleHi,
-        image: (art.image && !art.image.includes('unsplash.com')) ? art.image : (art.videoUrl && art.videoUrl.includes('cloudinary.com') ? art.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg') : 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80'),
-        summary: art.summaryHi || art.contentHi?.slice(0, 140) || '',
-        author: art.author || 'आर्यन ब्यूरो',
-        tag: cfg.tag,
-        badgeColor: cfg.color,
-        article: art
-      };
+  // Use local Beawar stories, taking up to 10
+  const validArticles = localArticles.length > 0 ? localArticles : articles.filter(a => !a.category?.startsWith('_'));
+  
+  const stories = validArticles.slice(0, 10).map((art, idx) => {
+    let img = art.image;
+    if (!img && art.videoUrl && art.videoUrl.includes('cloudinary.com')) {
+      img = art.videoUrl.replace(/\.(mp4|webm|mov|mkv)$/i, '.jpg');
     }
-    // Fallback if no article found
-    const fallbackArt = articles[0];
+    if (!img || img.includes('unsplash.com')) {
+      img = art.image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&auto=format&fit=crop&q=80';
+    }
+
     return {
-      id: `story-${cfg.cat}`,
-      title: cfg.fallbackTitle,
-      image: fallbackArt?.image || 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=800&auto=format&fit=crop&q=80',
-      summary: cfg.fallbackTitle,
-      author: 'संपादकीय टीम',
-      tag: cfg.tag,
-      badgeColor: cfg.color,
-      article: fallbackArt
+      id: art.id || `story-${idx}`,
+      title: art.titleHi || art.title || '',
+      image: img,
+      summary: art.summaryHi || art.contentHi?.slice(0, 140) || '',
+      author: art.author || 'ब्यावर रिपोर्टर',
+      tag: 'ब्यावर',
+      badgeColor: 'bg-red-600 text-white',
+      article: art
     };
   });
 
@@ -63,12 +55,13 @@ export default function WebStories({ articles = [], onOpenArticle }) {
       setActiveStoryIndex(activeStoryIndex - 1);
     }
   };
-
   const handleShareStory = (story) => {
     const shareUrl = `https://www.aryannewsagency.com/`;
     const text = `*वेब स्टोरी: ${story.title}*\n\n👉 पूरी खबर देखें: ${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
+
+  if (stories.length === 0) return null;
 
   return (
     <section className="bg-white dark:bg-gray-900 py-5 sm:py-6 border-b border-gray-200 dark:border-gray-800">
