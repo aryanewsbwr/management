@@ -119,10 +119,6 @@ export default function Navbar({
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-gray-950 dark:text-white font-hindi leading-tight">
                   {lang === 'hi' ? AGENCY_INFO.nameHi : AGENCY_INFO.nameEn}
                 </h1>
-                <span className="hidden md:inline-flex items-center gap-0.5 bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800">
-                  <ShieldCheck className="w-3 h-3 text-red-600" />
-                  वेरिफाइड
-                </span>
               </div>
               <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 font-medium">
                 {lang === 'hi' ? AGENCY_INFO.taglineHi : AGENCY_INFO.taglineEn}

@@ -12,8 +12,8 @@ export const CATEGORIES = [
 export const AGENCY_INFO = {
   nameHi: 'आर्यन न्यूज़ एजेंसी',
   nameEn: 'Aryan News Agency',
-  taglineHi: 'ब्यावर का सर्वाधिक विश्वसनीय डिजिटल न्यूज़ नेटवर्क',
-  taglineEn: 'Beawar\'s Most Trusted Digital News Network',
+  taglineHi: 'ब्यावर की ताज़ा खबरें',
+  taglineEn: 'Latest News of Beawar',
   address: 'नेताजी सुभाष मार्ग, पारस कॉलोनी, पुराने बस स्टैंड के पास, ब्यावर - 305901 (राजस्थान)',
   phonePrimary: '+91 98875-00875',
   phoneLandline: '01462-258949',

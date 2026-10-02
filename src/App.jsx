@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import BreakingTicker from './components/BreakingTicker';
-import McxTicker from './components/McxTicker';
+import BullionTicker from './components/BullionTicker';
 import WebStories from './components/WebStories';
 import HeroMixedSection from './components/HeroMixedSection';
 import CategorySection from './components/CategorySection';
@@ -10,6 +10,7 @@ import ArticleModal from './components/ArticleModal';
 import QuickReadModal from './components/QuickReadModal';
 import SubmitNewsModal from './components/SubmitNewsModal';
 import BookmarksModal from './components/BookmarksModal';
+import LegalModal from './components/LegalModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import Footer from './components/Footer';
 import AdminPanel from './pages/AdminPanel';
@@ -42,8 +43,9 @@ export default function App() {
   // 1. Core States
   const [articles, setArticles] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
-  const [mcxData, setMcxData] = useState({ enabled: false, items: [] });
+  const [bullionData, setBullionData] = useState({ rates: [], lastUpdatedAt: null });
   const [ads, setAds] = useState([]);
+  const [legalModal, setLegalModal] = useState({ isOpen: false, page: 'about' });
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(getInitialCategory);
   const [isApiNewsEnabled, setIsApiNewsEnabled] = useState(StorageService.getApiNewsEnabledSync);
@@ -69,17 +71,17 @@ export default function App() {
   // 4. Load Database Data (Custom Articles, Breaking News, Site Settings)
   const loadDatabaseData = async () => {
     try {
-      const [customArticles, bn, apiEnabled, mcx, loadedAds] = await Promise.all([
+      const [customArticles, bn, apiEnabled, bullionRes, loadedAds] = await Promise.all([
         StorageService.fetchCustomArticles().then(list => list.filter(a => !a.isHidden)),
         StorageService.fetchBreakingNews(),
         StorageService.fetchApiNewsEnabled(),
-        StorageService.fetchMcxData(),
+        StorageService.fetchBullionRates(),
         StorageService.fetchAdvertisements()
       ]);
 
       setIsApiNewsEnabled(apiEnabled);
-      if (mcx && typeof mcx === 'object') {
-        setMcxData(mcx);
+      if (bullionRes && bullionRes.rates) {
+        setBullionData(bullionRes);
       }
       if (loadedAds && Array.isArray(loadedAds)) {
         setAds(loadedAds.filter(a => a.isActive));
@@ -510,8 +512,8 @@ export default function App() {
         </div>
       )}
 
-      {/* MCX LIVE COMMODITY TICKER */}
-      {mcxData.enabled && <McxTicker enabled={mcxData.enabled} />}
+      {/* 1. BEAWAR SARRAFA BHAV (LOCAL BULLION RATES TICKER) */}
+      <BullionTicker rates={bullionData.rates} lastUpdatedAt={bullionData.lastUpdatedAt} />
 
       {/* 2. BREAKING NEWS LIVE FLASH TICKER */}
       <BreakingTicker
@@ -826,6 +828,7 @@ export default function App() {
       <Footer
         onSelectCategory={handleSelectCategory}
         onOpenSubmitNews={() => setIsSubmitNewsOpen(true)}
+        onOpenLegal={(page) => setLegalModal({ isOpen: true, page })}
         lang={lang}
       />
 
@@ -884,6 +887,13 @@ export default function App() {
         onPlayTTS={handlePlayTTS}
         currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
         onToggleBookmark={handleToggleBookmark}
+      />
+
+      {/* 5. Legal & Policies Modal (/about, /grievance, /terms, /privacy) */}
+      <LegalModal
+        isOpen={legalModal.isOpen}
+        onClose={() => setLegalModal(prev => ({ ...prev, isOpen: false }))}
+        page={legalModal.page}
       />
 
     </div>

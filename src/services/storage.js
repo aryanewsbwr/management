@@ -276,33 +276,67 @@ export const StorageService = {
     return true;
   },
 
-  // Upload single media file (Image or Video) to Cloudinary
+  // Upload single media file (Image or Video) to Cloudinary via secure server signature
   async uploadArticleMedia(file) {
     if (!file) throw new Error('No file provided');
 
     // Security: Strict validation before sending to Cloudinary
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB limit
     if (file.size > MAX_FILE_SIZE) {
-      throw new Error('à¤«à¤¼à¤¾à¤‡à¤² à¤¬à¤¹à¥ à¤¤ à¤¬à¤¡à¤¼à¥€ à¤¹à¥ˆ! à¤…à¤§à¤¿à¤•à¤¤à¤® à¤¸à¤¾à¤‡à¤œà¤¼ 50MB à¤¹à¥ˆà¥¤ (File too large. Max 50MB)');
+      throw new Error('फ़ाइल बहुत बड़ी है! अधिकतम साइज़ 50MB है। (File too large. Max 50MB)');
     }
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime'];
     if (!allowedTypes.includes(file.type)) {
-      throw new Error('à¤…à¤®à¤¾à¤¨à¥ à¤¯ à¤«à¤¼à¤¾à¤‡à¤² à¤«à¥‰à¤°à¥ à¤®à¥‡à¤Ÿ! à¤•à¥‡à¤µà¤² JPG, PNG, WEBP, GIF, MP4, WEBM à¤”à¤° MOV à¤®à¤¾à¤¨à¥ à¤¯ à¤¹à¥ˆà¤‚à¥¤');
+      throw new Error('अमान्य फ़ाइल फॉर्मेट! केवल JPG, PNG, WEBP, GIF, MP4, WEBM और MOV मान्य हैं।');
     }
 
     const isVideo = file.type && file.type.startsWith('video/');
-    
-    // Cloudinary Unsigned Upload Configuration
-    const cloudName = 'vxlbrcgx';
-    const uploadPreset = 'aryan_news';
-    
+    const resourceType = isVideo ? 'video' : 'image';
+
+    // 1. Request signed upload signature from Vercel serverless function
+    let signData = null;
+    try {
+      let token = null;
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        token = session?.access_token;
+      }
+
+      if (token) {
+        const sigRes = await fetch('/api/upload-signature', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (sigRes.ok) {
+          signData = await sigRes.json();
+        }
+      }
+    } catch (sigErr) {
+      console.warn('[StorageService] Signed signature request fallback notice:', sigErr.message);
+    }
+
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    
-    const resourceType = isVideo ? 'video' : 'image';
-    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+
+    let endpoint = '';
+    if (signData && signData.signature) {
+      // Secure Signed Upload
+      formData.append('api_key', signData.apiKey);
+      formData.append('timestamp', signData.timestamp);
+      formData.append('signature', signData.signature);
+      formData.append('folder', signData.folder || 'arya_news');
+      endpoint = `https://api.cloudinary.com/v1_1/${signData.cloudName}/${resourceType}/upload`;
+    } else {
+      // Fallback unsigned configuration if local dev or signing unavailable
+      const cloudName = 'vxlbrcgx';
+      formData.append('upload_preset', 'aryan_news');
+      endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+    }
 
     try {
       const response = await fetch(endpoint, {
@@ -374,50 +408,57 @@ export const StorageService = {
     return isEnabled;
   },
 
-  
-  async fetchMcxData() {
-    let result = { 
-      enabled: localStorage.getItem('arya_mcx_enabled') !== 'false', 
-      items: [] 
-    };
-    if (!isSupabaseConfigured || !supabase) return result;
+  // ==========================================
+  // 3.4 BEAWAR SARRAFA BHAV (Bullion Rates)
+  // ==========================================
+  async fetchBullionRates() {
+    const DEFAULT_RATES = [
+      { id: 'gold_24k', item: '24K सोना (Gold 24K)', unit: '10 ग्राम', price: '78,500' },
+      { id: 'gold_22k', item: '22K सोना (Gold 22K)', unit: '10 ग्राम', price: '72,000' },
+      { id: 'gold_18k', item: '18K सोना (Gold 18K)', unit: '10 ग्राम', price: '59,000' },
+      { id: 'silver_1kg', item: 'चांदी (Silver 999)', unit: '1 किलो', price: '93,000' },
+      { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '9,300' }
+    ];
+
+    if (!isSupabaseConfigured || !supabase) {
+      return { rates: DEFAULT_RATES, lastUpdatedAt: null };
+    }
+
     try {
       const { data, error } = await supabase
-        .from('articles')
-        .select('title_hi, content_hi')
-        .eq('id', 'setting-mcx-data')
-        .maybeSingle();
-      if (!error && data) {
-        result.enabled = data.title_hi === 'enabled';
-        localStorage.setItem('arya_mcx_enabled', result.enabled ? 'true' : 'false');
-        if (data.content_hi) {
-          try { result.items = JSON.parse(data.content_hi); } catch(e){}
-        }
+        .from('bullion_rates')
+        .select('*')
+        .order('id');
+
+      if (!error && data && data.length > 0) {
+        // Find latest updated_at
+        const timestamps = data.map(d => new Date(d.updated_at).getTime()).filter(t => !isNaN(t));
+        const latestTime = timestamps.length > 0 ? new Date(Math.max(...timestamps)).toISOString() : null;
+        return { rates: data, lastUpdatedAt: latestTime };
       }
-    } catch (err) {}
-    return result;
+    } catch (err) {
+      console.warn('[StorageService] fetchBullionRates notice:', err.message);
+    }
+
+    return { rates: DEFAULT_RATES, lastUpdatedAt: null };
   },
 
-  async saveMcxData(enabled, items) {
-    localStorage.setItem('arya_mcx_enabled', enabled ? 'true' : 'false');
+  async saveBullionRates(ratesArray) {
     if (!isSupabaseConfigured || !supabase) throw new Error('Supabase credentials not configured.');
-    const record = {
-      id: 'setting-mcx-data',
-      title_hi: enabled ? 'enabled' : 'disabled',
-      title_en: enabled ? 'enabled' : 'disabled',
-      summary_hi: 'System Setting for MCX Ticker',
-      summary_en: 'System Setting for MCX Ticker',
-      content_hi: JSON.stringify(items || []),
-      content_en: 'MCX Data JSON',
-      category: '_system',
-      image: null,
-      published_at: new Date().toISOString(),
-      author: 'system',
-      views: 0,
-      updated_at: new Date().toISOString()
-    };
-    const { error } = await supabase.from('articles').upsert(record);
+    if (!Array.isArray(ratesArray) || ratesArray.length === 0) return;
+
+    const now = new Date().toISOString();
+    const rows = ratesArray.map(r => ({
+      id: r.id || r.item.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+      item: r.item,
+      unit: r.unit,
+      price: r.price,
+      updated_at: now
+    }));
+
+    const { error } = await supabase.from('bullion_rates').upsert(rows);
     if (error) throw error;
+    return rows;
   },
 
   // ==========================================

@@ -76,12 +76,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [isAdSubmitting, setIsAdSubmitting] = useState(false);
   const [isAdMediaUploading, setIsAdMediaUploading] = useState(false);
 
-  const [mcxEnabled, setMcxEnabled] = useState(false);
-  const [mcxItems, setMcxItems] = useState([]);
-  const [newMcxSymbol, setNewMcxSymbol] = useState('');
-  const [newMcxDate, setNewMcxDate] = useState('');
-  const [newMcxPrice, setNewMcxPrice] = useState('');
-  const [newMcxChange, setNewMcxChange] = useState('');
+  const [bullionRates, setBullionRates] = useState([
+    { id: 'gold_24k', item: '24K सोना (Gold 24K)', unit: '10 ग्राम', price: '78,500' },
+    { id: 'gold_22k', item: '22K सोना (Gold 22K)', unit: '10 ग्राम', price: '72,000' },
+    { id: 'gold_18k', item: '18K सोना (Gold 18K)', unit: '10 ग्राम', price: '59,000' },
+    { id: 'silver_1kg', item: 'चांदी (Silver 999)', unit: '1 किलो', price: '93,000' },
+    { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '9,300' }
+  ]);
+  const [bullionLastUpdated, setBullionLastUpdated] = useState(null);
+  const [isBullionSaving, setIsBullionSaving] = useState(false);
 
   const [newTicker, setNewTicker] = useState('');
 
@@ -162,38 +165,24 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     }
   };
 
-  const handleAddMcx = async (e) => {
+  const handleSaveBullionRates = async (e) => {
     e.preventDefault();
-    if (!newMcxSymbol || !newMcxPrice) return;
-    const newItem = {
-      symbol: newMcxSymbol.toUpperCase(),
-      date: newMcxDate.toUpperCase(),
-      price: newMcxPrice,
-      change: newMcxChange
-    };
-    const updated = [newItem, ...mcxItems];
+    setIsBullionSaving(true);
     try {
-      await StorageService.saveMcxData(mcxEnabled, updated);
-      setMcxItems(updated);
-      setNewMcxSymbol(''); setNewMcxDate(''); setNewMcxPrice(''); setNewMcxChange('');
-    } catch(err) { alert(err.message); }
+      await StorageService.saveBullionRates(bullionRates);
+      const res = await StorageService.fetchBullionRates();
+      setBullionRates(res.rates);
+      setBullionLastUpdated(res.lastUpdatedAt);
+      alert('ब्यावर सर्राफा भाव सफलतापूर्वक अपडेट हो चुके हैं!');
+    } catch (err) {
+      alert(err.message || 'Error saving bullion rates');
+    } finally {
+      setIsBullionSaving(false);
+    }
   };
 
-  const handleDeleteMcx = async (idx) => {
-    if (!window.confirm('Delete this MCX item?')) return;
-    const updated = mcxItems.filter((_, i) => i !== idx);
-    try {
-      await StorageService.saveMcxData(mcxEnabled, updated);
-      setMcxItems(updated);
-    } catch(err) { alert(err.message); }
-  };
-
-  const handleToggleMcxStatus = async () => {
-    const nextState = !mcxEnabled;
-    try {
-      await StorageService.saveMcxData(nextState, mcxItems);
-      setMcxEnabled(nextState);
-    } catch(err) { alert(err.message); }
+  const handleBullionPriceChange = (id, newPrice) => {
+    setBullionRates(prev => prev.map(r => r.id === id ? { ...r, price: newPrice } : r));
   };
 
   // Check existing Supabase auth session
@@ -228,16 +217,16 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       const [customArticles, bn, mcxRes, apiNewsStatus, ads] = await Promise.all([
         StorageService.fetchCustomArticles(),
         StorageService.fetchBreakingNews(),
-        StorageService.fetchMcxData(),
+        StorageService.fetchBullionRates(),
         StorageService.fetchApiNewsEnabled(),
         StorageService.fetchAdvertisements()
       ]);
       setAdsList(ads || []);
       setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
       setBreakingNews(bn || []);
-      if (mcxRes && typeof mcxRes === 'object') {
-        setMcxEnabled(mcxRes.enabled || false);
-        setMcxItems(mcxRes.items || []);
+      if (mcxRes && mcxRes.rates) {
+        setBullionRates(mcxRes.rates);
+        setBullionLastUpdated(mcxRes.lastUpdatedAt);
       }
 
       setIsApiNewsEnabled(apiNewsStatus);
@@ -881,15 +870,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
             <span>⚡ ब्रेकिंग न्यूज़ टिकर</span>
           </button>
           <button
-            onClick={() => setActiveTab('mcx')}
+            onClick={() => setActiveTab('bullion')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition ${
-              activeTab === 'mcx'
+              activeTab === 'bullion'
                 ? 'bg-red-600 text-white shadow-md shadow-red-500/30'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            <TrendingUp className="w-4 h-4" />
-            <span>📈 MCX (Gold/Silver)</span>
+            <TrendingUp className="w-4 h-4 text-amber-300" />
+            <span>🪙 ब्यावर सर्राफा भाव</span>
           </button>
 
           <button
@@ -1584,86 +1573,78 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         )}
 
         {/* ==================================================== */}
-        {/* 5. MCX MANAGER */}
+        
         {/* ==================================================== */}
-        {activeTab === 'mcx' && (
+        {/* 5. BEAWAR SARRAFA BHAV (BULLION RATES MANAGER) */}
+        {/* ==================================================== */}
+        {activeTab === 'bullion' && (
           <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-gray-100 dark:border-gray-800 gap-4">
               <div>
+                <div className="flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider mb-1">
+                  <span>🪙 ब्यावर स्थानीय बाजार</span>
+                </div>
                 <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
-                  📈 MCX / Bullion Market (सोना-चांदी भाव)
+                  🪙 ब्यावर सर्राफा भाव प्रबंधन (Bullion Rates)
                 </h3>
                 <p className="text-xs text-gray-500 mt-1">
-                  Manage MCX rates here. Turn on the switch to display the animated ticker on the website.
+                  आज के स्थानीय सोने व चांदी के भाव यहाँ अपडेट करें। यह सीधे वेबसाइट के शीर्ष टिकर पर अपडेटेड समय के साथ प्रदर्शित होगा।
                 </p>
               </div>
-              
-              <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-2 pr-4 rounded-full border border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={handleToggleMcxStatus}
-                  className={`w-12 h-6 rounded-full transition-colors relative shadow-inner ${mcxEnabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-                >
-                  <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${mcxEnabled ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                </button>
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                  {mcxEnabled ? 'Ticker is Live' : 'Ticker is Hidden'}
-                </span>
-              </div>
-            </div>
 
-            <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800 flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-emerald-600 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">Automated Live Feed Connected</h4>
-                <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
-                  The MCX ticker is securely connected to your live API endpoint. Market prices are updated automatically. You only need to use the toggle switch above to show or hide the ticker on the website.
-                </p>
-              </div>
-            </div>
-            
-            {/* Hidden Manual Input Form */}
-<form onSubmit={handleAddMcx} className="hidden gap-2 mb-6 bg-gray-50 dark:bg-gray-850 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
-              <input
-                type="text" required value={newMcxSymbol} onChange={e=>setNewMcxSymbol(e.target.value)}
-                placeholder="Symbol (e.g. GOLD)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm font-bold uppercase"
-              />
-              <input
-                type="text" value={newMcxDate} onChange={e=>setNewMcxDate(e.target.value)}
-                placeholder="Date (04DEC2026)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm uppercase"
-              />
-              <input
-                type="text" required value={newMcxPrice} onChange={e=>setNewMcxPrice(e.target.value)}
-                placeholder="Price (150250.00)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm font-mono font-bold text-red-600 dark:text-red-400"
-              />
-              <input
-                type="text" value={newMcxChange} onChange={e=>setNewMcxChange(e.target.value)}
-                placeholder="Change (-0.09%)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm font-mono text-gray-600"
-              />
-              <button type="submit" className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-6 py-2 rounded-xl shrink-0">
-                + Add
-              </button>
-            </form>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {mcxItems.map((item, idx) => (
-                <div key={idx} className="relative group bg-[#0f172a] border border-[#1e293b] rounded-xl p-3 shadow-sm hover:border-gray-500 transition">
-                  <button onClick={() => handleDeleteMcx(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition shadow">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-bold text-gray-300 tracking-wider">{item.symbol}</span>
-                    <span className="text-[9px] text-gray-500">{item.date}</span>
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-sm font-bold text-red-500 font-mono">{item.price}</span>
-                    <span className="text-[10px] text-red-400 font-mono">{item.change}</span>
-                  </div>
+              {bullionLastUpdated && (
+                <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-3 py-2 rounded-2xl text-xs text-amber-800 dark:text-amber-300 font-mono flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                  <span>अंतिम अपडेट: {new Date(bullionLastUpdated).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                 </div>
-              ))}
-              {mcxItems.length === 0 && <p className="col-span-full text-center py-4 text-xs text-gray-400">Live API data will automatically appear on the website.</p>}
+              )}
             </div>
+
+            <form onSubmit={handleSaveBullionRates} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {bullionRates.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="p-4 bg-gray-50 dark:bg-gray-850 rounded-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <h4 className="text-sm font-bold font-hindi text-gray-900 dark:text-white">
+                        {item.item}
+                      </h4>
+                      <span className="text-xs text-gray-400 font-hindi">
+                        इकाई: {item.unit}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-sm font-bold text-gray-500">₹</span>
+                      <input
+                        type="text"
+                        required
+                        value={item.price}
+                        onChange={(e) => handleBullionPriceChange(item.id, e.target.value)}
+                        placeholder="78,500"
+                        className="w-28 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-sm font-mono font-black text-amber-600 dark:text-amber-400 text-right"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isBullionSaving}
+                  className="px-8 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black text-sm rounded-xl shadow-md transition active:scale-95 flex items-center gap-2"
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  <span>{isBullionSaving ? 'सेव हो रहा है...' : '💾 आज के भाव सेव व अपडेट करें'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         )}
+
 
 
         {/* ==================================================== */}

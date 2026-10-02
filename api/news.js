@@ -1,56 +1,41 @@
 import { XMLParser } from 'fast-xml-parser';
 
 const FEEDS = [
-  // 1. Rajasthan State News (Dedicated verified feed)
-  {
-    category: 'rajasthan',
-    sourceName: 'अमर उजाला (राजस्थान)',
-    url: 'https://www.amarujala.com/rss/rajasthan.xml'
-  },
-  // 2. Pure Entertainment & Cinema (Dedicated verified feed)
-  {
-    category: 'entertainment',
-    sourceName: 'अमर उजाला (मनोरंजन)',
-    url: 'https://www.amarujala.com/rss/entertainment.xml'
-  },
-  // 3. Sports & Games (Dedicated verified feeds)
-  {
-    category: 'sports',
-    sourceName: 'अमर उजाला (खेल)',
-    url: 'https://www.amarujala.com/rss/sports.xml'
-  },
+  // 1. Sports (Dainik Bhaskar)
   {
     category: 'sports',
     sourceName: 'दैनिक भास्कर (स्पोर्ट्स)',
     url: 'https://www.bhaskar.com/rss-v1--category-1053.xml'
   },
-  // 4. Business & Economy (Dedicated verified feeds)
-  {
-    category: 'business',
-    sourceName: 'अमर उजाला (कारोबार)',
-    url: 'https://www.amarujala.com/rss/business.xml'
-  },
+  // 2. Business & Economy (Dainik Bhaskar)
   {
     category: 'business',
     sourceName: 'दैनिक भास्कर (बिजनेस)',
     url: 'https://www.bhaskar.com/rss-v1--category-1051.xml'
   },
-  // 5. Crime & Police (Dedicated verified feed)
-  {
-    category: 'crime',
-    sourceName: 'अमर उजाला (क्राइम)',
-    url: 'https://www.amarujala.com/rss/crime.xml'
-  },
-  // 6. National & World News (Dedicated verified feeds)
+  // 3. National & World News (Dainik Bhaskar)
   {
     category: 'national',
     sourceName: 'दैनिक भास्कर (देश)',
     url: 'https://www.bhaskar.com/rss-v1--category-1061.xml'
   },
+  // 4. International & National (BBC Hindi)
   {
     category: 'national',
     sourceName: 'बीबीसी हिंदी',
     url: 'https://feeds.bbci.co.uk/hindi/rss.xml'
+  },
+  // 5. Entertainment (Dainik Bhaskar Cinema)
+  {
+    category: 'entertainment',
+    sourceName: 'दैनिक भास्कर (मनोरंजन)',
+    url: 'https://www.bhaskar.com/rss-v1--category-1054.xml'
+  },
+  // 6. Rajasthan State (Dainik Bhaskar Rajasthan)
+  {
+    category: 'rajasthan',
+    sourceName: 'दैनिक भास्कर (राजस्थान)',
+    url: 'https://www.bhaskar.com/rss-v1--category-1049.xml'
   }
 ];
 
@@ -69,15 +54,13 @@ function cleanHtml(str = '') {
 }
 
 function detectCategory(title = '', desc = '', feedCategory = 'national') {
-  // 1. Dedicated feeds (rajasthan, entertainment, sports, business, crime) MUST NEVER be overridden
   if (['rajasthan', 'entertainment', 'sports', 'business', 'crime'].includes(feedCategory)) {
     return feedCategory;
   }
 
   const text = (title + ' ' + desc).toLowerCase();
 
-  // 2. High-confidence Rajasthan state news from national feeds
-  if (/राजस्थान में|जयपुर में|जोधपुर में|अजमेर में|ब्यावर में|कोटा में|उदयपुर में|भीलवाड़ा में|भजनलाल शर्मा|राजस्थान पुलिस|राजस्थान सरकार|अशोक गहलोत|वसुंधरा राजे/i.test(text)) {
+  if (/राजस्थान|जयपुर|जोधपुर|अजमेर|ब्यावर|कोटा|उदयपुर|भीलवाड़ा|भजनलाल शर्मा|राजस्थान पुलिस/i.test(text)) {
     return 'rajasthan';
   }
 
@@ -128,7 +111,6 @@ async function parseFeed(feedConfig, feedIndex) {
         pubDate = new Date().toISOString();
       }
 
-      // Short summary (~180 chars max) - no full body text per client rule
       const shortSummary = cleanDesc.length > 180 
         ? cleanDesc.slice(0, 180).trim() + '...' 
         : (cleanDesc || cleanTitle);
@@ -159,9 +141,34 @@ async function parseFeed(feedConfig, feedIndex) {
   }
 }
 
+// Check kill switch from Supabase
+async function isKillSwitchActive() {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) return false;
+
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/articles?id=eq.setting-api-news-status&select=title_hi`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0].title_hi === 'disabled';
+    }
+  } catch (e) {
+    console.warn('Kill switch check error in api/news:', e.message);
+  }
+  return false;
+}
+
 export default async function handler(req, res) {
-  // Edge caching for 10-15 minutes on Vercel CDN
-  res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=300');
+  // Edge caching on Vercel CDN
+  res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=120');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
@@ -170,6 +177,18 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Check Kill Switch Setting
+    const isKilled = await isKillSwitchActive();
+    if (isKilled) {
+      return res.status(200).json({
+        status: 'disabled',
+        message: 'Live API syndication is currently disabled by administrator kill switch.',
+        count: 0,
+        updatedAt: new Date().toISOString(),
+        articles: []
+      });
+    }
+
     const promises = FEEDS.map((feed, idx) => parseFeed(feed, idx));
     const settled = await Promise.allSettled(promises);
 
