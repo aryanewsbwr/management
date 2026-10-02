@@ -1,7 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function McxTicker({ items = [] }) {
-  if (!items || items.length === 0) return null;
+export default function McxTicker({ enabled = false }) {
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    
+    const fetchMcx = async () => {
+      try {
+        const res = await fetch('/api/mcx');
+        const json = await res.json();
+        if (json.success && json.data) {
+          setItems(json.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch live MCX data', err);
+      }
+    };
+
+    fetchMcx();
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchMcx, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [enabled]);
+
+  if (!enabled || items.length === 0) return null;
 
   return (
     <div className="w-full bg-[#040f25] border-b border-[#1e293b] py-2 overflow-hidden relative">

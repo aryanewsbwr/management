@@ -1508,7 +1508,18 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
               </div>
             </div>
 
-            <form onSubmit={handleAddMcx} className="flex flex-wrap gap-2 mb-6 bg-gray-50 dark:bg-gray-850 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
+            <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800 flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-emerald-600 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">Automated Live Feed Connected</h4>
+                <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
+                  The MCX ticker is securely connected to your live API endpoint. Market prices are updated automatically. You only need to use the toggle switch above to show or hide the ticker on the website.
+                </p>
+              </div>
+            </div>
+            
+            {/* Hidden Manual Input Form */}
+<form onSubmit={handleAddMcx} className="hidden gap-2 mb-6 bg-gray-50 dark:bg-gray-850 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
               <input
                 type="text" required value={newMcxSymbol} onChange={e=>setNewMcxSymbol(e.target.value)}
                 placeholder="Symbol (e.g. GOLD)" className="flex-1 min-w-[120px] px-4 py-2 border rounded-xl dark:bg-gray-800 text-sm font-bold uppercase"
@@ -1546,7 +1557,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   </div>
                 </div>
               ))}
-              {mcxItems.length === 0 && <p className="col-span-full text-center py-4 text-xs text-gray-400">No MCX data added yet.</p>}
+              {mcxItems.length === 0 && <p className="col-span-full text-center py-4 text-xs text-gray-400">Live API data will automatically appear on the website.</p>}
             </div>
           </div>
         )}

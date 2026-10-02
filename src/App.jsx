@@ -490,7 +490,7 @@ export default function App() {
         onRefreshLiveNews={() => loadLiveFeeds(true)}
         liveCount={articles.filter(a => a.isLiveFeed).length}
       />
-        {mcxData.enabled && <McxTicker items={mcxData.items} />}
+        {mcxData.enabled && <McxTicker enabled={mcxData.enabled} />}
 
       {/* Floating Live Update Notification Toast */}
       {liveUpdateToast && (
