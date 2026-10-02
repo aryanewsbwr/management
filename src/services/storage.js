@@ -408,7 +408,7 @@ export const StorageService = {
       image: null,
       published_at: new Date().toISOString(),
       author: 'system',
-      original_url: null,
+      
       views: 0
     };
     const { error } = await supabase.from('articles').upsert(record);
