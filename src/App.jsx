@@ -40,12 +40,26 @@ export default function App() {
     return 'all';
   };
 
+  // Helper to determine initial legal modal from URL (/about, /grievance, /terms, /privacy)
+  const getInitialLegalModal = () => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      for (const page of ['about', 'grievance', 'terms', 'privacy']) {
+        if (path.includes(page) || hash.includes(page)) {
+          return { isOpen: true, page };
+        }
+      }
+    }
+    return { isOpen: false, page: 'about' };
+  };
+
   // 1. Core States
   const [articles, setArticles] = useState([]);
   const [breakingNews, setBreakingNews] = useState([]);
   const [bullionData, setBullionData] = useState({ rates: [], lastUpdatedAt: null, enabled: true });
   const [ads, setAds] = useState([]);
-  const [legalModal, setLegalModal] = useState({ isOpen: false, page: 'about' });
+  const [legalModal, setLegalModal] = useState(getInitialLegalModal);
   const [bookmarks, setBookmarks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(getInitialCategory);
   const [isApiNewsEnabled, setIsApiNewsEnabled] = useState(StorageService.getApiNewsEnabledSync);
