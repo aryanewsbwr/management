@@ -52,7 +52,7 @@ export default function McxTicker({ enabled = false }) {
     };
 
     fetchMcx();
-    const interval = setInterval(fetchMcx, 5 * 60 * 1000);
+    const interval = setInterval(fetchMcx, 30 * 1000); // Live poll every 30 seconds
     return () => clearInterval(interval);
   }, [enabled]);
 
@@ -65,8 +65,13 @@ export default function McxTicker({ enabled = false }) {
     <div className="w-full bg-[#040f25] border-b border-[#1e293b] py-2 overflow-hidden relative select-none">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 flex items-center">
         
-        {/* Interactive Tab Switcher */}
+        {/* Interactive Tab Switcher & Live Indicator */}
         <div className="flex items-center gap-2 sm:gap-4 pr-3 sm:pr-5 border-r border-[#1e293b] shrink-0 mr-2 sm:mr-3">
+          <div className="flex items-center gap-1.5 mr-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Live</span>
+          </div>
+
           <button
             onClick={() => setActiveTab('futures')}
             className={`text-xs font-bold transition-all py-1 px-1.5 sm:px-2 rounded-md ${
