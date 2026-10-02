@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import { BarChart2, 
   Lock, User, Key, Eye, EyeOff, ShieldCheck, CheckCircle2, 
   AlertCircle, Upload, Image as ImageIcon, Trash2, ExternalLink, 
   LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save,

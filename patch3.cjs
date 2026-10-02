@@ -1,7 +1,0 @@
-const fs = require('fs');
-let c = fs.readFileSync('src/pages/AdminPanel.jsx', 'utf8');
-c = c.replace(
-  '                {/* 3. Media Caption */}',
-  '                {videoPreviewUrl && (\n                  <div className="flex gap-4 p-4 mt-2 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">\n                    <div className="flex-1">\n                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">\n                        ?? Trim Start (seconds)\n                      </label>\n                      <input type="number" step="0.1" min="0" value={videoTrimStart} onChange={e => setVideoTrimStart(e.target.value)} className="w-full px-3 py-1.5 rounded-lg border text-sm" placeholder="e.g. 5.5" />\n                    </div>\n                    <div className="flex-1">\n                      <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">\n                        ?? Trim End (seconds)\n                      </label>\n                      <input type="number" step="0.1" min="0" value={videoTrimEnd} onChange={e => setVideoTrimEnd(e.target.value)} className="w-full px-3 py-1.5 rounded-lg border text-sm" placeholder="e.g. 15.2" />\n                    </div>\n                  </div>\n                )}\n                {/* 3. Media Caption */}'
-);
-fs.writeFileSync('src/pages/AdminPanel.jsx', c);
