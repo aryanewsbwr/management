@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import BreakingTicker from './components/BreakingTicker';
 import BullionTicker from './components/BullionTicker';
-import WebStories from './components/WebStories';
 import HeroMixedSection from './components/HeroMixedSection';
 import EditorialMagazineGrid from './components/EditorialMagazineGrid';
 import CategorySection from './components/CategorySection';
@@ -745,12 +744,6 @@ export default function App() {
             <AdvertisementCard 
               ad={ads.find(a => a.placements?.includes('banner') || a.placement === 'banner' || a.placement === 'all')} 
               layout="banner" 
-            />
-
-            {/* 3. WEB STORIES (Interactive Category Stories) */}
-            <WebStories 
-              articles={articles} 
-              onOpenArticle={handleOpenArticle} 
             />
 
             {/* OTHER SECTIONS (Visible when API news is enabled) */}
