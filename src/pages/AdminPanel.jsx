@@ -68,6 +68,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [breakingNews, setBreakingNews] = useState([]);
   // Advertisements Management States
   const [adsList, setAdsList] = useState([]);
+  const [editingAd, setEditingAd] = useState(null);
   const [adBusinessName, setAdBusinessName] = useState('');
   const [adAbout, setAdAbout] = useState('');
   const [adMediaUrl, setAdMediaUrl] = useState('');
@@ -110,6 +111,64 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [newTicker, setNewTicker] = useState('');
 
   // ADVERTISEMENT HANDLERS
+  const handleStartEditAd = (ad) => {
+    setEditingAd(ad);
+    setAdBusinessName(ad.businessName || '');
+    setAdAbout(ad.about || '');
+    setAdMediaUrl(ad.mediaUrl || '');
+    setAdMediaType(ad.mediaType || 'image');
+    setAdDisplayStyle(ad.displayStyle || 'poster');
+    
+    setAdDuration(ad.duration || '7d');
+    setAdCustomDays(ad.customDays || '3');
+
+    const placements = ad.placements || (ad.placement ? (ad.placement === 'all' ? ['banner', 'feed', 'article'] : ad.placement.split(',')) : ['banner', 'feed', 'article']);
+    setAdPlacementBanner(placements.includes('banner'));
+    setAdPlacementFeed(placements.includes('feed'));
+    setAdPlacementArticle(placements.includes('article'));
+
+    const actions = ad.actions && ad.actions.length > 0 
+      ? ad.actions 
+      : (ad.actionType ? [{ type: ad.actionType, target: ad.actionTarget }] : []);
+    
+    const wa = actions.find(a => a.type === 'whatsapp');
+    setAdEnableWhatsApp(!!wa);
+    setAdWhatsAppNumber(wa ? wa.target : '');
+
+    const cl = actions.find(a => a.type === 'call');
+    setAdEnableCall(!!cl);
+    setAdCallNumber(cl ? cl.target : '');
+
+    const mp = actions.find(a => a.type === 'maps');
+    setAdEnableMaps(!!mp);
+    setAdMapsUrl(mp ? mp.target : '');
+
+    const ws = actions.find(a => a.type === 'website');
+    setAdEnableWebsite(!!ws);
+    setAdWebsiteUrl(ws ? ws.target : '');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEditAd = () => {
+    setEditingAd(null);
+    setAdBusinessName('');
+    setAdAbout('');
+    setAdMediaUrl('');
+    setAdDisplayStyle('poster');
+    setAdEnableWhatsApp(false);
+    setAdWhatsAppNumber('');
+    setAdEnableCall(false);
+    setAdCallNumber('');
+    setAdEnableMaps(false);
+    setAdMapsUrl('');
+    setAdEnableWebsite(false);
+    setAdWebsiteUrl('');
+    setAdPlacementBanner(true);
+    setAdPlacementFeed(true);
+    setAdPlacementArticle(true);
+  };
+
   const handleAdMediaUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -164,7 +223,8 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
     setIsAdSubmitting(true);
     try {
-      const newAd = {
+      const adData = {
+        ...(editingAd ? { id: editingAd.id, createdAt: editingAd.createdAt, views: editingAd.views || 0, clicks: editingAd.clicks || 0 } : {}),
         businessName: adBusinessName.trim(),
         about: adAbout.trim(),
         mediaUrl: adMediaUrl || null,
@@ -177,29 +237,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         placement: placements.length === 3 ? 'all' : placements.join(','),
         duration: adDuration,
         customDays: adCustomDays,
-        isHidden: false
+        isHidden: editingAd ? editingAd.isHidden : false
       };
-      await StorageService.saveAdvertisement(newAd);
+      await StorageService.saveAdvertisement(adData);
       const updated = await StorageService.fetchAdvertisements();
       setAdsList(updated);
       if (onNewsUpdated) onNewsUpdated();
       // Reset form cleanly
-      setAdBusinessName('');
-      setAdAbout('');
-      setAdMediaUrl('');
-      setAdDisplayStyle('poster');
-      setAdEnableWhatsApp(false);
-      setAdWhatsAppNumber('');
-      setAdEnableCall(false);
-      setAdCallNumber('');
-      setAdEnableMaps(false);
-      setAdMapsUrl('');
-      setAdEnableWebsite(false);
-      setAdWebsiteUrl('');
-      setAdPlacementBanner(true);
-      setAdPlacementFeed(true);
-      setAdPlacementArticle(true);
-      alert('विज्ञापन सफलतापूर्वक प्रकाशित कर दिया गया है!');
+      handleCancelEditAd();
+      alert(editingAd ? 'विज्ञापन सफलतापूर्वक अपडेट कर दिया गया है!' : 'विज्ञापन सफलतापूर्वक प्रकाशित कर दिया गया है!');
     } catch (err) {
       alert(err.message || 'Error saving ad');
     } finally {
@@ -2031,13 +2077,51 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   <Megaphone className="w-4 h-4" />
                   <span>लोकल एडवरटाइजिंग इंजन</span>
                 </div>
-                <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
-                  📢 नया विज्ञापन जोड़ें (Create Advertisement)
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  ब्यावर व स्थानीय व्यापारियों के विज्ञापन यहाँ से सीधे वेबसाइट पर शेड्यूल और पब्लिश करें।
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
+                      {editingAd ? '✏️ विज्ञापन संपादित करें (Edit Advertisement)' : '📢 नया विज्ञापन जोड़ें (Create Advertisement)'}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {editingAd 
+                        ? 'विज्ञापन की जानकारी, मीडिया अथवा एक्शन बटन अपडेट करें।' 
+                        : 'ब्यावर व स्थानीय व्यापारियों के विज्ञापन यहाँ से सीधे वेबसाइट पर शेड्यूल और पब्लिश करें।'}
+                    </p>
+                  </div>
+                  {editingAd && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditAd}
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition font-hindi"
+                    >
+                      रद्द करें (Cancel)
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {editingAd && (
+                <div className="mb-6 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 p-4 rounded-2xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                    <Edit3 className="w-5 h-5 text-amber-600 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold font-hindi block">
+                        विज्ञापन संपादन मोड (Editing Mode Active)
+                      </span>
+                      <span className="text-[11px] text-amber-700 dark:text-amber-300">
+                        आप <strong>&quot;{editingAd.businessName}&quot;</strong> के विज्ञापन में बदलाव कर रहे हैं।
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelEditAd}
+                    className="px-3 py-1 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700 shadow-sm"
+                  >
+                    नया विज्ञापन बनाएं
+                  </button>
+                </div>
+              )}
 
               <form onSubmit={handleSaveAd} className="space-y-5">
                 {/* Business Name */}
@@ -2344,15 +2428,28 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                   )}
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 flex flex-wrap items-center gap-3">
                   <button
                     type="submit"
                     disabled={isAdSubmitting || isAdMediaUploading}
                     className="w-full sm:w-auto px-8 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black text-sm rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2"
                   >
                     <Megaphone className="w-4 h-4" />
-                    <span>{isAdSubmitting ? 'विज्ञापन प्रकाशित हो रहा है...' : '🚀 विज्ञापन लाइव प्रकाशित करें'}</span>
+                    <span>
+                      {isAdSubmitting 
+                        ? (editingAd ? 'विज्ञापन अपडेट हो रहा है...' : 'विज्ञापन प्रकाशित हो रहा है...') 
+                        : (editingAd ? '💾 बदलाव सुरक्षित करें (Update Ad)' : '🚀 विज्ञापन लाइव प्रकाशित करें')}
+                    </span>
                   </button>
+                  {editingAd && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditAd}
+                      className="px-5 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold text-sm rounded-xl transition font-hindi"
+                    >
+                      रद्द करें (Cancel)
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
@@ -2449,6 +2546,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
                     {/* Action Controls */}
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-0 border-gray-100 dark:border-gray-800">
+                      <button
+                        onClick={() => handleStartEditAd(ad)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold transition bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5"
+                        title="संपादित करें (Edit)"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>एडिट</span>
+                      </button>
+
                       <button
                         onClick={() => handleToggleAdVisibility(ad)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
