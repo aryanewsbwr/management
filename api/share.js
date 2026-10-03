@@ -7,10 +7,10 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Extract articleId from query (id, article, or fallback parse from url)
-  let articleId = req.query.id || req.query.article;
+  // Extract articleId/adId from query (id, article, ad, or fallback parse from url)
+  let articleId = req.query.id || req.query.article || req.query.ad;
   if (!articleId && req.url) {
-    const match = req.url.match(/(?:\/news\/|[?&](?:article|id)=)([^&#/?]+)/i);
+    const match = req.url.match(/(?:\/(?:news|ad)\/|[?&](?:article|id|ad)=)([^&#/?]+)/i);
     if (match) {
       articleId = decodeURIComponent(match[1]);
     }
@@ -45,23 +45,38 @@ export default async function handler(req, res) {
       }
     }
   } catch (err) {
-    console.error('[api/share] Error fetching article:', err.message);
+    console.error('[api/share] Error fetching article/ad:', err.message);
   }
 
-  const title = article?.title_hi || article?.title_en || 'आर्यन न्यूज़ एजेंसी (ब्यावर)';
-  const rawDesc = article?.summary_hi || article?.content_hi || 'ब्यावर एवं राजस्थान की ताज़ा व विश्वसनीय खबरें।';
+  const isAd = article?.category === '_advertisement' || !!req.query.ad || (req.url && req.url.includes('/ad/'));
+
+  const title = isAd
+    ? `📢 ${article?.title_hi || article?.title_en || 'विशेष विज्ञापन'} - आर्यन न्यूज़ एजेंसी (ब्यावर)`
+    : (article?.title_hi || article?.title_en || 'आर्यन न्यूज़ एजेंसी (ब्यावर)');
+    
+  const rawDesc = article?.summary_hi || (isAd ? 'ब्यावर एवं राजस्थान के प्रमुख व्यापार एवं प्रतिष्ठान का विशेष विज्ञापन।' : article?.content_hi) || 'ब्यावर एवं राजस्थान की ताज़ा व विश्वसनीय खबरें।';
   const description = rawDesc.replace(/\s+/g, ' ').slice(0, 180).trim() + (rawDesc.length > 180 ? '...' : '');
   
   let gallery = null;
   let videoUrl = null;
+  let adMedia = null;
+
   if (article?.content_hi) {
-    const metaMatch = article.content_hi.match(/<!--MEDIA_META:([\s\S]*?)-->/);
-    if (metaMatch) {
+    if (article.category === '_advertisement') {
       try {
-        const parsed = JSON.parse(metaMatch[1]);
+        const parsed = JSON.parse(article.content_hi);
         if (parsed.videoUrl) videoUrl = parsed.videoUrl;
-        if (parsed.gallery) gallery = parsed.gallery;
+        if (parsed.mediaUrl) adMedia = parsed.mediaUrl;
       } catch (e) {}
+    } else {
+      const metaMatch = article.content_hi.match(/<!--MEDIA_META:([\s\S]*?)-->/);
+      if (metaMatch) {
+        try {
+          const parsed = JSON.parse(metaMatch[1]);
+          if (parsed.videoUrl) videoUrl = parsed.videoUrl;
+          if (parsed.gallery) gallery = parsed.gallery;
+        } catch (e) {}
+      }
     }
   }
 
@@ -69,10 +84,14 @@ export default async function handler(req, res) {
   const isBot = /facebookexternalhit|facebot|meta-externalagent|whatsapp|telegrambot|twitterbot|linkedinbot|slackbot|skypeuripreview|discordbot|applebot|bingbot|googlebot|crawler|spider/i.test(userAgent);
 
   const category = article?.category || req.query.category || 'beawar';
-  const targetUrl = `${siteUrl}/?category=${encodeURIComponent(category)}&article=${encodeURIComponent(articleId)}`;
-  const shareCanonicalUrl = `${siteUrl}/news/${encodeURIComponent(articleId)}`;
+  const targetUrl = isAd
+    ? `${siteUrl}/?ad=${encodeURIComponent(articleId)}`
+    : `${siteUrl}/?category=${encodeURIComponent(category)}&article=${encodeURIComponent(articleId)}`;
+  const shareCanonicalUrl = isAd
+    ? `${siteUrl}/ad/${encodeURIComponent(articleId)}`
+    : `${siteUrl}/news/${encodeURIComponent(articleId)}`;
 
-  // If a real human user opens the link directly in their browser, redirect them immediately to the article
+  // If a real human user opens the link directly in their browser, redirect them immediately to the article or ad
   if (!isBot && !req.query.preview) {
     return res.redirect(302, targetUrl);
   }
@@ -81,6 +100,8 @@ export default async function handler(req, res) {
   let image = `${siteUrl}/logo.png`;
   if (article?.image && typeof article.image === 'string' && article.image.startsWith('http') && !article.image.includes('unsplash.com')) {
     image = article.image;
+  } else if (adMedia && typeof adMedia === 'string' && adMedia.startsWith('http')) {
+    image = adMedia;
   } else if (gallery && Array.isArray(gallery) && gallery.length > 0) {
     const validG = gallery.find(g => g && typeof g === 'string' && g.startsWith('http') && !g.includes('unsplash.com'));
     if (validG) image = validG;

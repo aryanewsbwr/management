@@ -304,6 +304,27 @@ export default function App() {
     }
   }, [articles, activeArticle]);
 
+  // Handle Advertisement Deep Link Scroll & Visual Highlight
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const adParam = urlParams.get('ad') || (window.location.pathname.startsWith('/ad/') ? decodeURIComponent(window.location.pathname.replace('/ad/', '').split('/')[0].split('?')[0]) : null);
+
+    if (adParam) {
+      const scrollTimer = setTimeout(() => {
+        const adEl = document.getElementById(`ad-${adParam}`) || document.querySelector('[id^="ad-"]');
+        if (adEl) {
+          adEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          adEl.classList.add('ring-4', 'ring-red-500', 'ring-offset-4', 'transition-all', 'duration-500');
+          setTimeout(() => {
+            adEl.classList.remove('ring-4', 'ring-red-500', 'ring-offset-4');
+          }, 4000);
+        }
+      }, 500);
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [ads]);
+
   const navigateToAdmin = () => {
     window.history.pushState({}, '', '/admin-panel');
     setCurrentRoute('admin');
