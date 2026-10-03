@@ -100,6 +100,12 @@ export default function ArticleModal({
 
   const shareUrl = `https://www.aryannewsagency.com/news/${article.id}`;
 
+  const getFullShareText = () => {
+    const cleanContent = content ? content.replace(/<!--[\s\S]*?-->/g, '').replace(/\s+/g, ' ').trim() : '';
+    const excerpt = cleanContent.length > 250 ? cleanContent.slice(0, 250) + '...' : cleanContent;
+    return `${title}\n\n${excerpt}\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n#AryanNewsAgency #BeawarNews #RajasthanNews`;
+  };
+
   const handleWhatsAppShare = () => {
     const text = `*${title}*\n\n${content ? content.slice(0, 160) + '...' : ''}\n\n👉 पूरी खबर एवं फोटो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
@@ -107,12 +113,22 @@ export default function ArticleModal({
 
   // 1. Facebook Personal Post / Feed / Timeline / Story
   const handleFacebookPersonalShare = () => {
-    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(title)}`;
+    const shareText = getFullShareText();
+    try {
+      navigator.clipboard.writeText(shareText);
+    } catch (e) {}
+
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     window.open(fbUrl, '_blank', 'width=620,height=580,scrollbars=yes,resizable=yes');
   };
 
   // 2. Facebook Page / Group Share
   const handleFacebookPageShare = () => {
+    const shareText = getFullShareText();
+    try {
+      navigator.clipboard.writeText(shareText);
+    } catch (e) {}
+
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     window.open(fbUrl, '_blank', 'width=620,height=580,scrollbars=yes,resizable=yes');
   };
