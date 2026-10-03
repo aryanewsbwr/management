@@ -490,10 +490,10 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
             
             {/* Poster / Flyer Showcase */}
             {ad.mediaUrl && (
-              <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center justify-center">
+              <div className="md:col-span-4 lg:col-span-4 flex items-center justify-center">
                 <div 
                   onClick={() => setZoomedMedia(ad.mediaUrl)}
-                  className="relative w-full max-w-[290px] md:max-w-full bg-slate-50 dark:bg-black/50 rounded-2xl p-2 border-2 border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center overflow-hidden cursor-zoom-in group/poster hover:border-red-500 transition-all duration-300"
+                  className="relative w-fit max-w-full mx-auto rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-md flex items-center justify-center cursor-zoom-in group/poster hover:border-red-500 transition-all duration-300 bg-black/5 dark:bg-black/30"
                 >
                   {ad.mediaType === 'video' ? (
                     <video
@@ -502,13 +502,13 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                       loop
                       muted
                       playsInline
-                      className="w-auto max-h-[340px] sm:max-h-[360px] rounded-xl object-contain shadow"
+                      className="block w-auto max-h-[340px] sm:max-h-[360px] object-contain"
                     />
                   ) : (
                     <img
                       src={ad.mediaUrl}
                       alt={ad.businessName}
-                      className="w-auto max-h-[340px] sm:max-h-[360px] rounded-xl object-contain shadow group-hover/poster:scale-[1.02] transition-transform duration-300"
+                      className="block w-auto max-h-[340px] sm:max-h-[360px] object-contain group-hover/poster:scale-[1.02] transition-transform duration-300"
                     />
                   )}
 
@@ -595,29 +595,31 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
         <div>
           {/* Full Poster / Flyer support with zoom click */}
           {ad.mediaUrl && (
-            <div 
-              onClick={() => setZoomedMedia(ad.mediaUrl)}
-              className="relative w-full mb-2.5 rounded-2xl overflow-hidden bg-slate-50 dark:bg-black/40 border border-gray-200 dark:border-gray-700 p-2 flex items-center justify-center cursor-zoom-in group/feedposter hover:border-red-500 transition"
-            >
-              {ad.mediaType === 'video' ? (
-                <video
-                  src={ad.mediaUrl}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="max-h-[300px] w-auto max-w-full rounded-xl object-contain shadow-sm"
-                />
-              ) : (
-                <img
-                  src={ad.mediaUrl}
-                  alt={ad.businessName}
-                  className="max-h-[300px] w-auto max-w-full rounded-xl object-contain shadow-sm group-hover/feedposter:scale-[1.01] transition duration-300"
-                />
-              )}
-              <div className="absolute bottom-2.5 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20">
-                <Maximize2 className="w-3 h-3 text-amber-300" />
-                <span>ज़ूम करें</span>
+            <div className="flex justify-center mb-2.5">
+              <div 
+                onClick={() => setZoomedMedia(ad.mediaUrl)}
+                className="relative w-fit max-w-full rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm cursor-zoom-in group/feedposter hover:border-red-500 transition bg-black/5 dark:bg-black/30"
+              >
+                {ad.mediaType === 'video' ? (
+                  <video
+                    src={ad.mediaUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="block max-h-[300px] w-auto object-contain"
+                  />
+                ) : (
+                  <img
+                    src={ad.mediaUrl}
+                    alt={ad.businessName}
+                    className="block max-h-[300px] w-auto object-contain group-hover/feedposter:scale-[1.01] transition duration-300"
+                  />
+                )}
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20 whitespace-nowrap">
+                  <Maximize2 className="w-3 h-3 text-amber-300" />
+                  <span>ज़ूम करें</span>
+                </div>
               </div>
             </div>
           )}
@@ -676,29 +678,31 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
 
       <div className="flex flex-col items-center gap-3.5">
         {ad.mediaUrl && (
-          <div 
-            onClick={() => setZoomedMedia(ad.mediaUrl)}
-            className="relative w-full flex justify-center bg-white/80 dark:bg-black/30 p-2 rounded-2xl border border-amber-200/50 dark:border-gray-700 shadow-sm cursor-zoom-in hover:border-red-500 transition group/artposter"
-          >
-            {ad.mediaType === 'video' ? (
-              <video
-                src={ad.mediaUrl}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="max-h-[320px] w-auto max-w-full rounded-xl object-contain shadow"
-              />
-            ) : (
-              <img
-                src={ad.mediaUrl}
-                alt={ad.businessName}
-                className="max-h-[320px] w-auto max-w-full rounded-xl object-contain shadow group-hover/artposter:scale-[1.01] transition duration-300"
-              />
-            )}
-            <div className="absolute bottom-2.5 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20">
-              <Maximize2 className="w-3 h-3 text-amber-300" />
-              <span>बड़ा देखने हेतु क्लिक करें</span>
+          <div className="w-full flex justify-center">
+            <div 
+              onClick={() => setZoomedMedia(ad.mediaUrl)}
+              className="relative w-fit max-w-full rounded-2xl overflow-hidden border border-amber-200 dark:border-gray-700 shadow-sm cursor-zoom-in hover:border-red-500 transition group/artposter bg-black/5 dark:bg-black/30"
+            >
+              {ad.mediaType === 'video' ? (
+                <video
+                  src={ad.mediaUrl}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="block max-h-[320px] w-auto object-contain"
+                />
+              ) : (
+                <img
+                  src={ad.mediaUrl}
+                  alt={ad.businessName}
+                  className="block max-h-[320px] w-auto object-contain group-hover/artposter:scale-[1.01] transition duration-300"
+                />
+              )}
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20 whitespace-nowrap">
+                <Maximize2 className="w-3 h-3 text-amber-300" />
+                <span>बड़ा देखने हेतु क्लिक करें</span>
+              </div>
             </div>
           </div>
         )}
