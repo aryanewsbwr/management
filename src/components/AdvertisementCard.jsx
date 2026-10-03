@@ -449,16 +449,16 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
     );
   };
 
-  // 1. TOP / BELOW MAIN NEWS BANNER LAYOUT (Modern Magazine Showcase)
+  // 1. TOP / BELOW MAIN NEWS BANNER LAYOUT (Modern Compact Magazine Showcase)
   if (layout === 'banner') {
     return (
-      <div id={`ad-${ad.id}`} className="max-w-7xl mx-auto px-3 sm:px-6 my-6 sm:my-8 scroll-mt-24">
-        <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-6 lg:p-8 border-2 border-red-500/30 dark:border-red-500/40 shadow-xl relative overflow-hidden group">
+      <div id={`ad-${ad.id}`} className="max-w-7xl mx-auto px-3 sm:px-6 my-4 sm:my-5 scroll-mt-24">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-5 lg:p-6 border-2 border-red-500/30 dark:border-red-500/40 shadow-lg relative overflow-hidden group">
           
           {/* Top Bar */}
-          <div className="flex items-center justify-between pb-3 mb-5 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between pb-2.5 mb-4 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-2">
-              <span className="bg-red-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <span className="bg-red-600 text-white font-black text-[10px] sm:text-xs px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm flex items-center gap-1">
                 <span>📢</span>
                 <span>विशेष प्रायोजित विज्ञापन</span>
               </span>
@@ -485,15 +485,15 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
             </div>
           </div>
 
-          {/* Body: Generous Balanced Split Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+          {/* Body: Balanced Compact Split Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-6 items-center">
             
-            {/* Poster / Flyer Showcase (Generous Sizing with Click-To-Zoom) */}
+            {/* Poster / Flyer Showcase */}
             {ad.mediaUrl && (
-              <div className="md:col-span-5 lg:col-span-5 flex flex-col items-center justify-center">
+              <div className="md:col-span-4 lg:col-span-4 flex flex-col items-center justify-center">
                 <div 
                   onClick={() => setZoomedMedia(ad.mediaUrl)}
-                  className="relative w-full bg-slate-50 dark:bg-black/50 rounded-2xl p-2.5 sm:p-3 border-2 border-gray-200 dark:border-gray-700 shadow-md flex items-center justify-center overflow-hidden cursor-zoom-in group/poster hover:border-red-500 transition-all duration-300"
+                  className="relative w-full max-w-[290px] md:max-w-full bg-slate-50 dark:bg-black/50 rounded-2xl p-2 border-2 border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center overflow-hidden cursor-zoom-in group/poster hover:border-red-500 transition-all duration-300"
                 >
                   {ad.mediaType === 'video' ? (
                     <video
@@ -502,51 +502,51 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                       loop
                       muted
                       playsInline
-                      className="w-full max-h-[580px] rounded-xl object-contain shadow"
+                      className="w-auto max-h-[340px] sm:max-h-[360px] rounded-xl object-contain shadow"
                     />
                   ) : (
                     <img
                       src={ad.mediaUrl}
                       alt={ad.businessName}
-                      className="w-full max-h-[580px] rounded-xl object-contain shadow group-hover/poster:scale-[1.02] transition-transform duration-300"
+                      className="w-auto max-h-[340px] sm:max-h-[360px] rounded-xl object-contain shadow group-hover/poster:scale-[1.02] transition-transform duration-300"
                     />
                   )}
 
                   {/* Zoom Badge Overlay */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-black/75 hover:bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg flex items-center gap-1.5 transition-all opacity-90 group-hover/poster:opacity-100 whitespace-nowrap border border-white/20">
-                    <Maximize2 className="w-3.5 h-3.5 text-amber-300" />
-                    <span>बड़ा पोस्टर देखने हेतु क्लिक करें (Zoom)</span>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-black/80 hover:bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md shadow-lg flex items-center gap-1 transition-all opacity-90 group-hover/poster:opacity-100 whitespace-nowrap border border-white/20">
+                    <Maximize2 className="w-3 h-3 text-amber-300" />
+                    <span>ज़ूम पोस्टर (Zoom)</span>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Info & Action Column */}
-            <div className={`${ad.mediaUrl ? 'md:col-span-7 lg:col-span-7' : 'md:col-span-12'} flex flex-col justify-between space-y-5`}>
+            <div className={`${ad.mediaUrl ? 'md:col-span-8 lg:col-span-8' : 'md:col-span-12'} flex flex-col justify-between space-y-3.5`}>
               
               <div 
                 onClick={handleCardOrTextClick} 
-                className="cursor-pointer space-y-3 group/text"
+                className="cursor-pointer space-y-2 group/text"
                 title={ad.mediaUrl ? "बड़ा पोस्टर देखने हेतु क्लिक करें" : "विज्ञापन विवरण"}
               >
-                <div className="inline-block bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs font-bold px-3 py-1 rounded-full border border-red-200 dark:border-red-900">
+                <div className="inline-block bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-red-200 dark:border-red-900">
                   ✨ विशेष ऑफर एवं प्रतिष्ठान
                 </div>
                 
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black font-hindi text-gray-950 dark:text-white leading-tight group-hover/text:text-red-600 dark:group-hover/text-red-400 transition-colors">
+                <h3 className="text-xl sm:text-2xl font-black font-hindi text-gray-950 dark:text-white leading-snug group-hover/text:text-red-600 dark:group-hover/text-red-400 transition-colors">
                   {ad.businessName}
                 </h3>
 
                 {ad.about && (
-                  <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/80 dark:bg-gray-800/80 border border-amber-200 dark:border-gray-700 text-sm sm:text-base font-hindi text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-line shadow-sm hover:border-amber-400 dark:hover:border-gray-600 transition-colors">
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/80 dark:bg-gray-800/80 border border-amber-200 dark:border-gray-700 text-xs sm:text-sm font-hindi text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-line shadow-sm max-h-[200px] overflow-y-auto pr-2">
                     {ad.about}
                   </div>
                 )}
               </div>
 
               {/* Call-to-action buttons */}
-              <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
-                <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2.5">
+              <div className="pt-2.5 border-t border-gray-100 dark:border-gray-800">
+                <div className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                   सीधा संपर्क एवं शेयर करें:
                 </div>
                 {renderActionButtons('normal')}
@@ -570,7 +570,7 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
   if (layout === 'feed') {
     return (
       <div id={`ad-${ad.id}`} className="bg-white dark:bg-gray-900 rounded-3xl p-4 sm:p-5 border-2 border-red-500/30 shadow-lg flex flex-col justify-between relative overflow-hidden group scroll-mt-24">
-        <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-gray-100 dark:border-gray-800">
           <span className="bg-red-600 text-white font-black text-[9px] px-2.5 py-0.5 rounded uppercase tracking-widest shadow">
             विज्ञापन
           </span>
@@ -597,7 +597,7 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
           {ad.mediaUrl && (
             <div 
               onClick={() => setZoomedMedia(ad.mediaUrl)}
-              className="relative w-full mb-3 rounded-2xl overflow-hidden bg-slate-50 dark:bg-black/40 border border-gray-200 dark:border-gray-700 p-2 flex items-center justify-center cursor-zoom-in group/feedposter hover:border-red-500 transition"
+              className="relative w-full mb-2.5 rounded-2xl overflow-hidden bg-slate-50 dark:bg-black/40 border border-gray-200 dark:border-gray-700 p-2 flex items-center justify-center cursor-zoom-in group/feedposter hover:border-red-500 transition"
             >
               {ad.mediaType === 'video' ? (
                 <video
@@ -606,25 +606,25 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                   loop
                   muted
                   playsInline
-                  className="max-h-[480px] w-auto max-w-full rounded-xl object-contain shadow-sm"
+                  className="max-h-[300px] w-auto max-w-full rounded-xl object-contain shadow-sm"
                 />
               ) : (
                 <img
                   src={ad.mediaUrl}
                   alt={ad.businessName}
-                  className="max-h-[480px] w-auto max-w-full rounded-xl object-contain shadow-sm group-hover/feedposter:scale-[1.01] transition duration-300"
+                  className="max-h-[300px] w-auto max-w-full rounded-xl object-contain shadow-sm group-hover/feedposter:scale-[1.01] transition duration-300"
                 />
               )}
-              <div className="absolute bottom-3 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20">
+              <div className="absolute bottom-2.5 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20">
                 <Maximize2 className="w-3 h-3 text-amber-300" />
-                <span>ज़ूम करें (Click to Zoom)</span>
+                <span>ज़ूम करें</span>
               </div>
             </div>
           )}
 
           <h3 
             onClick={handleCardOrTextClick}
-            className="text-base sm:text-lg font-black font-hindi text-gray-900 dark:text-white cursor-pointer hover:text-red-600 transition"
+            className="text-base font-black font-hindi text-gray-900 dark:text-white cursor-pointer hover:text-red-600 transition"
           >
             {ad.businessName}
           </h3>
@@ -632,14 +632,14 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
           {ad.about && (
             <div 
               onClick={handleCardOrTextClick}
-              className="text-xs text-gray-600 dark:text-gray-300 font-hindi mt-2 leading-relaxed bg-gray-50 dark:bg-gray-850/60 p-3 rounded-xl border border-gray-100 dark:border-gray-800 whitespace-pre-line cursor-pointer"
+              className="text-xs text-gray-600 dark:text-gray-300 font-hindi mt-1.5 leading-relaxed bg-gray-50 dark:bg-gray-850/60 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800 whitespace-pre-line cursor-pointer max-h-[140px] overflow-y-auto"
             >
               {ad.about}
             </div>
           )}
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2.5">
+        <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
           {renderActionButtons('normal')}
         </div>
 
@@ -651,8 +651,8 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
 
   // 3. INSIDE ARTICLE LAYOUT
   return (
-    <div id={`ad-${ad.id}`} className="my-6 p-4 sm:p-6 rounded-3xl bg-amber-50/70 dark:bg-gray-850 border-2 border-amber-300 dark:border-gray-700 shadow-md max-w-2xl mx-auto scroll-mt-24">
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-200 dark:border-gray-700">
+    <div id={`ad-${ad.id}`} className="my-5 p-4 sm:p-5 rounded-3xl bg-amber-50/70 dark:bg-gray-850 border-2 border-amber-300 dark:border-gray-700 shadow-md max-w-2xl mx-auto scroll-mt-24">
+      <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-amber-200 dark:border-gray-700">
         <span className="bg-red-600 text-white font-black text-[9px] px-2.5 py-0.5 rounded uppercase tracking-wider">
           विशेष विज्ञापन
         </span>
@@ -674,11 +674,11 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-3.5">
         {ad.mediaUrl && (
           <div 
             onClick={() => setZoomedMedia(ad.mediaUrl)}
-            className="relative w-full flex justify-center bg-white/80 dark:bg-black/30 p-2.5 rounded-2xl border border-amber-200/50 dark:border-gray-700 shadow-sm cursor-zoom-in hover:border-red-500 transition group/artposter"
+            className="relative w-full flex justify-center bg-white/80 dark:bg-black/30 p-2 rounded-2xl border border-amber-200/50 dark:border-gray-700 shadow-sm cursor-zoom-in hover:border-red-500 transition group/artposter"
           >
             {ad.mediaType === 'video' ? (
               <video
@@ -687,16 +687,16 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
                 loop
                 muted
                 playsInline
-                className="max-h-[500px] w-auto max-w-full rounded-xl object-contain shadow"
+                className="max-h-[320px] w-auto max-w-full rounded-xl object-contain shadow"
               />
             ) : (
               <img
                 src={ad.mediaUrl}
                 alt={ad.businessName}
-                className="max-h-[500px] w-auto max-w-full rounded-xl object-contain shadow group-hover/artposter:scale-[1.01] transition duration-300"
+                className="max-h-[320px] w-auto max-w-full rounded-xl object-contain shadow group-hover/artposter:scale-[1.01] transition duration-300"
               />
             )}
-            <div className="absolute bottom-3 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20">
+            <div className="absolute bottom-2.5 bg-black/75 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm shadow flex items-center gap-1 border border-white/20">
               <Maximize2 className="w-3 h-3 text-amber-300" />
               <span>बड़ा देखने हेतु क्लिक करें</span>
             </div>
@@ -707,17 +707,17 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
           onClick={handleCardOrTextClick}
           className="w-full text-center cursor-pointer"
         >
-          <h4 className="text-lg sm:text-xl font-black font-hindi text-gray-900 dark:text-white hover:text-red-600 transition">
+          <h4 className="text-base sm:text-lg font-black font-hindi text-gray-900 dark:text-white hover:text-red-600 transition">
             {ad.businessName}
           </h4>
           {ad.about && (
-            <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-hindi mt-2 max-w-lg mx-auto leading-relaxed whitespace-pre-line text-left bg-amber-100/50 dark:bg-gray-800/60 p-3.5 rounded-xl border border-amber-200 dark:border-gray-700">
+            <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-hindi mt-1.5 max-w-lg mx-auto leading-relaxed whitespace-pre-line text-left bg-amber-100/50 dark:bg-gray-800/60 p-3 rounded-xl border border-amber-200 dark:border-gray-700 max-h-[160px] overflow-y-auto">
               {ad.about}
             </div>
           )}
         </div>
 
-        <div className="pt-2 w-full flex justify-center">
+        <div className="pt-1.5 w-full flex justify-center">
           {renderActionButtons('normal')}
         </div>
       </div>
