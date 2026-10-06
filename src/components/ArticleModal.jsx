@@ -9,6 +9,7 @@ import { CATEGORIES, AGENCY_INFO } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
 import MediaCarousel from './MediaCarousel';
 import AdvertisementCard from './AdvertisementCard';
+import { formatContentForDisplay } from '../utils/textFormatter';
 
 export default function ArticleModal({
   article,
@@ -387,9 +388,10 @@ export default function ArticleModal({
           {/* Content Text: Live Feed vs Custom Local News */}
           {article.isLiveFeed || article.originalUrl ? (
             <div className="mt-6 space-y-6">
-              <p className={`text-gray-800 dark:text-gray-200 font-hindi leading-relaxed ${fontClasses[fontSizeLevel]}`}>
-                {article.summaryHi || article.summaryEn || content}
-              </p>
+              <div 
+                className={`text-gray-800 dark:text-gray-200 font-hindi leading-relaxed ${fontClasses[fontSizeLevel]}`}
+                dangerouslySetInnerHTML={{ __html: formatContentForDisplay(article.summaryHi || article.summaryEn || content) }}
+              />
 
               <div className="p-4 sm:p-5 bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-800 dark:to-red-950/20 rounded-2xl border border-red-200 dark:border-red-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
@@ -418,9 +420,10 @@ export default function ArticleModal({
               </p>
             </div>
           ) : (
-            <div className={`mt-6 text-gray-800 dark:text-gray-200 font-hindi whitespace-pre-line ${fontClasses[fontSizeLevel]}`}>
-              {content}
-            </div>
+            <div 
+              className={`mt-6 text-gray-800 dark:text-gray-200 font-hindi leading-relaxed prose dark:prose-invert max-w-none ${fontClasses[fontSizeLevel]} [&_p]:mb-4 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:my-4 [&_h2]:text-xl [&_h2]:font-black [&_h2]:my-3.5 [&_h3]:text-lg [&_h3]:font-black [&_h3]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-3 [&_li]:mb-1.5 [&_blockquote]:border-l-4 [&_blockquote]:border-red-500 [&_blockquote]:pl-4 [&_blockquote]:py-1 [&_blockquote]:italic [&_blockquote]:my-4 [&_blockquote]:bg-red-50/50 dark:[&_blockquote]:bg-red-950/20 [&_u]:underline [&_b]:font-black [&_strong]:font-black`}
+              dangerouslySetInnerHTML={{ __html: formatContentForDisplay(content) }}
+            />
           )}
 
           {/* In-Article Advertisement Card */}

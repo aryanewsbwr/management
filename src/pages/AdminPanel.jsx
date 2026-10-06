@@ -12,6 +12,7 @@ import { compressImage } from '../utils/imageCompressor';
 import { getArticleThumbnail } from '../utils/mediaHelper';
 
 import { supabase, isSupabaseConfigured } from '../services/supabase';
+import RichTextEditor from '../components/RichTextEditor';
 
 export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   // Authentication State
@@ -787,13 +788,14 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       setUploadStatusText('💾 खबर डेटाबेस में सुरक्षित हो रही है...');
 
       const formattedAuthor = area.trim() ? `${author.trim()} (${area.trim()})` : author.trim();
+      const plainTextSummary = content.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
 
       const articlePayload = {
         id: editingArticle ? editingArticle.id : `custom-bwr-${Date.now()}`,
         titleHi: title.trim(),
         titleEn: title.trim(),
-        summaryHi: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
-        summaryEn: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
+        summaryHi: plainTextSummary.slice(0, 160) + (plainTextSummary.length > 160 ? '...' : ''),
+        summaryEn: plainTextSummary.slice(0, 160) + (plainTextSummary.length > 160 ? '...' : ''),
         contentHi: content.trim(),
         contentEn: content.trim(),
         category: 'beawar',
@@ -1608,18 +1610,16 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 />
               </div>
 
-              {/* 4. Full Story Description */}
+              {/* 4. Full Story Description with Rich Formatting Toolbar */}
               <div>
                 <label className="block text-sm font-black font-hindi text-gray-800 dark:text-gray-200 mb-1.5">
-                  4. खबर का पूरा विवरण (Full News Content) *
+                  4. खबर का पूरा विवरण (Full News Content & Formatting) *
                 </label>
-                <textarea
-                  required
-                  rows={6}
+                <RichTextEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="खबर की पूरी जानकारी यहाँ लिखें (क्या, कब, कहाँ, किसने कहा)..."
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-hindi leading-relaxed focus:border-red-500 focus:bg-white dark:focus:bg-gray-850 focus:outline-none text-gray-900 dark:text-white"
+                  onChange={setContent}
+                  placeholder="खबर की पूरी जानकारी यहाँ लिखें या पेस्ट करें (बोल्ड, अंडरलाइन, अलाइनमेंट, लिस्ट आदि के साथ)..."
+                  minHeight="200px"
                 />
               </div>
 
