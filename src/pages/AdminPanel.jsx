@@ -4,7 +4,7 @@ import { BarChart2, Megaphone, Clock, MessageCircle,
   AlertCircle, Upload, Image as ImageIcon, Trash2, ExternalLink, 
   LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save,
   Edit3, Radio, PowerOff, Video, Film, Play, X, Layers,
-  Scissors, RotateCcw, Camera
+  Scissors, RotateCcw, Camera, Search, ArrowUpDown, Award, Filter, Flame, ChevronRight
 } from 'lucide-react';
 import { AGENCY_INFO } from '../data/categories';
 import { StorageService } from '../services/storage';
@@ -24,7 +24,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState('');
 
-  // Dashboard Active Tab: 'upload' | 'manage' | 'mandi' | 'breaking'
+  // Dashboard Active Tab: 'upload' | 'manage' | 'mandi' | 'breaking' | 'bullion' | 'analytics' | 'ads'
   const [activeTab, setActiveTab] = useState('upload');
 
   // Live API News Kill Switch State
@@ -62,8 +62,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [uploadStatusText, setUploadStatusText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Uploaded Beawar articles list
+  // Uploaded Beawar articles list & All custom articles
   const [beawarArticles, setBeawarArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]);
+
+  // Analytics tab filters and sorting
+  const [analyticsSearch, setAnalyticsSearch] = useState('');
+  const [analyticsSort, setAnalyticsSort] = useState('views_desc');
+  const [analyticsMediaFilter, setAnalyticsMediaFilter] = useState('all');
+  const [isRefreshingAnalytics, setIsRefreshingAnalytics] = useState(false);
 
   // Mandi & Breaking States
   const [breakingNews, setBreakingNews] = useState([]);
@@ -332,8 +339,10 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
         StorageService.fetchApiNewsEnabled(),
         StorageService.fetchAdvertisements()
       ]);
+      const list = customArticles || [];
       setAdsList(ads || []);
-      setBeawarArticles(customArticles.filter(a => a.category === 'beawar'));
+      setAllArticles(list);
+      setBeawarArticles(list.filter(a => !a.category || a.category === 'beawar'));
       setBreakingNews(bn || []);
       if (mcxRes && mcxRes.rates && mcxRes.rates.length > 0) {
         setBullionRates(mcxRes.rates);
@@ -348,6 +357,15 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
       setIsApiNewsEnabled(apiNewsStatus);
     } catch (e) {
       console.error('[AdminPanel] Error loading data:', e);
+    }
+  };
+
+  const handleRefreshAnalytics = async () => {
+    setIsRefreshingAnalytics(true);
+    try {
+      await loadData();
+    } finally {
+      setTimeout(() => setIsRefreshingAnalytics(false), 400);
     }
   };
 
@@ -2003,62 +2021,453 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
 
         {/* ==================================================== */}
-        {/* 4. ANALYTICS PAGE */}
+        {/* 4. ANALYTICS PAGE (ALL POST VIEWS & PERFORMANCE) */}
         {/* ==================================================== */}
         {activeTab === 'analytics' && (() => {
-          const totalArticles = beawarArticles.length;
-          const totalViews = beawarArticles.reduce((sum, a) => sum + (a.views || 0), 0);
-          const topArticles = [...beawarArticles].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
+          const rawList = allArticles.length > 0 ? allArticles : beawarArticles;
+          const totalArticles = rawList.length;
+          const totalViews = rawList.reduce((sum, a) => sum + (a.views || 0), 0);
+          const avgViews = totalArticles > 0 ? Math.round(totalViews / totalArticles) : 0;
+          const maxViews = rawList.reduce((max, a) => Math.max(max, a.views || 0), 0) || 1;
+
+          // Rank all articles by views for relative positioning
+          const sortedByViewsGlobal = [...rawList].sort((a, b) => (b.views || 0) - (a.views || 0));
+          const top3Podium = sortedByViewsGlobal.slice(0, 3);
+
+          // Filter articles based on search & media type
+          const filteredArticles = rawList.filter(art => {
+            if (analyticsSearch.trim()) {
+              const q = analyticsSearch.toLowerCase().trim();
+              const matchTitle = (art.titleHi || '').toLowerCase().includes(q) || (art.titleEn || '').toLowerCase().includes(q);
+              const matchAuthor = (art.author || '').toLowerCase().includes(q);
+              const matchId = (art.id || '').toLowerCase().includes(q);
+              if (!matchTitle && !matchAuthor && !matchId) return false;
+            }
+
+            if (analyticsMediaFilter === 'video') {
+              return art.videoUrl || art.mediaType === 'video';
+            }
+            if (analyticsMediaFilter === 'gallery') {
+              return art.gallery && art.gallery.length > 1;
+            }
+            if (analyticsMediaFilter === 'standard') {
+              return !art.videoUrl && (!art.gallery || art.gallery.length <= 1);
+            }
+            return true;
+          });
+
+          // Sort filtered articles
+          filteredArticles.sort((a, b) => {
+            if (analyticsSort === 'views_desc') return (b.views || 0) - (a.views || 0);
+            if (analyticsSort === 'views_asc') return (a.views || 0) - (b.views || 0);
+            if (analyticsSort === 'date_desc') return new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0);
+            if (analyticsSort === 'date_asc') return new Date(a.publishedAt || 0) - new Date(b.publishedAt || 0);
+            if (analyticsSort === 'title_asc') return (a.titleHi || '').localeCompare(b.titleHi || '', 'hi');
+            return 0;
+          });
 
           return (
             <div className="bg-white dark:bg-gray-900 rounded-3xl p-5 sm:p-8 shadow-sm border border-gray-200 dark:border-gray-800 space-y-6">
-              <div className="border-b border-gray-100 dark:border-gray-800 pb-4">
-                <h3 className="text-xl font-bold font-hindi text-gray-900 dark:text-white">
-                  📊 वेबसाइट एनालिटिक्स (Website Analytics)
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  यहाँ आप देख सकते हैं कि आपकी वेबसाइट पर कितनी खबरें अपलोड हुई हैं और उन्हें कितने लोगों ने पढ़ा है।
-                </p>
+              
+              {/* Header with Title and Refresh Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 text-red-600 font-bold text-xs uppercase tracking-wider mb-1">
+                    <BarChart2 className="w-4 h-4" />
+                    <span>रियल-टाइम व्यूज ट्रैकर (Real-Time Post Views)</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black font-hindi text-gray-900 dark:text-white">
+                    📊 सम्पूर्ण वेबसाइट एनालिटिक्स एवं सभी पोस्ट व्यूज
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1 font-hindi">
+                    वेबसाइट पर अपलोड की गई सभी खबरों के लाइव व्यूज, लोकप्रियता रैंकिंग और पाठकों की संख्या देखें।
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRefreshAnalytics}
+                  disabled={isRefreshingAnalytics}
+                  className="self-start sm:self-center px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl text-xs font-bold font-hindi transition flex items-center gap-2 shadow-sm shrink-0 active:scale-95"
+                  title="ताज़ा व्यूज डेटा लोड करें"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-red-600 ${isRefreshingAnalytics ? 'animate-spin' : ''}`} />
+                  <span>{isRefreshingAnalytics ? 'डेटा रीफ्रेश हो रहा है...' : '🔄 व्यूज रीफ्रेश करें'}</span>
+                </button>
               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/50 flex flex-col items-center justify-center text-center">
-                  <span className="text-3xl font-black text-amber-600 dark:text-amber-500 mb-1">{totalArticles}</span>
-                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">कुल खबरें (Total Articles)</span>
+              {/* 4 Summary Metric Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                {/* Total Posts */}
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-900/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-amber-700 dark:text-amber-400 mb-2">
+                    <span className="text-xs font-bold font-hindi">कुल प्रकाशित खबरें</span>
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-amber-900 dark:text-amber-100">
+                    {totalArticles}
+                  </div>
+                  <span className="text-[11px] text-amber-600/90 dark:text-amber-400 mt-1 font-hindi">
+                    वेबसाइट पर लाइव पोस्ट्स
+                  </span>
                 </div>
-                <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 flex flex-col items-center justify-center text-center">
-                  <span className="text-3xl font-black text-emerald-600 dark:text-emerald-500 mb-1">{totalViews}</span>
-                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">कुल व्यूज (Total Views)</span>
+
+                {/* Total Lifetime Views */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 mb-2">
+                    <span className="text-xs font-bold font-hindi">कुल व्यूज (Total Views)</span>
+                    <Eye className="w-4 h-4" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-900 dark:text-emerald-100">
+                    {totalViews.toLocaleString('en-IN')}
+                  </div>
+                  <span className="text-[11px] text-emerald-600/90 dark:text-emerald-400 mt-1 font-hindi">
+                    सभी पाठकों के कुल व्यूज
+                  </span>
+                </div>
+
+                {/* Average Views Per Post */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 p-4 rounded-2xl border border-blue-200/80 dark:border-blue-900/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-blue-700 dark:text-blue-400 mb-2">
+                    <span className="text-xs font-bold font-hindi">औसत व्यूज प्रति खबर</span>
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-blue-900 dark:text-blue-100">
+                    {avgViews.toLocaleString('en-IN')}
+                  </div>
+                  <span className="text-[11px] text-blue-600/90 dark:text-blue-400 mt-1 font-hindi">
+                    औसत पाठक प्रति पोस्ट
+                  </span>
+                </div>
+
+                {/* Highest Viewed Post Views */}
+                <div className="bg-gradient-to-br from-rose-50 to-red-50/50 dark:from-rose-950/30 dark:to-red-950/20 p-4 rounded-2xl border border-rose-200/80 dark:border-rose-900/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-rose-700 dark:text-rose-400 mb-2">
+                    <span className="text-xs font-bold font-hindi">सर्वाधिक व्यूज (Top Post)</span>
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black font-mono text-rose-900 dark:text-rose-100">
+                    {maxViews.toLocaleString('en-IN')}
+                  </div>
+                  <span className="text-[11px] text-rose-600/90 dark:text-rose-400 mt-1 font-hindi truncate" title={top3Podium[0]?.titleHi || ''}>
+                    {top3Podium[0] ? top3Podium[0].titleHi : 'डेटा उपलब्ध नहीं'}
+                  </span>
                 </div>
               </div>
 
-              {/* Top Articles List */}
-              <div className="pt-4">
-                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4 border-l-4 border-red-500 pl-2">
-                  🔥 टॉप 5 सबसे ज्यादा पढ़ी गई खबरें (Top 5 Most Read)
-                </h4>
-                <div className="space-y-3">
-                  {topArticles.map((art, idx) => (
-                    <div key={art.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">
-                          {idx + 1}
+              {/* Top 3 Leaderboard Podium Cards */}
+              {top3Podium.length > 0 && !analyticsSearch && (
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-black font-hindi text-gray-900 dark:text-white flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-red-500 fill-current" />
+                      <span>टॉप 3 सबसे लोकप्रिय खबरें (Top 3 Most Read)</span>
+                    </h4>
+                    <span className="text-xs text-gray-500 font-hindi">
+                      पाठकों द्वारा सबसे ज्यादा पढ़ी गई खबरें
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                    {top3Podium.map((art, idx) => {
+                      const medalStyles = [
+                        { badge: '🥇 #1 रैंक', border: 'border-amber-400 dark:border-amber-600', bg: 'bg-amber-500 text-white', glow: 'bg-amber-50/60 dark:bg-amber-950/20' },
+                        { badge: '🥈 #2 रैंक', border: 'border-slate-300 dark:border-slate-600', bg: 'bg-slate-500 text-white', glow: 'bg-slate-50/60 dark:bg-slate-900/20' },
+                        { badge: '🥉 #3 रैंक', border: 'border-amber-700/60 dark:border-amber-800', bg: 'bg-amber-700 text-white', glow: 'bg-amber-900/10 dark:bg-amber-950/10' }
+                      ][idx] || { badge: `#${idx + 1}`, border: 'border-gray-200', bg: 'bg-gray-600 text-white', glow: 'bg-gray-50' };
+
+                      const viewPct = Math.round(((art.views || 0) / maxViews) * 100);
+
+                      return (
+                        <div
+                          key={art.id}
+                          className={`p-4 rounded-2xl border-2 transition relative flex flex-col justify-between ${medalStyles.border} ${medalStyles.glow}`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-2.5">
+                              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shadow-sm ${medalStyles.bg}`}>
+                                {medalStyles.badge}
+                              </span>
+                              <span className="inline-flex items-center gap-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-mono font-black text-xs px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                                👁️ {(art.views || 0).toLocaleString('en-IN')} व्यूज
+                              </span>
+                            </div>
+
+                            <div className="flex items-start gap-3 mb-3">
+                              <img
+                                src={getArticleThumbnail(art)}
+                                alt=""
+                                className="w-14 h-14 object-cover rounded-xl shrink-0 border border-gray-300 dark:border-gray-700 shadow-sm"
+                              />
+                              <h5 className="text-xs font-bold font-hindi text-gray-900 dark:text-white line-clamp-2 leading-snug" title={art.titleHi}>
+                                {art.titleHi}
+                              </h5>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 pt-2 border-t border-gray-200/70 dark:border-gray-700/60">
+                            {/* Readership comparison bar */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[10px] text-gray-500 font-hindi">
+                                <span>रीडरशिप शेयर</span>
+                                <span className="font-mono font-bold">{viewPct}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all duration-500"
+                                  style={{ width: `${viewPct}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1">
+                              <span className="truncate max-w-[140px] font-hindi">{art.author}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(art)}
+                                className="text-red-600 hover:text-red-700 dark:text-red-400 font-bold hover:underline flex items-center gap-0.5 font-hindi"
+                              >
+                                <span>संपादित करें</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">
-                          {art.titleHi}
-                        </span>
-                      </div>
-                      <div className="flex-shrink-0 ml-4 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded font-bold text-xs whitespace-nowrap">
-                        👁️ {art.views || 0}
-                      </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Filter & Search Bar */}
+              <div className="pt-2">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-2xl border border-gray-200 dark:border-gray-700/80 space-y-3">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    
+                    {/* Search Bar */}
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={analyticsSearch}
+                        onChange={e => setAnalyticsSearch(e.target.value)}
+                        placeholder="खबर का शीर्षक, रिपोर्टर या क्षेत्र खोजें (Search Headline / Reporter)..."
+                        className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-hindi text-gray-900 dark:text-white focus:outline-none focus:border-red-500"
+                      />
+                      {analyticsSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setAnalyticsSearch('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
-                  ))}
-                  {topArticles.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-4">अभी कोई डेटा नहीं है।</p>
-                  )}
+
+                    {/* Sorting Dropdown */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-gray-500" />
+                      <select
+                        value={analyticsSort}
+                        onChange={e => setAnalyticsSort(e.target.value)}
+                        className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-bold font-hindi text-gray-900 dark:text-white focus:outline-none"
+                      >
+                        <option value="views_desc">👁️ सर्वाधिक व्यूज पहले (Highest Views)</option>
+                        <option value="views_asc">📉 न्यूनतम व्यूज पहले (Lowest Views)</option>
+                        <option value="date_desc">📅 नवीनतम तारीख पहले (Newest First)</option>
+                        <option value="date_asc">⏳ पुरानी खबर पहले (Oldest First)</option>
+                        <option value="title_asc">🔤 शीर्षक A-Z (Alphabetical)</option>
+                      </select>
+                    </div>
+
+                  </div>
+
+                  {/* Media Type Filter Pills */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-200 dark:border-gray-700/60">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-gray-500 font-hindi mr-1">मीडिया प्रकार:</span>
+                      {[
+                        { id: 'all', label: 'सभी खबरें (All)' },
+                        { id: 'video', label: '🎥 वीडियो (Videos)' },
+                        { id: 'gallery', label: '📷 फोटो कैरोज़ल (Gallery)' },
+                        { id: 'standard', label: '📰 सामान्य पोस्ट्स (Standard)' }
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setAnalyticsMediaFilter(tab.id)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold font-hindi transition ${
+                            analyticsMediaFilter === tab.id
+                              ? 'bg-red-600 text-white shadow-sm'
+                              : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 border border-gray-200 dark:border-gray-700'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <span className="text-xs font-bold text-gray-500 font-hindi">
+                      कुल <span className="text-red-600 font-mono font-black">{filteredArticles.length}</span> खबरें प्रदर्शित
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* Complete All Posts Analytics List / Table */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-black font-hindi text-gray-900 dark:text-white flex items-center gap-2">
+                    <span>📋 सभी खबरों की व्यूज सूची (All Posts Views Table)</span>
+                    <span className="bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 font-mono text-xs font-bold px-2 py-0.5 rounded-md">
+                      {filteredArticles.length} Posts
+                    </span>
+                  </h4>
+                  <span className="text-[11px] text-gray-400 font-hindi">
+                    क्रम: {analyticsSort === 'views_desc' ? 'सर्वाधिक व्यूज अनुसार' : analyticsSort === 'views_asc' ? 'न्यूनतम व्यूज अनुसार' : 'तिथि अनुसार'}
+                  </span>
+                </div>
+
+                {filteredArticles.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-gray-850 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+                    <BarChart2 className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                    <h5 className="text-sm font-bold font-hindi text-gray-800 dark:text-gray-200">
+                      कोई खबर नहीं मिली
+                    </h5>
+                    <p className="text-xs text-gray-500 mt-1 font-hindi">
+                      आपके खोजे गए शब्द &quot;{analyticsSearch}&quot; अथवा चुने गए फ़िल्टर से कोई पोस्ट मैच नहीं हुई।
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAnalyticsSearch('');
+                        setAnalyticsMediaFilter('all');
+                      }}
+                      className="mt-3 px-4 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold font-hindi hover:bg-red-700 transition"
+                    >
+                      फ़िल्टर रीसेट करें
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {filteredArticles.map((art, idx) => {
+                      const relativePct = Math.max(4, Math.round(((art.views || 0) / maxViews) * 100));
+
+                      return (
+                        <div
+                          key={art.id}
+                          className="p-3.5 sm:p-4 bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100/80 dark:hover:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 transition flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
+                        >
+                          {/* Rank + Thumbnail + Title Info */}
+                          <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                            {/* Rank Number Badge */}
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-mono font-black text-xs shadow-sm ${
+                              idx === 0 && analyticsSort === 'views_desc'
+                                ? 'bg-amber-500 text-white ring-2 ring-amber-400/40'
+                                : idx === 1 && analyticsSort === 'views_desc'
+                                ? 'bg-slate-400 text-white'
+                                : idx === 2 && analyticsSort === 'views_desc'
+                                ? 'bg-amber-700 text-white'
+                                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}>
+                              #{idx + 1}
+                            </div>
+
+                            {/* Thumbnail */}
+                            <div className="relative w-16 h-14 rounded-xl overflow-hidden shrink-0 border border-gray-300 dark:border-gray-700 bg-black">
+                              <img
+                                src={getArticleThumbnail(art)}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                              {art.videoUrl ? (
+                                <span className="absolute bottom-1 right-1 bg-red-600 text-white text-[8px] font-black px-1 py-0.2 rounded">
+                                  VID
+                                </span>
+                              ) : art.gallery && art.gallery.length > 1 ? (
+                                <span className="absolute bottom-1 right-1 bg-amber-600 text-white text-[8px] font-black px-1 py-0.2 rounded">
+                                  {art.gallery.length}📷
+                                </span>
+                              ) : null}
+                            </div>
+
+                            {/* Headline & Metadata */}
+                            <div className="flex-1 min-w-0">
+                              <h5 className="text-sm font-bold font-hindi text-gray-950 dark:text-white line-clamp-2 leading-snug" title={art.titleHi}>
+                                {art.titleHi}
+                              </h5>
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                                <span className="font-semibold text-red-600 dark:text-red-400 font-hindi">
+                                  ✍️ {art.author || 'संवाददाता'}
+                                </span>
+                                <span>•</span>
+                                <span>📅 {new Date(art.publishedAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                {art.isHidden && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold px-1.5 py-0.2 rounded text-[10px]">
+                                      🔒 छिपा हुआ
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Views Meter & Actions */}
+                          <div className="flex flex-row md:flex-col lg:flex-row items-center md:items-end lg:items-center justify-between gap-3 shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-gray-200 dark:border-gray-700">
+                            
+                            {/* Readership Progress Bar & Counter */}
+                            <div className="w-36 sm:w-44 text-right space-y-1">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <span className="inline-flex items-center gap-1 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 font-mono font-black text-xs px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800">
+                                  👁️ {(art.views || 0).toLocaleString('en-IN')} <span className="text-[10px] font-hindi">व्यूज</span>
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-300"
+                                  style={{ width: `${relativePct}%` }}
+                                  title={`कुल शीर्ष व्यूज का ${relativePct}%`}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(art)}
+                                className="flex items-center gap-1 bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold font-hindi transition shadow-sm"
+                                title="यह खबर संपादित करें"
+                              >
+                                <Edit3 className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+                                <span>संपादित करें</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleHideArticle(art)}
+                                className={`p-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
+                                  art.isHidden 
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' 
+                                    : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-300'
+                                }`}
+                                title={art.isHidden ? 'वेबसाइट पर दिखाएं' : 'वेबसाइट से छिपाएं'}
+                              >
+                                {art.isHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
             </div>
           );
         })()}
