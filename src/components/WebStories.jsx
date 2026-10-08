@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, X, ChevronRight, ChevronLeft, Share2, BookOpen, Play, Video } from 'lucide-react';
 import { getArticleThumbnail } from '../utils/mediaHelper';
+import { stripHtmlToPlainText } from '../utils/textFormatter';
 
 export default function WebStories({ articles = [], onOpenArticle }) {
   const [activeStoryIndex, setActiveStoryIndex] = useState(null);
@@ -20,11 +21,11 @@ export default function WebStories({ articles = [], onOpenArticle }) {
 
     return {
       id: art.id || `story-${idx}`,
-      title: art.titleHi || art.title || '',
+      title: stripHtmlToPlainText(art.titleHi || art.title || ''),
       image: img,
       videoUrl: art.videoUrl || null,
       isVideo: isVideo,
-      summary: art.summaryHi || art.contentHi?.slice(0, 140) || '',
+      summary: stripHtmlToPlainText(art.summaryHi || art.contentHi || '').slice(0, 140),
       author: art.author || 'ब्यावर रिपोर्टर',
       tag: 'ब्यावर',
       badgeColor: 'bg-red-600 text-white',
@@ -56,7 +57,8 @@ export default function WebStories({ articles = [], onOpenArticle }) {
   const handleShareStory = (story) => {
     const articleId = story.article?.id || story.id;
     const shareUrl = `https://www.aryannewsagency.com/news/${articleId}`;
-    const text = `*वेब स्टोरी: ${story.title}*\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const cleanTitle = stripHtmlToPlainText(story.title);
+    const text = `*वेब स्टोरी: ${cleanTitle}*\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 

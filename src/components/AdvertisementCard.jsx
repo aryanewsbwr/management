@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PhoneCall, MessageCircle, MapPin, Globe, Maximize2, X, ExternalLink, Share2, Copy, Check, Send } from 'lucide-react';
 import { StorageService } from '../services/storage';
+import { stripHtmlToPlainText } from '../utils/textFormatter';
 
 function FacebookIcon({ className = "w-5 h-5" }) {
   return (
@@ -77,8 +78,10 @@ export default function AdvertisementCard({ ad = null, layout = 'banner' }) {
 
     const contactStr = contactParts.length > 0 ? `\n\n${contactParts.join('\n')}` : '';
     const shareUrl = getAdShareUrl();
+    const cleanBizName = stripHtmlToPlainText(ad.businessName || '');
+    const cleanAbout = stripHtmlToPlainText(ad.about || '');
 
-    return `📢 *विशेष विज्ञापन | Aryan News Agency*\n\n🏢 *${ad.businessName}*\n${ad.about || ''}${contactStr}\n\n👉 पूरा विज्ञापन एवं पोस्टर यहाँ देखें:\n${shareUrl}\n\n#AryanNewsAgency #BeawarNews #Advertisement #Rajasthan`;
+    return `📢 *विशेष विज्ञापन | Aryan News Agency*\n\n🏢 *${cleanBizName}*\n${cleanAbout}${contactStr}\n\n👉 पूरा विज्ञापन एवं पोस्टर यहाँ देखें:\n${shareUrl}\n\n#AryanNewsAgency #BeawarNews #Advertisement #Rajasthan`;
   };
 
   const handleWhatsAppAdShare = (e) => {

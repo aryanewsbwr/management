@@ -129,3 +129,31 @@ export function processPastedContent(clipboardData) {
 
   return '';
 }
+
+/**
+ * Strips all HTML tags, inline styles, comments, and entities, converting rich HTML to clean plain text.
+ * Essential for social sharing (WhatsApp, Facebook, Twitter), SMS, and meta descriptions.
+ */
+export function stripHtmlToPlainText(input = '') {
+  if (!input || typeof input !== 'string') return '';
+
+  return input
+    .replace(/<!--[\s\S]*?-->/g, '') // Remove HTML comments / metadata
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove style blocks
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script blocks
+    .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newline
+    .replace(/<\/p>/gi, '\n\n') // Convert </p> to double newline
+    .replace(/<\/div>/gi, '\n') // Convert </div> to newline
+    .replace(/<\/li>/gi, '\n') // Convert </li> to newline
+    .replace(/<li[^>]*>/gi, '• ') // Convert <li> to bullet
+    .replace(/<[^>]*>/g, '') // Strip all remaining HTML tags
+    .replace(/&nbsp;/gi, ' ') // Replace non-breaking spaces
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/[ \t]+/g, ' ') // Collapse multiple spaces
+    .replace(/\n\s*\n\s*\n+/g, '\n\n') // Collapse excessive newlines
+    .trim();
+}

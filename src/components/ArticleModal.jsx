@@ -8,7 +8,7 @@ import {
 import { CATEGORIES, AGENCY_INFO } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
 import MediaCarousel from './MediaCarousel';
-import { formatContentForDisplay } from '../utils/textFormatter';
+import { formatContentForDisplay, stripHtmlToPlainText } from '../utils/textFormatter';
 
 const AdvertisementCard = lazy(() => import('./AdvertisementCard'));
 
@@ -103,13 +103,19 @@ export default function ArticleModal({
   const shareUrl = `https://www.aryannewsagency.com/news/${article.id}`;
 
   const getFullShareText = () => {
-    const cleanContent = content ? content.replace(/<!--[\s\S]*?-->/g, '').replace(/\s+/g, ' ').trim() : '';
-    const excerpt = cleanContent.length > 250 ? cleanContent.slice(0, 250) + '...' : cleanContent;
-    return `${title}\n\n${excerpt}\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n#AryanNewsAgency #BeawarNews #RajasthanNews`;
+    const rawText = content || article.summaryHi || article.summaryEn || '';
+    const plainContent = stripHtmlToPlainText(rawText);
+    const excerpt = plainContent.length > 250 ? plainContent.slice(0, 250) + '...' : plainContent;
+    const cleanTitle = stripHtmlToPlainText(title);
+    return `${cleanTitle}\n\n${excerpt}\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n#AryanNewsAgency #BeawarNews #RajasthanNews`;
   };
 
   const handleWhatsAppShare = () => {
-    const text = `*${title}*\n\n${content ? content.slice(0, 160) + '...' : ''}\n\n👉 पूरी खबर एवं फोटो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const rawText = content || article.summaryHi || article.summaryEn || '';
+    const plainContent = stripHtmlToPlainText(rawText);
+    const excerpt = plainContent ? (plainContent.length > 180 ? plainContent.slice(0, 180) + '...' : plainContent) : '';
+    const cleanTitle = stripHtmlToPlainText(title);
+    const text = `*${cleanTitle}*\n\n${excerpt}\n\n👉 पूरी खबर एवं फोटो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 

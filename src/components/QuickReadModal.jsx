@@ -4,6 +4,7 @@ import {
   Bookmark, Sparkles, ExternalLink 
 } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
+import { stripHtmlToPlainText } from '../utils/textFormatter';
 
 export default function QuickReadModal({
   isOpen,
@@ -42,9 +43,12 @@ export default function QuickReadModal({
   };
 
   const handleShare = () => {
-    const articleId = currentArticle?.id;
+    const articleId = current?.id;
     const shareUrl = articleId ? `https://www.aryannewsagency.com/news/${articleId}` : `https://www.aryannewsagency.com/`;
-    const text = `*शॉर्ट न्यूज़: ${title}*\n\n${summary ? summary.slice(0, 140) + '...' : ''}\n\n👉 पूरी खबर विस्तार से पढ़ें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const plainSummary = stripHtmlToPlainText(summary || current?.contentHi || '');
+    const excerpt = plainSummary ? (plainSummary.length > 140 ? plainSummary.slice(0, 140) + '...' : plainSummary) : '';
+    const cleanTitle = stripHtmlToPlainText(title);
+    const text = `*शॉर्ट न्यूज़: ${cleanTitle}*\n\n${excerpt}\n\n👉 पूरी खबर विस्तार से पढ़ें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 

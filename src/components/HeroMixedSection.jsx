@@ -6,6 +6,7 @@ import {
 import ArticleCard from './ArticleCard';
 import CategoryPlaceholder from './CategoryPlaceholder';
 import MediaCarousel from './MediaCarousel';
+import { stripHtmlToPlainText } from '../utils/textFormatter';
 
 export default function HeroMixedSection({
   articles = [],
@@ -34,7 +35,10 @@ export default function HeroMixedSection({
   const handleHeroShare = (e) => {
     e.stopPropagation();
     const shareUrl = `https://www.aryannewsagency.com/news/${heroArticle.id}`;
-    const shareText = `*${heroTitle}*\n\n${heroSummary ? heroSummary.slice(0, 140) + '...' : ''}\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
+    const plainSummary = stripHtmlToPlainText(heroSummary || heroArticle.contentHi || '');
+    const excerpt = plainSummary ? (plainSummary.length > 140 ? plainSummary.slice(0, 140) + '...' : plainSummary) : '';
+    const cleanTitle = stripHtmlToPlainText(heroTitle);
+    const shareText = `*${cleanTitle}*\n\n${excerpt}\n\n👉 पूरी खबर एवं वीडियो देखें:\n${shareUrl}\n\n*आर्यन न्यूज़ एजेंसी (ब्यावर)*`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
   };
 

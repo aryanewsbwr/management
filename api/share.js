@@ -50,12 +50,14 @@ export default async function handler(req, res) {
 
   const isAd = article?.category === '_advertisement' || !!req.query.ad || (req.url && req.url.includes('/ad/'));
 
-  const title = isAd
+  const rawTitle = isAd
     ? `📢 ${article?.title_hi || article?.title_en || 'विशेष विज्ञापन'} - आर्यन न्यूज़ एजेंसी (ब्यावर)`
     : (article?.title_hi || article?.title_en || 'आर्यन न्यूज़ एजेंसी (ब्यावर)');
+  const title = stripHtml(rawTitle);
     
   const rawDesc = article?.summary_hi || (isAd ? 'ब्यावर एवं राजस्थान के प्रमुख व्यापार एवं प्रतिष्ठान का विशेष विज्ञापन।' : article?.content_hi) || 'ब्यावर एवं राजस्थान की ताज़ा व विश्वसनीय खबरें।';
-  const description = rawDesc.replace(/\s+/g, ' ').slice(0, 180).trim() + (rawDesc.length > 180 ? '...' : '');
+  const cleanDesc = stripHtml(rawDesc);
+  const description = cleanDesc.slice(0, 180).trim() + (cleanDesc.length > 180 ? '...' : '');
   
   let gallery = null;
   let videoUrl = null;
@@ -189,4 +191,23 @@ function escapeHtml(str = '') {
     .replace(/'/g, '&#39;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function stripHtml(input = '') {
+  if (!input || typeof input !== 'string') return '';
+  return input
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?(p|div|li|h[1-6]|tr|td|th)[^>]*>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
