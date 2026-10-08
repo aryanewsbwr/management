@@ -70,7 +70,7 @@ export default function ArticleCard({
         className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl p-3 sm:p-4 hover:shadow-lg transition-all duration-200 cursor-pointer flex gap-3 sm:gap-4 items-start"
       >
         {/* Left / Thumbnail */}
-        <div className="relative w-28 h-24 sm:w-36 sm:h-28 shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+        <div className="relative w-28 h-24 sm:w-36 sm:h-28 shrink-0 rounded-lg overflow-hidden bg-black">
           {article.isLiveFeed ? (
             <CategoryPlaceholder 
               category={article.category} 
@@ -165,7 +165,7 @@ export default function ArticleCard({
       className="group relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between"
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-black">
         {article.isLiveFeed ? (
           <CategoryPlaceholder 
             category={article.category} 

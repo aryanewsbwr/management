@@ -108,11 +108,18 @@ export default function MediaCarousel({
         onClick={onOpen}
         className={`relative w-full overflow-hidden bg-black group/video ${aspectRatio} ${className}`}
       >
+        {effectivePoster && (
+          <div
+            className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 brightness-75 select-none pointer-events-none"
+            style={{ backgroundImage: `url(${effectivePoster})` }}
+            aria-hidden="true"
+          />
+        )}
         {effectivePoster ? (
           <img
             src={effectivePoster}
             alt={title}
-            className={`w-full h-full object-cover ${objectPosition} group-hover/video:scale-105 transition-transform duration-500`}
+            className={`relative z-10 w-full h-full object-contain mx-auto group-hover/video:scale-105 transition-transform duration-500`}
             loading="lazy"
           />
         ) : (
@@ -121,22 +128,22 @@ export default function MediaCarousel({
             muted
             playsInline
             preload="metadata"
-            className={`w-full h-full object-cover ${objectPosition}`}
+            className={`w-full h-full object-contain mx-auto`}
           />
         )}
         
         {/* Dark vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
         {/* Video Play Icon Badge */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 z-20 flex items-center justify-center">
           <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-xl group-hover/video:scale-110 group-hover/video:bg-red-600 transition-all">
             <Play className="w-5 h-5 fill-current ml-0.5" />
           </div>
         </div>
 
         {/* Bottom Video Badge */}
-        <div className="absolute bottom-2 left-2 z-10 bg-black/75 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+        <div className="absolute bottom-2 left-2 z-20 bg-black/75 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
           <Video className="w-3 h-3 text-red-500" />
           <span>वीडियो</span>
         </div>
@@ -162,20 +169,18 @@ export default function MediaCarousel({
   }
 
   const currentImg = imageList[currentIndex] || imageList[0];
-  const activeFit = showControls ? fitMode : 'cover';
+  const activeFit = fitMode;
 
   // 2. SINGLE IMAGE RENDERING
   if (!hasMultipleImages) {
     return (
       <div className={`relative w-full overflow-hidden bg-black ${aspectRatio} ${className}`}>
         {/* Ambient blurred backdrop so portrait/custom aspect photos look full and cinematic without black voids */}
-        {showControls && (
-          <div
-            className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 brightness-75 select-none pointer-events-none transition-all duration-700"
-            style={{ backgroundImage: `url(${imageList[0]})` }}
-            aria-hidden="true"
-          />
-        )}
+        <div
+          className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 brightness-75 select-none pointer-events-none transition-all duration-700"
+          style={{ backgroundImage: `url(${imageList[0]})` }}
+          aria-hidden="true"
+        />
 
         <img
           src={imageList[0]}
@@ -260,13 +265,11 @@ export default function MediaCarousel({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Ambient blurred backdrop of active slide */}
-      {showControls && (
-        <div
-          className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 brightness-75 select-none pointer-events-none transition-all duration-700"
-          style={{ backgroundImage: `url(${currentImg})` }}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 brightness-75 select-none pointer-events-none transition-all duration-700"
+        style={{ backgroundImage: `url(${currentImg})` }}
+        aria-hidden="true"
+      />
 
       {/* In-flow spacer image */}
       <img
