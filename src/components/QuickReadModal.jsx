@@ -79,13 +79,18 @@ export default function QuickReadModal({
         {/* Story Card Body */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Image */}
-          <div className="relative h-56 sm:h-64 w-full bg-gray-950 overflow-hidden shrink-0">
+          <div className="relative h-56 sm:h-64 w-full bg-black overflow-hidden shrink-0">
+            <div 
+              className="absolute inset-0 bg-cover bg-center filter blur-xl scale-125 opacity-40 brightness-75 select-none pointer-events-none"
+              style={{ backgroundImage: `url(${current.image})` }}
+              aria-hidden="true"
+            />
             <img
               src={current.image}
               alt={title}
-              className="w-full h-full object-cover"
+              className="relative z-10 w-full h-full object-contain mx-auto"
             />
-            <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+            <span className="absolute top-3 left-3 z-20 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
               {categoryLabel}
             </span>
           </div>

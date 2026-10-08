@@ -144,6 +144,8 @@ export default function MediaCarousel({
     );
   }
 
+  const [fitMode, setFitMode] = useState('contain'); // 'contain' (no crop) | 'cover' (fill box)
+
   // Fallback if no images provided
   if (imageList.length === 0) {
     const defaultPlaceholder = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
@@ -159,10 +161,22 @@ export default function MediaCarousel({
     );
   }
 
+  const currentImg = imageList[currentIndex] || imageList[0];
+  const activeFit = showControls ? fitMode : 'cover';
+
   // 2. SINGLE IMAGE RENDERING
   if (!hasMultipleImages) {
     return (
-      <div className={`relative w-full overflow-hidden bg-gray-100 dark:bg-gray-800 ${aspectRatio} ${className}`}>
+      <div className={`relative w-full overflow-hidden bg-black ${aspectRatio} ${className}`}>
+        {/* Ambient blurred backdrop so portrait/custom aspect photos look full and cinematic without black voids */}
+        {showControls && (
+          <div
+            className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 brightness-75 select-none pointer-events-none transition-all duration-700"
+            style={{ backgroundImage: `url(${imageList[0]})` }}
+            aria-hidden="true"
+          />
+        )}
+
         <img
           src={imageList[0]}
           alt={title}
@@ -170,32 +184,104 @@ export default function MediaCarousel({
             e.currentTarget.onerror = null;
             e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
           }}
-          onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imageList[0]); } }}
-          className={`w-full h-full object-cover ${objectPosition} transition-transform duration-500`}
+          onClick={(e) => {
+            if (showControls) {
+              e.stopPropagation();
+              setFullscreenImg(imageList[0]);
+            }
+          }}
+          className={`relative z-10 w-full h-full ${
+            activeFit === 'contain'
+              ? 'object-contain mx-auto'
+              : `object-cover ${objectPosition}`
+          } ${showControls ? 'cursor-zoom-in' : ''} transition-all duration-300`}
           loading="lazy"
-        /> {fullscreenImg && ( <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setFullscreenImg(null); }}> <img src={fullscreenImg} alt="Zoomed preview" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" /> <button type="button" className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition"> <span className="font-bold px-3 py-1">? ??? ???? (Close)</span> </button> </div> )} </div> ); }
+        />
+
+        {/* Fit Mode Toggle & Fullscreen Button in Modal */}
+        {showControls && (
+          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFitMode(fitMode === 'contain' ? 'cover' : 'contain');
+              }}
+              title={fitMode === 'contain' ? 'स्क्रीन भरें (Fill Box)' : 'पूरा फोटो देखें (Fit Whole Photo)'}
+              className="bg-black/70 hover:bg-black/90 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md border border-white/20 transition active:scale-95"
+            >
+              <span>{fitMode === 'contain' ? '🔍 पूरा फोटो (Fit)' : '📐 क्रॉप भरा (Fill)'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullscreenImg(imageList[0]);
+              }}
+              title="फुलस्क्रीन ज़ूम"
+              className="p-1 rounded-full bg-black/70 hover:bg-black/90 text-white border border-white/20 backdrop-blur-md transition active:scale-95"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Fullscreen Zoom Overlay */}
+        {fullscreenImg && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-md animate-in fade-in duration-200"
+            onClick={(e) => {
+              e.stopPropagation();
+              setFullscreenImg(null);
+            }}
+          >
+            <img
+              src={fullscreenImg}
+              alt="Zoomed preview"
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+            />
+            <button
+              type="button"
+              className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full px-3 py-1.5 transition flex items-center gap-1.5 text-xs font-bold border border-white/20"
+            >
+              ✕ बंद करें (Close)
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // 3. MULTIPLE IMAGES AUTO-RUNNING CAROUSEL
   return (
-    <div 
-      className={`relative w-full overflow-hidden bg-gray-950 group/carousel select-none ${aspectRatio} ${className}`}
+    <div
+      className={`relative w-full overflow-hidden bg-black group/carousel select-none ${aspectRatio} ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* In-flow spacer image so container never collapses to 0 height */}
+      {/* Ambient blurred backdrop of active slide */}
+      {showControls && (
+        <div
+          className="absolute inset-0 bg-cover bg-center filter blur-2xl scale-125 opacity-40 brightness-75 select-none pointer-events-none transition-all duration-700"
+          style={{ backgroundImage: `url(${currentImg})` }}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* In-flow spacer image */}
       <img
         src={imageList[0]}
         alt=""
-        className="w-full h-full object-cover invisible pointer-events-none select-none max-h-[500px]"
+        className="w-full h-full object-contain invisible pointer-events-none select-none max-h-[520px]"
         aria-hidden="true"
       />
 
       {/* Direct Absolute Slides Container */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden">
+      <div className="absolute inset-0 w-full h-full overflow-hidden z-10 flex items-center justify-center">
         {imageList.map((imgUrl, idx) => (
           <div
             key={idx}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out ${
+            className={`absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out flex items-center justify-center ${
               idx === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
           >
@@ -206,13 +292,50 @@ export default function MediaCarousel({
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1000&auto=format&fit=crop&q=80';
               }}
-              onClick={(e) => { if (showControls) { e.stopPropagation(); setFullscreenImg(imgUrl); } }}
-              className={`w-full h-full object-cover ${objectPosition} ${showControls ? 'cursor-zoom-in' : ''}`}
+              onClick={(e) => {
+                if (showControls) {
+                  e.stopPropagation();
+                  setFullscreenImg(imgUrl);
+                }
+              }}
+              className={`w-full h-full ${
+                activeFit === 'contain'
+                  ? 'object-contain mx-auto'
+                  : `object-cover ${objectPosition}`
+              } ${showControls ? 'cursor-zoom-in' : ''} transition-all duration-300`}
               loading={idx === 0 ? 'eager' : 'lazy'}
             />
           </div>
         ))}
       </div>
+
+      {/* Top Left: Fit Mode Toggle in Modal */}
+      {showControls && (
+        <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setFitMode(fitMode === 'contain' ? 'cover' : 'contain');
+            }}
+            title={fitMode === 'contain' ? 'स्क्रीन भरें (Fill Box)' : 'पूरा फोटो देखें (Fit Whole Photo)'}
+            className="bg-black/70 hover:bg-black/90 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md border border-white/20 transition active:scale-95"
+          >
+            <span>{fitMode === 'contain' ? '🔍 पूरा फोटो (Fit)' : '📐 क्रॉप भरा (Fill)'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setFullscreenImg(currentImg);
+            }}
+            title="फुलस्क्रीन ज़ूम"
+            className="p-1 rounded-full bg-black/70 hover:bg-black/90 text-white border border-white/20 backdrop-blur-md transition active:scale-95"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Top Right: Photos Counter Badge */}
       <div className="absolute top-2.5 right-2.5 z-20 bg-black/70 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md border border-white/20">
@@ -291,7 +414,7 @@ export default function MediaCarousel({
       {/* Fullscreen Zoom Overlay */}
       {fullscreenImg && (
         <div 
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-sm"
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-6 cursor-zoom-out backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => {
             e.stopPropagation();
             setFullscreenImg(null);
@@ -300,13 +423,13 @@ export default function MediaCarousel({
           <img 
             src={fullscreenImg} 
             alt="Zoomed preview" 
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
           />
           <button 
-            type="button"
-            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition"
+            type="button" 
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full px-3 py-1.5 transition flex items-center gap-1.5 text-xs font-bold border border-white/20"
           >
-            <span className="font-bold px-3 py-1">✕ बंद करें (Close)</span>
+            ✕ बंद करें (Close)
           </button>
         </div>
       )}

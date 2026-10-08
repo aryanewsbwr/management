@@ -322,13 +322,13 @@ export default function ArticleModal({
               />
             </div>
           ) : (
-            <div className="my-5 rounded-2xl overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-800">
+            <div className="my-5 rounded-2xl overflow-hidden shadow-lg bg-black">
               <MediaCarousel
                 images={article.gallery && article.gallery.length > 0 ? article.gallery : [article.image]}
                 videoUrl={article.videoUrl}
                 mediaType={article.mediaType}
                 title={title}
-                aspectRatio="w-full aspect-[16/10] sm:aspect-[16/9] min-h-[260px] sm:min-h-[380px] max-h-[500px]"
+                aspectRatio="w-full aspect-[4/3] sm:aspect-[16/10] min-h-[300px] sm:min-h-[420px] max-h-[540px]"
                 autoPlayInterval={3500}
                 showControls={true}
                 mediaCaption={article.mediaCaption}
