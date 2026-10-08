@@ -7,17 +7,18 @@ import HeroMixedSection from './components/HeroMixedSection';
 import EditorialMagazineGrid from './components/EditorialMagazineGrid';
 import CategorySection from './components/CategorySection';
 import ArticleCard from './components/ArticleCard';
-import ArticleModal from './components/ArticleModal';
-import QuickReadModal from './components/QuickReadModal';
-import SubmitNewsModal from './components/SubmitNewsModal';
-import BookmarksModal from './components/BookmarksModal';
-import LegalModal from './components/LegalModal';
 import CookieConsent from './components/CookieConsent';
 import MobileBottomNav from './components/MobileBottomNav';
 import Footer from './components/Footer';
 
+// Code-splitting / Lazy loading heavy modals & cards
+const ArticleModal = lazy(() => import('./components/ArticleModal'));
+const QuickReadModal = lazy(() => import('./components/QuickReadModal'));
+const SubmitNewsModal = lazy(() => import('./components/SubmitNewsModal'));
+const BookmarksModal = lazy(() => import('./components/BookmarksModal'));
+const LegalModal = lazy(() => import('./components/LegalModal'));
+const AdvertisementCard = lazy(() => import('./components/AdvertisementCard'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
-import AdvertisementCard from './components/AdvertisementCard';
 
 import { StorageService } from './services/storage';
 import { fetchAllLiveCategories } from './services/newsApi';
@@ -702,7 +703,9 @@ export default function App() {
                         onToggleBookmark={handleToggleBookmark}
                       />
                       {showAdHere && (
-                        <AdvertisementCard ad={feedAd} layout="feed" />
+                        <Suspense fallback={null}>
+                          <AdvertisementCard ad={feedAd} layout="feed" />
+                        </Suspense>
                       )}
                     </React.Fragment>
                   );
@@ -772,10 +775,12 @@ export default function App() {
             />
 
             {/* 2. ADVERTISEMENT BANNER (Below Hero Mix) */}
-            <AdvertisementCard 
-              ad={ads.find(a => a.placements?.includes('banner') || a.placement === 'banner' || a.placement === 'all')} 
-              layout="banner" 
-            />
+            <Suspense fallback={null}>
+              <AdvertisementCard 
+                ad={ads.find(a => a.placements?.includes('banner') || a.placement === 'banner' || a.placement === 'all')} 
+                layout="banner" 
+              />
+            </Suspense>
 
             {/* 3. 📍 ब्यावर विशेष एवं अन्य प्रमुख खबरें (More News Section) */}
             <CategorySection
@@ -898,58 +903,68 @@ export default function App() {
       {/* MODALS */}
       
       {/* 1. Full Article Reader Modal */}
-      <ArticleModal
-        article={activeArticle}
-        isOpen={!!activeArticle || isArticleLoading}
-        isLoading={isArticleLoading}
-        onClose={handleCloseArticle}
-        lang={lang}
-        onPlayTTS={handlePlayTTS}
-        isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === activeArticle?.id}
-        isBookmarked={activeArticle ? bookmarks.includes(activeArticle.id) : false}
-        onToggleBookmark={handleToggleBookmark}
-        relatedArticles={articles.filter(a => a.id !== activeArticle?.id && (a.category === activeArticle?.category || a.category === 'beawar'))}
-        onSelectRelated={handleOpenArticle}
-        ad={ads.find(a => a.placements?.includes('article') || a.placement === 'article' || a.placement === 'all')}
-      />
+      <Suspense fallback={null}>
+        <ArticleModal
+          article={activeArticle}
+          isOpen={!!activeArticle || isArticleLoading}
+          isLoading={isArticleLoading}
+          onClose={handleCloseArticle}
+          lang={lang}
+          onPlayTTS={handlePlayTTS}
+          isPlayingAudio={currentTTSState.isPlaying && currentTTSState.articleId === activeArticle?.id}
+          isBookmarked={activeArticle ? bookmarks.includes(activeArticle.id) : false}
+          onToggleBookmark={handleToggleBookmark}
+          relatedArticles={articles.filter(a => a.id !== activeArticle?.id && (a.category === activeArticle?.category || a.category === 'beawar'))}
+          onSelectRelated={handleOpenArticle}
+          ad={ads.find(a => a.placements?.includes('article') || a.placement === 'article' || a.placement === 'all')}
+        />
+      </Suspense>
 
       {/* 2. 60-Word Inshorts Quick Read Modal */}
-      <QuickReadModal
-        isOpen={isQuickReadOpen}
-        onClose={() => setIsQuickReadOpen(false)}
-        articles={articles}
-        lang={lang}
-        onPlayTTS={handlePlayTTS}
-        isPlayingAudio={currentTTSState.isPlaying}
-        currentTTSId={currentTTSState.articleId}
-        bookmarks={bookmarks}
-        onToggleBookmark={handleToggleBookmark}
-      />
+      <Suspense fallback={null}>
+        <QuickReadModal
+          isOpen={isQuickReadOpen}
+          onClose={() => setIsQuickReadOpen(false)}
+          articles={articles}
+          lang={lang}
+          onPlayTTS={handlePlayTTS}
+          isPlayingAudio={currentTTSState.isPlaying}
+          currentTTSId={currentTTSState.articleId}
+          bookmarks={bookmarks}
+          onToggleBookmark={handleToggleBookmark}
+        />
+      </Suspense>
 
       {/* 3. Citizen Journalism: Submit News via WhatsApp Modal */}
-      <SubmitNewsModal
-        isOpen={isSubmitNewsOpen}
-        onClose={() => setIsSubmitNewsOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <SubmitNewsModal
+          isOpen={isSubmitNewsOpen}
+          onClose={() => setIsSubmitNewsOpen(false)}
+        />
+      </Suspense>
 
       {/* 4. Saved Bookmarks Modal */}
-      <BookmarksModal
-        isOpen={isBookmarksModalOpen}
-        onClose={() => setIsBookmarksModalOpen(false)}
-        bookmarkedArticles={bookmarkedArticles}
-        lang={lang}
-        onOpenArticle={handleOpenArticle}
-        onPlayTTS={handlePlayTTS}
-        currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
-        onToggleBookmark={handleToggleBookmark}
-      />
+      <Suspense fallback={null}>
+        <BookmarksModal
+          isOpen={isBookmarksModalOpen}
+          onClose={() => setIsBookmarksModalOpen(false)}
+          bookmarkedArticles={bookmarkedArticles}
+          lang={lang}
+          onOpenArticle={handleOpenArticle}
+          onPlayTTS={handlePlayTTS}
+          currentTTSId={currentTTSState.isPlaying ? currentTTSState.articleId : null}
+          onToggleBookmark={handleToggleBookmark}
+        />
+      </Suspense>
 
       {/* 5. Legal & Policies Modal (/about, /grievance, /terms, /privacy, /cookies, /editorial) */}
-      <LegalModal
-        isOpen={legalModal.isOpen}
-        onClose={() => setLegalModal(prev => ({ ...prev, isOpen: false }))}
-        page={legalModal.page}
-      />
+      <Suspense fallback={null}>
+        <LegalModal
+          isOpen={legalModal.isOpen}
+          onClose={() => setLegalModal(prev => ({ ...prev, isOpen: false }))}
+          page={legalModal.page}
+        />
+      </Suspense>
 
       {/* 6. Cookie & Privacy Consent Banner */}
       <CookieConsent

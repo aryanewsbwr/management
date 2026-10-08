@@ -16,6 +16,17 @@ export default defineConfig({
     }
   ],
   build: {
-    chunkSizeWarningLimit: 1600
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('@supabase')) {
+            return 'vendor-supabase';
+          }
+          if (id.includes('lucide-react')) {
+            return 'vendor-icons';
+          }
+        }
+      }
+    }
   }
 })

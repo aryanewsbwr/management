@@ -1,95 +1,51 @@
+import DOMPurify from 'dompurify';
+
 /**
  * Text & Rich Content Formatter for Arya News Agency
  * Supports Rich HTML, WhatsApp Formatting (*bold*, _italic_, ~strike~),
- * Alignment, Underline, and Safe Content Sanitization.
+ * Alignment, Underline, and Safe Content Sanitization via DOMPurify.
  */
 
+// Configure DOMPurify hook to enforce rel="noopener noreferrer" on target="_blank" links
+// and allow only http, https, mailto, and tel URLs on anchor tags.
+if (typeof DOMPurify.addHook === 'function') {
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.tagName === 'A') {
+      const href = node.getAttribute('href');
+      if (href) {
+        const trimmed = href.trim();
+        // Allow only http, https, mailto, tel URLs
+        if (!/^(https?:\/\/|mailto:|tel:)/i.test(trimmed)) {
+          node.removeAttribute('href');
+        }
+      }
+      if (node.getAttribute('target') === '_blank') {
+        node.setAttribute('rel', 'noopener noreferrer');
+      }
+    }
+  });
+}
+
 /**
- * Sanitizes HTML string to allow safe formatting tags while stripping dangerous elements.
+ * Sanitizes HTML string using DOMPurify.
+ * Allows only the formatting tags and attributes used by the rich editor.
  */
 export function sanitizeRichHtml(html = '') {
   if (!html || typeof html !== 'string') return '';
 
-  // In browser environment, use DOMParser for accurate and safe tree-based sanitization
-  if (typeof window !== 'undefined' && typeof DOMParser !== 'undefined') {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      // Allowed tags for news formatting
-      const allowedTags = new Set([
-        'P', 'B', 'STRONG', 'U', 'I', 'EM', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-        'UL', 'OL', 'LI', 'BLOCKQUOTE', 'DIV', 'SPAN', 'BR', 'HR', 'FONT',
-        'A', 'MARK', 'SUB', 'SUP', 'DEL', 'S'
-      ]);
-
-      const cleanNode = (node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          const tagName = node.tagName.toUpperCase();
-
-          // If dangerous tag, remove completely
-          if (['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'FORM', 'INPUT', 'BUTTON'].includes(tagName)) {
-            node.remove();
-            return;
-          }
-
-          // If not in allowed tags, unwrap (keep children)
-          if (!allowedTags.has(tagName)) {
-            while (node.firstChild) {
-              node.parentNode.insertBefore(node.firstChild, node);
-            }
-            node.remove();
-            return;
-          }
-
-          // Filter attributes: remove event handlers (on*), javascript: links, etc.
-          const attrs = Array.from(node.attributes);
-          for (const attr of attrs) {
-            const name = attr.name.toLowerCase();
-            const val = attr.value;
-
-            if (name.startsWith('on') || (name === 'href' && val.toLowerCase().trim().startsWith('javascript:'))) {
-              node.removeAttribute(attr.name);
-            } else if (name === 'style') {
-              // Only permit safe styling properties: text-align, text-decoration, font-weight, etc.
-              const safeStyles = val
-                .split(';')
-                .map(s => s.trim())
-                .filter(s => {
-                  const prop = s.split(':')[0]?.trim().toLowerCase();
-                  return ['text-align', 'text-decoration', 'font-weight', 'font-style', 'color', 'background-color', 'padding-left', 'margin-left', 'line-height'].includes(prop);
-                })
-                .join('; ');
-
-              if (safeStyles) {
-                node.setAttribute('style', safeStyles);
-              } else {
-                node.removeAttribute('style');
-              }
-            } else if (!['href', 'target', 'rel', 'class', 'align', 'dir'].includes(name)) {
-              node.removeAttribute(attr.name);
-            }
-          }
-
-          // Recursively clean children
-          Array.from(node.childNodes).forEach(cleanNode);
-        }
-      };
-
-      Array.from(doc.body.childNodes).forEach(cleanNode);
-      return doc.body.innerHTML;
-    } catch (e) {
-      console.warn('DOMParser sanitize notice:', e);
-    }
-  }
-
-  // Fallback regex sanitizer
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .replace(/on\w+="[^"]*"/gi, '')
-    .replace(/on\w+='[^']*'/gi, '');
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li', 'blockquote', 'span', 'div', 'hr',
+      'a', 'mark', 'sub', 'sup', 'code', 'pre'
+    ],
+    ALLOWED_ATTR: [
+      'href', 'target', 'rel', 'style', 'class', 'align', 'dir', 'title'
+    ],
+    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:)/i,
+    ALLOW_DATA_ATTR: false
+  });
 }
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { 
   X, Share2, Volume2, Bookmark, Eye, Clock, 
   ExternalLink, ArrowLeft, Type, Check, Send, 
@@ -8,8 +8,9 @@ import {
 import { CATEGORIES, AGENCY_INFO } from '../data/categories';
 import CategoryPlaceholder from './CategoryPlaceholder';
 import MediaCarousel from './MediaCarousel';
-import AdvertisementCard from './AdvertisementCard';
 import { formatContentForDisplay } from '../utils/textFormatter';
+
+const AdvertisementCard = lazy(() => import('./AdvertisementCard'));
 
 export default function ArticleModal({
   article,
@@ -427,7 +428,11 @@ export default function ArticleModal({
           )}
 
           {/* In-Article Advertisement Card */}
-          {ad && <AdvertisementCard ad={ad} layout="article" />}
+          {ad && (
+            <Suspense fallback={null}>
+              <AdvertisementCard ad={ad} layout="article" />
+            </Suspense>
+          )}
 
           {/* Bottom Complete Social Share Box */}
           <div className="mt-8 p-5 bg-gradient-to-br from-gray-900 via-gray-950 to-black rounded-3xl text-white shadow-xl border border-gray-800 space-y-4">

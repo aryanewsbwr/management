@@ -2,7 +2,14 @@ import React from 'react';
 import { Clock, AlertCircle, Sparkles } from 'lucide-react';
 
 export default function BullionTicker({ rates = [], lastUpdatedAt = null, enabled = true }) {
-  if (!enabled || !rates || rates.length === 0) return null;
+  // Only display if enabled, has real saved lastUpdatedAt timestamp, and has non-empty valid prices
+  const validRates = (rates || []).filter(
+    item => item && item.price && String(item.price).trim() !== '' && String(item.price).trim() !== '0'
+  );
+
+  if (!enabled || !lastUpdatedAt || validRates.length === 0) {
+    return null;
+  }
 
   // Check if update is older than 24 hours
   let isOutdated = false;
@@ -59,7 +66,7 @@ export default function BullionTicker({ rates = [], lastUpdatedAt = null, enable
         {/* Marquee Rates */}
         <div className="flex-1 overflow-hidden relative">
           <div className="flex animate-marquee whitespace-nowrap items-center hover:pause-animation">
-            {[...rates, ...rates, ...rates].map((item, idx) => (
+            {[...validRates, ...validRates, ...validRates].map((item, idx) => (
               <div 
                 key={idx} 
                 className="inline-flex items-center gap-2 bg-[#101d42] border border-amber-500/20 rounded-lg px-3 py-1 mx-2 shrink-0 shadow-sm"

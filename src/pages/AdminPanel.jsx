@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BarChart2, Megaphone, Clock, MessageCircle, 
   Lock, User, Key, Eye, EyeOff, ShieldCheck, CheckCircle2, 
   AlertCircle, Upload, Image as ImageIcon, Trash2, ExternalLink, 
   LogOut, PlusCircle, ArrowLeft, RefreshCw, Sparkles, TrendingUp, Save,
   Edit3, Radio, PowerOff, Video, Film, Play, X, Layers,
-  Scissors, RotateCcw, Camera, Search, ArrowUpDown, Award, Filter, Flame, ChevronRight
+  Search, ArrowUpDown, Award, Flame, ChevronRight
 } from 'lucide-react';
 import { AGENCY_INFO } from '../data/categories';
 import { StorageService } from '../services/storage';
@@ -12,7 +12,9 @@ import { compressImage } from '../utils/imageCompressor';
 import { getArticleThumbnail } from '../utils/mediaHelper';
 
 import { supabase, isSupabaseConfigured } from '../services/supabase';
-import RichTextEditor from '../components/RichTextEditor';
+
+const RichTextEditor = lazy(() => import('../components/RichTextEditor'));
+const VideoTrimmer = lazy(() => import('../components/VideoTrimmer'));
 
 export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   // Authentication State
@@ -52,9 +54,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
   const [videoPosterPreview, setVideoPosterPreview] = useState('');
   const [videoTrimStart, setVideoTrimStart] = useState('');
   const [videoTrimEnd, setVideoTrimEnd] = useState('');
-  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
-  const [videoDuration, setVideoDuration] = useState(0);
-  const videoRef = React.useRef(null);
   const [videoSizeMb, setVideoSizeMb] = useState('');
 
   const [isCompressingImage, setIsCompressingImage] = useState(false);
@@ -112,7 +111,7 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     { id: 'silver_100g', item: 'चांदी टंच (Silver 100g)', unit: '100 ग्राम', price: '' }
   ]);
   const [bullionLastUpdated, setBullionLastUpdated] = useState(null);
-  const [bullionEnabled, setBullionEnabled] = useState(true);
+  const [bullionEnabled, setBullionEnabled] = useState(false);
   const [isBullionSaving, setIsBullionSaving] = useState(false);
   const [isTogglingBullion, setIsTogglingBullion] = useState(false);
 
@@ -285,12 +284,21 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
   const handleSaveBullionRates = async (e) => {
     e.preventDefault();
+    const hasValidPrice = bullionRates.some(r => r.price && String(r.price).trim() !== '' && String(r.price).trim() !== '0');
+    if (!hasValidPrice) {
+      alert('कृपया कम से कम एक आइटम का आज का वास्तविक भाव भरें। (Please enter at least one real price before saving)');
+      return;
+    }
     setIsBullionSaving(true);
     try {
       await StorageService.saveBullionRates(bullionRates);
       const res = await StorageService.fetchBullionRates();
-      setBullionRates(res.rates);
+      if (res && res.rates && res.rates.length > 0) {
+        setBullionRates(res.rates);
+      }
       setBullionLastUpdated(res.lastUpdatedAt);
+      setBullionEnabled(res.enabled);
+      if (onNewsUpdated) onNewsUpdated();
       alert('ब्यावर सर्राफा भाव सफलतापूर्वक अपडेट हो चुके हैं!');
     } catch (err) {
       alert(err.message || 'Error saving bullion rates');
@@ -604,61 +612,6 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
     const objUrl = URL.createObjectURL(file);
     setVideoPreviewUrl(objUrl);
     e.target.value = '';
-  };
-
-  const handleCaptureThumbnail = async () => {
-    if (!videoRef.current) return;
-    const video = videoRef.current;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-    setVideoPosterPreview(dataUrl);
-    try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], "thumbnail.jpg", { type: "image/jpeg" });
-      setVideoPosterFile(file);
-    } catch(e) { console.error('Capture error:', e); }
-  };
-
-  const handleSetTrimStart = () => {
-    if (!videoRef.current) return;
-    setVideoTrimStart(videoRef.current.currentTime.toFixed(1));
-  };
-
-  const handleSetTrimEnd = () => {
-    if (!videoRef.current) return;
-    setVideoTrimEnd(videoRef.current.currentTime.toFixed(1));
-  };
-
-  const handleResetTrim = () => {
-    setVideoTrimStart('');
-    setVideoTrimEnd('');
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-    }
-  };
-
-  const handlePreviewTrim = () => {
-    if (!videoRef.current) return;
-    const start = parseFloat(videoTrimStart) || 0;
-    const end = parseFloat(videoTrimEnd) || (videoRef.current.duration || 1000);
-    videoRef.current.currentTime = start;
-    videoRef.current.play();
-
-    const checkInterval = setInterval(() => {
-      if (!videoRef.current || videoRef.current.paused) {
-        clearInterval(checkInterval);
-        return;
-      }
-      if (videoRef.current.currentTime >= end) {
-        videoRef.current.pause();
-        clearInterval(checkInterval);
-      }
-    }, 100);
   };
 
   // Video Poster / Cover Image Picker
@@ -1466,138 +1419,31 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
 
                     {/* Video Preview Player & Trimming Suite */}
                     {videoPreviewUrl ? (
-                      <div className="space-y-4 bg-gray-50 dark:bg-gray-800/60 p-4 rounded-2xl border border-gray-200 dark:border-gray-700">
-                        {/* Video Player */}
-                        <div className="relative rounded-xl overflow-hidden bg-black shadow-md border border-gray-800">
-                          <video
-                            ref={videoRef}
-                            crossOrigin="anonymous"
-                            src={videoPreviewUrl}
-                            controls
-                            playsInline
-                            onTimeUpdate={(e) => setVideoCurrentTime(e.target.currentTime)}
-                            onLoadedMetadata={(e) => setVideoDuration(e.target.duration)}
-                            className="w-full max-h-60 object-contain mx-auto"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setVideoFile(null);
-                              setVideoPreviewUrl('');
-                              setVideoSizeMb('');
-                              setVideoTrimStart('');
-                              setVideoTrimEnd('');
-                            }}
-                            className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full text-xs shadow-lg transition"
-                            title="वीडियो हटाएं"
-                          >
-                            ✕
-                          </button>
+                      <Suspense fallback={
+                        <div className="p-6 text-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                          <RefreshCw className="w-5 h-5 text-red-600 animate-spin mx-auto mb-2" />
+                          <span className="text-xs font-bold font-hindi text-gray-600 dark:text-gray-300">वीडियो ट्रिमर लोड हो रहा है...</span>
                         </div>
-
-                        {/* Live Playback Timer & Status */}
-                        <div className="flex items-center justify-between text-xs font-mono text-gray-600 dark:text-gray-300 px-1">
-                          <div className="flex items-center gap-1.5 font-bold text-gray-900 dark:text-white font-hindi">
-                            <Clock className="w-3.5 h-3.5 text-red-600" />
-                            <span>वर्तमान समय: {videoCurrentTime.toFixed(1)}s / {videoDuration.toFixed(1)}s</span>
-                          </div>
-                          <span className="text-[11px] text-gray-500 font-hindi">
-                            आकार: {videoSizeMb ? `${videoSizeMb} MB` : 'तैयार'}
-                          </span>
-                        </div>
-
-                        {/* ✂️ VIDEO TRIMMER & FRAME CAPTURE TOOLBAR */}
-                        <div className="p-3.5 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold font-hindi text-gray-900 dark:text-white flex items-center gap-1.5">
-                              <Scissors className="w-3.5 h-3.5 text-red-600" />
-                              <span>वीडियो ट्रिम टूल (Video Trimming & Capture)</span>
-                            </span>
-                            {(videoTrimStart || videoTrimEnd) && (
-                              <button
-                                type="button"
-                                onClick={handleResetTrim}
-                                className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1"
-                              >
-                                <RotateCcw className="w-3 h-3" />
-                                <span>रीसेट ट्रिम</span>
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <button
-                              type="button"
-                              onClick={handleSetTrimStart}
-                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-800 dark:text-gray-200 hover:text-red-600 rounded-xl text-xs font-bold transition border border-gray-200 dark:border-gray-600 active:scale-95"
-                              title="वर्तमान वीडियो स्थिति को शुरू का समय बनाएं"
-                            >
-                              <Scissors className="w-3.5 h-3.5 text-red-600" />
-                              <span>शुरू: {videoTrimStart ? `${videoTrimStart}s` : 'सेट करें'}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={handleSetTrimEnd}
-                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-950/40 text-gray-800 dark:text-gray-200 hover:text-red-600 rounded-xl text-xs font-bold transition border border-gray-200 dark:border-gray-600 active:scale-95"
-                              title="वर्तमान वीडियो स्थिति को अंतिम समय बनाएं"
-                            >
-                              <Scissors className="w-3.5 h-3.5 text-red-600 rotate-180" />
-                              <span>अंत: {videoTrimEnd ? `${videoTrimEnd}s` : 'सेट करें'}</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={handlePreviewTrim}
-                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold transition border border-blue-200 dark:border-blue-900 active:scale-95"
-                              title="ट्रिम किया हुआ भाग चलाकर देखें"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current" />
-                              <span>ट्रिम चलाएं</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={handleCaptureThumbnail}
-                              className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
-                              title="वर्तमान फ्रेम को थंबनेल / कवर फोटो बनाएं"
-                            >
-                              <Camera className="w-3.5 h-3.5" />
-                              <span>फ्रेम थंबनेल बनाएं</span>
-                            </button>
-                          </div>
-
-                          {(videoTrimStart || videoTrimEnd) && (
-                            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between font-hindi">
-                              <span>✓ ट्रिम सक्रिय: {videoTrimStart || 0}s से {videoTrimEnd || `${videoDuration.toFixed(1)}s`} तक</span>
-                              <span>अवधि: {((parseFloat(videoTrimEnd || videoDuration) - parseFloat(videoTrimStart || 0))).toFixed(1)}s</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Thumbnail Cover Photo Preview */}
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
-                          <label className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-lg text-xs font-bold cursor-pointer transition">
-                            <ImageIcon className="w-3.5 h-3.5 text-gray-600 dark:text-gray-300" />
-                            <span>कस्टम कवर फोटो अपलोड करें (वैकल्पिक)</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleVideoPosterChange}
-                              className="hidden"
-                            />
-                          </label>
-                          {videoPosterPreview && (
-                            <div className="flex items-center gap-2">
-                              <img src={videoPosterPreview} alt="" className="w-12 h-9 object-cover rounded-lg border shadow-sm" />
-                              <span className="text-xs text-emerald-600 font-bold">
-                                ✓ थंबनेल सेट है
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      }>
+                        <VideoTrimmer
+                          videoPreviewUrl={videoPreviewUrl}
+                          videoSizeMb={videoSizeMb}
+                          videoTrimStart={videoTrimStart}
+                          setVideoTrimStart={setVideoTrimStart}
+                          videoTrimEnd={videoTrimEnd}
+                          setVideoTrimEnd={setVideoTrimEnd}
+                          videoPosterPreview={videoPosterPreview}
+                          setVideoPosterPreview={setVideoPosterPreview}
+                          onRemoveVideo={() => {
+                            setVideoFile(null);
+                            setVideoPreviewUrl('');
+                            setVideoSizeMb('');
+                            setVideoTrimStart('');
+                            setVideoTrimEnd('');
+                          }}
+                          onVideoPosterChange={handleVideoPosterChange}
+                        />
+                      </Suspense>
                     ) : (
                       <div className="text-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-850">
                         <Film className="w-8 h-8 mx-auto mb-2 text-gray-400" />
@@ -1633,12 +1479,19 @@ export default function AdminPanel({ onNavigateHome, onNewsUpdated }) {
                 <label className="block text-sm font-black font-hindi text-gray-800 dark:text-gray-200 mb-1.5">
                   4. खबर का पूरा विवरण (Full News Content & Formatting) *
                 </label>
-                <RichTextEditor
-                  value={content}
-                  onChange={setContent}
-                  placeholder="खबर की पूरी जानकारी यहाँ लिखें या पेस्ट करें (बोल्ड, अंडरलाइन, अलाइनमेंट, लिस्ट आदि के साथ)..."
-                  minHeight="200px"
-                />
+                <Suspense fallback={
+                  <div className="p-8 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50 dark:bg-gray-800 text-center">
+                    <RefreshCw className="w-5 h-5 text-red-600 animate-spin mx-auto mb-2" />
+                    <span className="text-xs font-bold font-hindi text-gray-600 dark:text-gray-300">रिच टेक्स्ट एडिटर लोड हो रहा है...</span>
+                  </div>
+                }>
+                  <RichTextEditor
+                    value={content}
+                    onChange={setContent}
+                    placeholder="खबर की पूरी जानकारी यहाँ लिखें या पेस्ट करें (बोल्ड, अंडरलाइन, अलाइनमेंट, लिस्ट आदि के साथ)..."
+                    minHeight="200px"
+                  />
+                </Suspense>
               </div>
 
               {/* 5 & 6. Reporter Name & Area in Beawar */}

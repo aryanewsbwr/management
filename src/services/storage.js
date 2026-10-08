@@ -448,15 +448,20 @@ export const StorageService = {
         .order('id');
 
       if (!error && data && data.length > 0) {
-        const timestamps = data.map(d => new Date(d.updated_at).getTime()).filter(t => !isNaN(t));
+        const validWithPrices = data.filter(d => d.price && String(d.price).trim() !== '' && String(d.price).trim() !== '0');
+        const timestamps = validWithPrices.map(d => new Date(d.updated_at).getTime()).filter(t => !isNaN(t));
         const latestTime = timestamps.length > 0 ? new Date(Math.max(...timestamps)).toISOString() : null;
-        return { rates: data, lastUpdatedAt: latestTime, enabled: isEnabled };
+        return {
+          rates: data,
+          lastUpdatedAt: latestTime,
+          enabled: isEnabled && Boolean(latestTime && validWithPrices.length > 0)
+        };
       }
     } catch (err) {
       console.warn('[StorageService] fetchBullionRates notice:', err.message);
     }
 
-    return { rates: [], lastUpdatedAt: null, enabled: isEnabled };
+    return { rates: [], lastUpdatedAt: null, enabled: false };
   },
 
   async setBullionEnabled(enabled) {
