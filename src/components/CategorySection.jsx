@@ -143,6 +143,19 @@ export default function CategorySection({
           ))}
         </div>
 
+        {/* Bottom View More Button */}
+        {onViewMoreCategory && (
+          <div className="mt-5 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center">
+            <button
+              onClick={() => onViewMoreCategory(categoryId)}
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/40 px-5 py-2.5 rounded-xl border border-red-200 dark:border-red-900/40 transition active:scale-95 shadow-sm"
+            >
+              <span>{title} की सभी खबरें देखें (और देखें)</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
       </div>
     </section>
   );

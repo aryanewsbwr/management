@@ -63,10 +63,11 @@ export default function HeroMixedSection({
           </div>
 
           <button
-            onClick={() => onSelectCategory('all')}
-            className="hidden sm:flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-700"
+            onClick={() => onSelectCategory('beawar')}
+            className="flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50 dark:bg-red-950/40 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 transition hover:scale-105 active:scale-95 shadow-sm"
           >
-            <span>सभी देखें</span>
+            <MapPin className="w-3.5 h-3.5" />
+            <span>ब्यावर लोकल (और देखें)</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -192,6 +193,18 @@ export default function HeroMixedSection({
             </div>
           </div>
 
+        </div>
+
+        {/* Bottom "Show More Beawar Local News" Button Banner */}
+        <div className="mt-5 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center">
+          <button
+            onClick={() => onSelectCategory('beawar')}
+            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-xs sm:text-sm px-6 py-2.5 sm:py-3 rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 active:scale-95 border border-red-500/30"
+          >
+            <MapPin className="w-4 h-4 text-amber-300" />
+            <span>ब्यावर लोकल की और खबरें देखें (Beawar Local News →)</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
 
       </div>
